@@ -240,7 +240,7 @@ public class DependenciesCapturer implements Component {
 					JavaClass javaClass = entry.getValue();
 					result.put(entry.getKey(), javaClass);
 					if (javaClassConsumer != null) {
-						logDebug("Storing class " + javaClass);
+						logDebug("Storing class {} to CLASSPATH {}", javaClass, store.getAbsolutePath());
 						javaClassConsumer.accept(javaClass);
 					}
 					return entry.getValue();
@@ -258,7 +258,7 @@ public class DependenciesCapturer implements Component {
 					javaClassAdded.add(javaClass);
 					classesName.remove(javaClass.getName());
 					if (javaClassConsumer != null) {
-						logDebug("Storing class " + javaClass);
+						logDebug("Storing class {} to CLASSPATH {}", javaClass, store.getAbsolutePath());
 						javaClassConsumer.accept(javaClass);
 					}
 				}
