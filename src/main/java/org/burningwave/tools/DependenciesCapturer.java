@@ -93,7 +93,8 @@ public class DependenciesCapturer implements Component {
 		Class<?> simulatorClass,
 		Collection<String> baseClassPaths,
 		Consumer<JavaClass> javaClassConsumer,
-		BiConsumer<String, ByteBuffer> resourceConsumer
+		BiConsumer<String, ByteBuffer> resourceConsumer,
+		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) {
 		final Result result;
 		try (SearchResult searchResult = byteCodeHunter.findBy(
@@ -147,6 +148,9 @@ public class DependenciesCapturer implements Component {
 				try {
 					cls = classHelper.loadOrUploadClass(simulatorClass, memoryClassLoader);
 					cls.getMethod("main", String[].class).invoke(null, (Object)new String[]{});
+					if (continueToCaptureAfterSimulatorClassEndExecutionFor != null && continueToCaptureAfterSimulatorClassEndExecutionFor > 0) {
+						Thread.sleep(continueToCaptureAfterSimulatorClassEndExecutionFor);
+					}
 				} catch (Throwable exc) {					
 					Set<String> allLoadedClasses = lowLevelObjectsHandler.retrieveAllLoadedClasses(
 						this.getClass().getClassLoader()
@@ -158,6 +162,9 @@ public class DependenciesCapturer implements Component {
 					try {
 						classesNameToBeExcluded.addAll(allLoadedClasses);
 						simulatorClass.getMethod("main", String[].class).invoke(null, (Object)new String[]{});
+						if (continueToCaptureAfterSimulatorClassEndExecutionFor != null && continueToCaptureAfterSimulatorClassEndExecutionFor > 0) {
+							Thread.sleep(continueToCaptureAfterSimulatorClassEndExecutionFor);
+						}
 						allLoadedClasses = lowLevelObjectsHandler.retrieveAllLoadedClasses(
 							this.getClass().getClassLoader()
 						).stream().map(clsss -> 
@@ -166,7 +173,7 @@ public class DependenciesCapturer implements Component {
 						allLoadedClasses.removeAll(classesNameToBeExcluded);
 						result.loadAll(allLoadedClasses);
 					} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException
-							| NoSuchMethodException | SecurityException e) {
+							| NoSuchMethodException | SecurityException | InterruptedException e) {
 						throw Throwables.toRuntimeException(exc);
 					}					
 				}
@@ -175,17 +182,19 @@ public class DependenciesCapturer implements Component {
 		return result;
 	}
 	
-	public Result store(
+	public Result captureAndStore(
 		Class<?> simulatorClass,
-		String destinationPath
+		String destinationPath,
+		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) {
-		return store(simulatorClass, pathHelper.getMainClassPaths(), destinationPath);
+		return captureAndStore(simulatorClass, pathHelper.getMainClassPaths(), destinationPath, continueToCaptureAfterSimulatorClassEndExecutionFor);
 	}
 	
-	public Result store(
+	public Result captureAndStore(
 		Class<?> simulatorClass,
 		Collection<String> baseClassPaths,
-		String destinationPath
+		String destinationPath,
+		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) {
 		Result dependencies = capture(
 			simulatorClass,
@@ -200,7 +209,8 @@ public class DependenciesCapturer implements Component {
 				} catch (IOException exc) {
 					logError("Could not persist resource resourceName", exc);
 				}
-			}					
+			},
+			continueToCaptureAfterSimulatorClassEndExecutionFor
 		);
 		dependencies.store = FileSystemItem.ofPath(destinationPath);
 		return dependencies;
@@ -227,9 +237,11 @@ public class DependenciesCapturer implements Component {
 		public JavaClass load(String className) {
 			for (Map.Entry<String, JavaClass> entry : classPathClasses.entrySet()) {
 				if (entry.getValue().getName().equals(className)) {
-					result.put(entry.getKey(), entry.getValue());
+					JavaClass javaClass = entry.getValue();
+					result.put(entry.getKey(), javaClass);
 					if (javaClassConsumer != null) {
-						javaClassConsumer.accept(entry.getValue());
+						logDebug("Storing class " + javaClass);
+						javaClassConsumer.accept(javaClass);
 					}
 					return entry.getValue();
 				}
@@ -241,11 +253,13 @@ public class DependenciesCapturer implements Component {
 			Collection<JavaClass> javaClassAdded = new LinkedHashSet<>();
 			for (Map.Entry<String, JavaClass> entry : classPathClasses.entrySet()) {
 				if (classesName.contains(entry.getValue().getName())) {
-					result.put(entry.getKey(), entry.getValue());
-					javaClassAdded.add(entry.getValue());
-					classesName.remove(entry.getValue().getName());
+					JavaClass javaClass = entry.getValue();
+					result.put(entry.getKey(), javaClass);
+					javaClassAdded.add(javaClass);
+					classesName.remove(javaClass.getName());
 					if (javaClassConsumer != null) {
-						javaClassConsumer.accept(entry.getValue());
+						logDebug("Storing class " + javaClass);
+						javaClassConsumer.accept(javaClass);
 					}
 				}
 			}
