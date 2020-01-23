@@ -40,7 +40,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -53,13 +52,17 @@ import org.burningwave.core.classes.JavaClass;
 import org.burningwave.core.classes.MemoryClassLoader;
 import org.burningwave.core.classes.hunter.ByteCodeHunter;
 import org.burningwave.core.classes.hunter.ByteCodeHunter.SearchResult;
+import org.burningwave.core.classes.hunter.ResourceFileScanConfig;
 import org.burningwave.core.classes.hunter.SearchConfig;
-import org.burningwave.core.io.ByteBufferInputStream;
-import org.burningwave.core.io.ByteBufferOutputStream;
+import org.burningwave.core.common.Strings;
+import org.burningwave.core.io.FileInputStream;
 import org.burningwave.core.io.FileOutputStream;
+import org.burningwave.core.io.FileSystemHelper;
+import org.burningwave.core.io.FileSystemHelper.Scan;
 import org.burningwave.core.io.FileSystemItem;
 import org.burningwave.core.io.PathHelper;
 import org.burningwave.core.io.Streams;
+import org.burningwave.core.io.ZipInputStream;
 import org.burningwave.core.jvm.LowLevelObjectsHandler;
 
 
@@ -68,10 +71,18 @@ public class DependenciesCapturer implements Component {
 	private LowLevelObjectsHandler lowLevelObjectsHandler;
 	private PathHelper pathHelper;
 	private ClassHelper classHelper;
+	private FileSystemHelper fileSystemHelper;
 	
-	private DependenciesCapturer(LowLevelObjectsHandler lowLevelObjectsHandler, PathHelper pathHelper, ByteCodeHunter byteCodeHunter, ClassHelper classHelper) {
+	private DependenciesCapturer(
+		LowLevelObjectsHandler lowLevelObjectsHandler,
+		FileSystemHelper fileSystemHelper,
+		PathHelper pathHelper,
+		ByteCodeHunter byteCodeHunter,
+		ClassHelper classHelper
+	) {
 		this.lowLevelObjectsHandler = lowLevelObjectsHandler;
 		this.byteCodeHunter = byteCodeHunter;
+		this.fileSystemHelper = fileSystemHelper;
 		this.pathHelper = pathHelper;
 		this.classHelper = classHelper;
 	}
@@ -79,6 +90,7 @@ public class DependenciesCapturer implements Component {
 	public static DependenciesCapturer create(ComponentSupplier componentSupplier) {
 		return new DependenciesCapturer(
 			componentSupplier.getLowLevelObjectsHandler(),
+			componentSupplier.getFileSystemHelper(),
 			componentSupplier.getPathHelper(),
 			componentSupplier.getByteCodeHunter(),
 			componentSupplier.getClassHelper()
@@ -93,16 +105,20 @@ public class DependenciesCapturer implements Component {
 		Class<?> simulatorClass,
 		Collection<String> baseClassPaths,
 		Consumer<JavaClass> javaClassConsumer,
-		BiConsumer<String, ByteBuffer> resourceConsumer,
+		Consumer<Collection<String>> resourceConsumer,
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) {
 		final Result result;
+		resourceConsumer.accept(baseClassPaths);
 		try (SearchResult searchResult = byteCodeHunter.findBy(
 			SearchConfig.forPaths(
 				baseClassPaths
 			)
 		)) {
-			result = new Result(searchResult.getClassesFlatMap(), javaClassConsumer, resourceConsumer);
+			result = new Result(
+				searchResult.getClassesFlatMap(), 
+				javaClassConsumer
+			);
 		}
 		Set<String> classesNameToBeExcluded = lowLevelObjectsHandler.retrieveAllLoadedClasses(
 			this.getClass().getClassLoader()
@@ -130,16 +146,7 @@ public class DependenciesCapturer implements Component {
 			    	classesNameToBeExcluded.remove(name);
 			    	return cls;
 			    }
-				
-				@Override
-			    public InputStream getResourceAsStream(String name) {
-			    	InputStream inputStream = super.getResourceAsStream(name);
-			    	ByteBufferOutputStream bBOS = new ByteBufferOutputStream();
-			    	Streams.copy(inputStream, bBOS);
-			    	result.putResource(name, bBOS.toByteBuffer());			    	
-			    	return super.getResourceAsStream(name);
-			    }
-				
+			
 			}) {
 				for (Entry<String, JavaClass> entry : result.classPathClasses.entrySet()) {
 					JavaClass javaClass = entry.getValue();
@@ -200,38 +207,68 @@ public class DependenciesCapturer implements Component {
 			simulatorClass,
 			baseClassPaths, (javaClass) -> 
 				javaClass.storeToClassPath(destinationPath),
-			(resourceName, resourceContent) -> {
-				try (
-					ByteBufferInputStream inputStream = new ByteBufferInputStream(resourceContent);
-					FileOutputStream outputStream = FileOutputStream.create(new File(destinationPath + "/" + resourceName))
-				) {
-					Streams.copy(inputStream, outputStream);
-				} catch (IOException exc) {
-					logError("Could not persist resource resourceName", exc);
-				}
-			},
+			(paths) ->
+				fileSystemHelper.scan(
+					ResourceFileScanConfig.forPaths(paths).toScanConfiguration(
+						getFileSystemEntryStorer(destinationPath),
+						getZipEntryStorer(destinationPath)
+					)
+				),
 			continueToCaptureAfterSimulatorClassEndExecutionFor
 		);
 		dependencies.store = FileSystemItem.ofPath(destinationPath);
 		return dependencies;
 	}
+	
+	Consumer<Scan.ItemContext<FileInputStream>> getFileSystemEntryStorer(
+		String destinationPath
+	) {
+		return (scannedItemContext) -> {
+			String finalRelativePath = Strings.Paths.clean(scannedItemContext.getInput().getAbsolutePath()).replaceFirst(
+				Strings.Paths.clean(scannedItemContext.getBasePath().getAbsolutePath()),
+				""
+			);
+			File file = new File(destinationPath + finalRelativePath);
+			file.mkdirs();
+			file.delete();
+			try(FileOutputStream fileOutputStream = FileOutputStream.create(file, true)) {
+				Streams.copy(scannedItemContext.getInput(), fileOutputStream);
+			}
+		};
+	}
+	
+	
+	Consumer<Scan.ItemContext<ZipInputStream.Entry>> getZipEntryStorer(
+			String destinationPath
+	) {
+		return (scannedItemContext) -> {
+			String finalRelativePath = Strings.Paths.clean(scannedItemContext.getInput().getAbsolutePath()).replaceFirst(
+				Strings.Paths.clean(scannedItemContext.getBasePath().getAbsolutePath()),
+				""
+			);
+			File file = new File(destinationPath + finalRelativePath);
+			file.mkdirs();
+			file.delete();
+			try(InputStream inputStream = scannedItemContext.getInput().toInputStream(); FileOutputStream fileOutputStream = FileOutputStream.create(file, true)) {
+				Streams.copy(inputStream, fileOutputStream);
+			} catch (IOException e) {
+				logError("Excpetion occurred while trying to copy " + scannedItemContext.getInput().getAbsolutePath());
+			}
+		};
+	}
 		
 	public static class Result implements Component {
 		private CompletableFuture<Void> findingTask;
 		private final Map<String, JavaClass> classPathClasses;
-		private Map<String, ByteBuffer> resources;
 		private Map<String, JavaClass> result;
 		private FileSystemItem store;
 		private Consumer<JavaClass> javaClassConsumer;
-		private BiConsumer<String, ByteBuffer> resourceConsumer;
 		
-		private Result(Map<String, JavaClass> classPathClasses, Consumer<JavaClass> javaClassConsumer, BiConsumer<String, ByteBuffer> resourceConsumer) {
+		private Result(Map<String, JavaClass> classPathClasses, Consumer<JavaClass> javaClassConsumer) {
 			this.result = new ConcurrentHashMap<>();
-			this.resources = new ConcurrentHashMap<>();
 			this.classPathClasses = new ConcurrentHashMap<>();
 			this.classPathClasses.putAll(classPathClasses);
 			this.javaClassConsumer = javaClassConsumer;
-			this.resourceConsumer = resourceConsumer;
 		}
 		
 		public JavaClass load(String className) {
@@ -264,13 +301,6 @@ public class DependenciesCapturer implements Component {
 				}
 			}
 			return javaClassAdded;
-		}
-
-		public void putResource(String name, ByteBuffer bytes) {
-			resources.put(name, bytes);
-			if (resourceConsumer != null) {
-	    		resourceConsumer.accept(name, Streams.shareContent(bytes));
-	    	}
 		}
 
 		private JavaClass put(String className) {
@@ -307,8 +337,6 @@ public class DependenciesCapturer implements Component {
 			findingTask.cancel(true);
 			findingTask = null;
 			classPathClasses.clear();
-			resources.clear();
-			resources = null;
 			result.clear();
 			result = null;
 			store = null;
