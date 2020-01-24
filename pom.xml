@@ -45,6 +45,7 @@
 		<skipTests>${tools.skip.tests}</skipTests>
 		<project.test.includes />
 		<project.test.excludes>**/*Test.java</project.test.excludes>
+		<project.generated.artifacts.prefix>bw</project.generated.artifacts.prefix>
 	</properties>
 
 	<dependencies>
