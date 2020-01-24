@@ -181,7 +181,7 @@
 				<version>1.6.7</version>
 				<extensions>true</extensions>
 				<configuration>
-					<!-- <stagingProgressTimeoutMinutes>10</stagingProgressTimeoutMinutes> -->
+					<finalName>${project.generated.artifacts.prefix}-${project.artifactId}-${project.version}</finalName>
 					<serverId>ossrh</serverId>
 					<nexusUrl>https://oss.sonatype.org/</nexusUrl>
 					<autoReleaseAfterClose>true</autoReleaseAfterClose>
@@ -239,7 +239,6 @@
 	</scm>
 
 	<profiles>
-		<!-- GPG Signature on release -->
 		<profile>
 			<id>release-sign-artifacts</id>
 			<activation>
