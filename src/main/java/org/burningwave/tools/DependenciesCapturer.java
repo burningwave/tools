@@ -109,7 +109,9 @@ public class DependenciesCapturer implements Component {
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) {
 		final Result result;
-		resourceConsumer.accept(baseClassPaths);
+		if (resourceConsumer != null) {
+			resourceConsumer.accept(baseClassPaths);
+		}
 		try (SearchResult searchResult = byteCodeHunter.findBy(
 			SearchConfig.forPaths(
 				baseClassPaths
@@ -192,28 +194,32 @@ public class DependenciesCapturer implements Component {
 	public Result captureAndStore(
 		Class<?> simulatorClass,
 		String destinationPath,
+		boolean storeAllResources,
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) {
-		return captureAndStore(simulatorClass, pathHelper.getMainClassPaths(), destinationPath, continueToCaptureAfterSimulatorClassEndExecutionFor);
+		return captureAndStore(simulatorClass, pathHelper.getMainClassPaths(), destinationPath, storeAllResources, continueToCaptureAfterSimulatorClassEndExecutionFor);
 	}
 	
 	public Result captureAndStore(
 		Class<?> simulatorClass,
 		Collection<String> baseClassPaths,
 		String destinationPath,
+		boolean storeAllResources,
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) {
 		Result dependencies = capture(
 			simulatorClass,
 			baseClassPaths, (javaClass) -> 
 				javaClass.storeToClassPath(destinationPath),
-			(paths) ->
-				fileSystemHelper.scan(
-					ResourceFileScanConfig.forPaths(paths).toScanConfiguration(
-						getFileSystemEntryStorer(destinationPath),
-						getZipEntryStorer(destinationPath)
+			storeAllResources ?
+				(paths) ->
+					fileSystemHelper.scan(
+						ResourceFileScanConfig.forPaths(paths).toScanConfiguration(
+							getFileSystemEntryStorer(destinationPath),
+							getZipEntryStorer(destinationPath)
+						)
 					)
-				),
+				: null,
 			continueToCaptureAfterSimulatorClassEndExecutionFor
 		);
 		dependencies.store = FileSystemItem.ofPath(destinationPath);
@@ -239,7 +245,7 @@ public class DependenciesCapturer implements Component {
 	
 	
 	Consumer<Scan.ItemContext<ZipInputStream.Entry>> getZipEntryStorer(
-			String destinationPath
+		String destinationPath
 	) {
 		return (scannedItemContext) -> {
 			String finalRelativePath = Strings.Paths.clean(scannedItemContext.getInput().getAbsolutePath()).replaceFirst(
