@@ -40,11 +40,11 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<tools.jdk.version>8</tools.jdk.version>
+		<project.jdk.version>8</project.jdk.version>
 		<tools.skip.tests>true</tools.skip.tests>
 		<skipTests>${tools.skip.tests}</skipTests>
-		<tools.test.includes />
-		<tools.test.excludes>**/*Test.java</tools.test.excludes>
+		<project.test.includes />
+		<project.test.excludes>**/*Test.java</project.test.excludes>
 	</properties>
 
 	<dependencies>
@@ -52,24 +52,12 @@
 		<dependency>
 			<groupId>org.burningwave</groupId>
 			<artifactId>core</artifactId>
-			<version>[4.0.8.0,)</version>
+			<version>[4.0.8.1,)</version>
 		</dependency>
 
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-annotations</artifactId>
-			<version>2.10.0</version>
-		</dependency>
-
-		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-core</artifactId>
-			<version>2.10.0</version>
-		</dependency>
-
-		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-databind</artifactId>
 			<version>2.10.0</version>
 		</dependency>
 
@@ -129,8 +117,8 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.8.1</version>
 				<configuration>
-					<source>${tools.jdk.version}</source>
-        			<target>${tools.jdk.version}</target>
+					<source>${project.jdk.version}</source>
+        			<target>${project.jdk.version}</target>
         			<verbose>true</verbose>
 				</configuration>
 			</plugin>
@@ -140,16 +128,17 @@
 				<version>2.9</version>
 				<configuration>
 					<excludes>
-						<exclude>${tools.test.excludes}</exclude>
+						<exclude>${project.test.excludes}</exclude>
 					</excludes>
 					<includes>
-						<include>${tools.test.includes}</include>
+						<include>${project.test.includes}</include>
 					</includes>
 				</configuration>
 			</plugin>
 			<plugin>
 				<artifactId>maven-jar-plugin</artifactId>
 				<configuration>
+					<finalName>${project.generated.artifacts.prefix}-${project.artifactId}-${project.version}</finalName>
 					<archive>
 						<addMavenDescriptor>false</addMavenDescriptor>
 					</archive>
@@ -201,6 +190,9 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>
 				<version>3.0.1</version>
+				<configuration>
+					<finalName>${project.generated.artifacts.prefix}-${project.artifactId}-${project.version}</finalName>
+				</configuration>
 				<executions>
 					<execution>
 						<id>attach-sources</id>
@@ -216,9 +208,10 @@
 				<artifactId>maven-javadoc-plugin</artifactId>
 				<version>3.1.1</version>
 				<configuration>
+					<finalName>${project.generated.artifacts.prefix}-${project.artifactId}-${project.version}</finalName>
 					<javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>
 					<encoding>UTF-8</encoding>
-					<source>${tools.jdk.version}</source>
+					<source>${project.jdk.version}</source>
 				</configuration>
 				<executions>
 					<execution>
