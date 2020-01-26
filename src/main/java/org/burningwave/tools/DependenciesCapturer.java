@@ -40,6 +40,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -102,10 +103,11 @@ public class DependenciesCapturer implements Component {
 	}
 	
 	public Result capture(
-		Class<?> simulatorClass,
+		Class<?> mainClass,
 		Collection<String> baseClassPaths,
 		Consumer<JavaClass> javaClassConsumer,
 		Consumer<Collection<String>> resourceConsumer,
+		boolean includeMainClass,
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) {
 		final Result result;
@@ -127,22 +129,29 @@ public class DependenciesCapturer implements Component {
 		).stream().map(clsss -> 
 			clsss.getName()).collect((Collectors.toSet())
 		);
+		BiConsumer<Result, String> classNamePutter =
+			includeMainClass ? 
+				(res, className) -> 
+					res.put(className) 
+				:(res, className) -> {
+					if (!className.equals(mainClass.getName())) {
+						res.put(className);
+					}
+				};
 		result.findingTask = CompletableFuture.runAsync(() -> {
 			Class<?> cls;
 			try (MemoryClassLoader memoryClassLoader = new MemoryClassLoader(null, classHelper) {
 				@Override
 				public void addLoadedCompiledClass(String name, ByteBuffer byteCode) {
 					super.addLoadedCompiledClass(name, byteCode);
-					if (!name.equals(simulatorClass.getName())) {
-						result.put(name);
-					}
+					classNamePutter.accept(result, name);
 					classesNameToBeExcluded.remove(name);
 				};
 				
 				@Override
 			    protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
 			    	Class<?> cls = super.loadClass(name, resolve);
-			    	if (!name.equals(simulatorClass.getName())) {
+			    	if (!name.equals(mainClass.getName())) {
 						result.load(name);	
 					}
 			    	classesNameToBeExcluded.remove(name);
@@ -155,7 +164,7 @@ public class DependenciesCapturer implements Component {
 					memoryClassLoader.addCompiledClass(javaClass.getName(), javaClass.getByteCode());
 				}
 				try {
-					cls = classHelper.loadOrUploadClass(simulatorClass, memoryClassLoader);
+					cls = classHelper.loadOrUploadClass(mainClass, memoryClassLoader);
 					cls.getMethod("main", String[].class).invoke(null, (Object)new String[]{});
 					if (continueToCaptureAfterSimulatorClassEndExecutionFor != null && continueToCaptureAfterSimulatorClassEndExecutionFor > 0) {
 						Thread.sleep(continueToCaptureAfterSimulatorClassEndExecutionFor);
@@ -166,11 +175,14 @@ public class DependenciesCapturer implements Component {
 					).stream().map(clsss -> 
 						clsss.getName()).collect((Collectors.toSet())
 					);
+					if (!includeMainClass) {
+						classesNameToBeExcluded.add(mainClass.getName());
+					}
 					allLoadedClasses.removeAll(classesNameToBeExcluded);
 					result.loadAll(allLoadedClasses);
 					try {
 						classesNameToBeExcluded.addAll(allLoadedClasses);
-						simulatorClass.getMethod("main", String[].class).invoke(null, (Object)new String[]{});
+						mainClass.getMethod("main", String[].class).invoke(null, (Object)new String[]{});
 						if (continueToCaptureAfterSimulatorClassEndExecutionFor != null && continueToCaptureAfterSimulatorClassEndExecutionFor > 0) {
 							Thread.sleep(continueToCaptureAfterSimulatorClassEndExecutionFor);
 						}
@@ -192,23 +204,25 @@ public class DependenciesCapturer implements Component {
 	}
 	
 	public Result captureAndStore(
-		Class<?> simulatorClass,
+		Class<?> mainClass,
 		String destinationPath,
 		boolean storeAllResources,
+		boolean includeMainClass,
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) {
-		return captureAndStore(simulatorClass, pathHelper.getMainClassPaths(), destinationPath, storeAllResources, continueToCaptureAfterSimulatorClassEndExecutionFor);
+		return captureAndStore(mainClass, pathHelper.getMainClassPaths(), destinationPath, storeAllResources, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor);
 	}
 	
 	public Result captureAndStore(
-		Class<?> simulatorClass,
+		Class<?> mainClass,
 		Collection<String> baseClassPaths,
 		String destinationPath,
 		boolean storeAllResources,
+		boolean includeMainClass,
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) {
 		Result dependencies = capture(
-			simulatorClass,
+			mainClass,
 			baseClassPaths, (javaClass) -> 
 				javaClass.storeToClassPath(destinationPath),
 			storeAllResources ?
@@ -220,6 +234,7 @@ public class DependenciesCapturer implements Component {
 						)
 					)
 				: null,
+			includeMainClass,
 			continueToCaptureAfterSimulatorClassEndExecutionFor
 		);
 		dependencies.store = FileSystemItem.ofPath(destinationPath);

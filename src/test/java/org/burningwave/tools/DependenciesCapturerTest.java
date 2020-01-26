@@ -10,7 +10,9 @@ public class DependenciesCapturerTest extends BaseTest {
 	public void storeDependenciesTestOne() {
 		testNotEmpty(() -> {
 			Result dependencies = DependenciesCapturer.getInstance().captureAndStore(
-				DependenciesCapturerTest.class, System.getProperty("user.home") + "/Desktop/bw-tests", false, 0L
+				DependenciesCapturerTest.class, 
+				System.getProperty("user.home") + "/Desktop/bw-tests",
+				false, true, 0L
 			);
 			dependencies.waitForTaskEnding();
 			return dependencies.getStore().getAllChildren();
