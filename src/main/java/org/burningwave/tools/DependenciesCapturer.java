@@ -159,6 +159,7 @@ public class DependenciesCapturer implements Component {
 			    }
 			
 			}) {
+				Thread.currentThread().setContextClassLoader(memoryClassLoader);
 				for (Entry<String, JavaClass> entry : result.classPathClasses.entrySet()) {
 					JavaClass javaClass = entry.getValue();
 					memoryClassLoader.addCompiledClass(javaClass.getName(), javaClass.getByteCode());
