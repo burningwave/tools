@@ -33,9 +33,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
@@ -43,16 +47,20 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.burningwave.Throwables;
 import org.burningwave.core.Component;
+import org.burningwave.core.ManagedLogger;
 import org.burningwave.core.assembler.ComponentContainer;
 import org.burningwave.core.assembler.ComponentSupplier;
+import org.burningwave.core.classes.ClassCriteria;
 import org.burningwave.core.classes.ClassHelper;
 import org.burningwave.core.classes.JavaClass;
 import org.burningwave.core.classes.MemoryClassLoader;
 import org.burningwave.core.classes.hunter.ByteCodeHunter;
 import org.burningwave.core.classes.hunter.ByteCodeHunter.SearchResult;
+import org.burningwave.core.classes.hunter.ClassPathHunter;
 import org.burningwave.core.classes.hunter.SearchConfig;
 import org.burningwave.core.common.Strings;
 import org.burningwave.core.function.QuadConsumer;
@@ -66,30 +74,34 @@ import org.burningwave.core.io.Streams;
 import org.burningwave.core.io.ZipInputStream;
 
 
-public class DependenciesCapturer implements Component {
+public class TwoPassDependenciesCapturer implements Component {
 	private ByteCodeHunter byteCodeHunter;
 	private PathHelper pathHelper;
 	private ClassHelper classHelper;
+	private ClassPathHunter classPathHunter;
 	
-	private DependenciesCapturer(
+	private TwoPassDependenciesCapturer(
 		PathHelper pathHelper,
 		ByteCodeHunter byteCodeHunter,
+		ClassPathHunter classPathHunter,
 		ClassHelper classHelper
 	) {
 		this.byteCodeHunter = byteCodeHunter;
+		this.classPathHunter = classPathHunter;
 		this.pathHelper = pathHelper;
 		this.classHelper = classHelper;
 	}
 	
-	public static DependenciesCapturer create(ComponentSupplier componentSupplier) {
-		return new DependenciesCapturer(
+	public static TwoPassDependenciesCapturer create(ComponentSupplier componentSupplier) {
+		return new TwoPassDependenciesCapturer(
 			componentSupplier.getPathHelper(),
 			componentSupplier.getByteCodeHunter(),
+			componentSupplier.getClassPathHunter(),
 			componentSupplier.getClassHelper()
 		);
 	}
 	
-	public static DependenciesCapturer getInstance() {
+	public static TwoPassDependenciesCapturer getInstance() {
 		return LazyHolder.getDependeciesCapturerInstance();
 	}
 	
@@ -99,7 +111,8 @@ public class DependenciesCapturer implements Component {
 		QuadConsumer<String, String, String, ByteBuffer>  javaClassConsumer,
 		QuadConsumer<String, String, String, ByteBuffer>  resourceConsumer,
 		boolean includeMainClass,
-		Long continueToCaptureAfterSimulatorClassEndExecutionFor
+		Long continueToCaptureAfterSimulatorClassEndExecutionFor,
+		boolean recursive
 	) {
 		final Result result;
 		try (SearchResult searchResult = byteCodeHunter.findBy(
@@ -183,6 +196,12 @@ public class DependenciesCapturer implements Component {
 					if (continueToCaptureAfterSimulatorClassEndExecutionFor != null && continueToCaptureAfterSimulatorClassEndExecutionFor > 0) {
 						Thread.sleep(continueToCaptureAfterSimulatorClassEndExecutionFor);
 					}
+					if (recursive) {
+						launchExternalCapturer(
+							mainClass, result.getStore().getAbsolutePath(), baseClassPaths, 
+							resourceConsumer != null, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor
+						);
+					}
 				} catch (Throwable exc) {
 					throw Throwables.toRuntimeException(exc);				
 				} finally {
@@ -191,6 +210,77 @@ public class DependenciesCapturer implements Component {
 			}
 		});
 		return result;
+	}
+	
+	private void launchExternalCapturer(
+		Class<?> mainClass, String destinationPath, Collection<String> baseClassPaths,
+		boolean storeAllResources, boolean includeMainClass,
+		Long continueToCaptureAfterSimulatorClassEndExecutionFor
+	) throws IOException, InterruptedException {
+		String javaExecutablePath = System.getProperty("java.home") + "/bin/java";
+		List<String> command = new LinkedList<String>();
+        command.add(Strings.Paths.clean(javaExecutablePath));
+        command.add("-cp");
+        StringBuffer generatedClassPath = new StringBuffer("\"");
+        Collection<String> classPathsToBeScanned = new LinkedHashSet<>(baseClassPaths);
+        classPathsToBeScanned.remove(destinationPath);
+        List<String> classPaths = FileSystemItem.ofPath(destinationPath).getChildren().stream().map(
+        	child -> child.getAbsolutePath()
+        ).collect(Collectors.toList());
+        generatedClassPath.append(String.join(System.getProperty("path.separator"), classPaths));
+        ClassPathHunter.SearchResult searchResult = classPathHunter.findBy(
+			SearchConfig.forPaths(
+				baseClassPaths
+			).by(
+				ClassCriteria.create().className(clsName -> 
+					clsName.equals(this.getClass().getName()) || clsName.equals(ComponentSupplier.class.getName())
+				)
+			)
+    	);
+        Iterator<FileSystemItem> classPathIterator = searchResult.getClassPaths().iterator();
+        while (classPathIterator.hasNext()) {
+        	FileSystemItem classPath = classPathIterator.next();
+        	if (!generatedClassPath.toString().contains(classPath.getAbsolutePath())) {	
+	        	generatedClassPath.append(
+	        		System.getProperty("path.separator")
+	            );
+	        	generatedClassPath.append(
+	        		classPath.getAbsolutePath()
+	        	);
+	        	classPathsToBeScanned.remove(classPath.getAbsolutePath());
+        	}
+        }
+        generatedClassPath.append("\"");
+        command.add(generatedClassPath.toString());
+        command.add(this.getClass().getName());
+        command.add(mainClass.getName());
+        String classPathsToBeScannedParam = "\"" + String.join(System.getProperty("path.separator"), classPathsToBeScanned) + "\"";
+        command.add(classPathsToBeScannedParam);        
+        command.add("\"" + destinationPath + "\"");
+        command.add(Boolean.valueOf(storeAllResources).toString());
+        command.add(Boolean.valueOf(includeMainClass).toString());
+        command.add(continueToCaptureAfterSimulatorClassEndExecutionFor.toString());
+        ProcessBuilder builder = new ProcessBuilder(command);
+
+        Process process = builder.inheritIO().start();
+        
+        process.waitFor();
+
+	}
+	
+	public static void main(String[] args) throws ClassNotFoundException {
+		Class.forName(ManagedLogger.class.getName());
+		String mainClassName = args[0];
+		Collection<String> paths = Arrays.asList(args[1].split(System.getProperty("path.separator")));
+		String destinationPath = args[2];
+		boolean storeAllResources = Boolean.valueOf(args[3]);
+		boolean includeMainClass = Boolean.valueOf(args[4]);
+		long continueToCaptureAfterSimulatorClassEndExecutionFor = Long.valueOf(args[5]);
+		Class<?> mainClass = Class.forName(mainClassName);
+		
+		TwoPassDependenciesCapturer.getInstance().captureAndStore(
+			mainClass, paths, destinationPath, storeAllResources, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor, false
+		).waitForTaskEnding();
 	}
 	
 	public Result captureAndStore(
@@ -203,13 +293,14 @@ public class DependenciesCapturer implements Component {
 		return captureAndStore(mainClass, pathHelper.getMainClassPaths(), destinationPath, storeAllResources, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor);
 	}
 	
-	public Result captureAndStore(
+	private Result captureAndStore(
 		Class<?> mainClass,
 		Collection<String> baseClassPaths,
 		String destinationPath,
 		boolean storeResources,
 		boolean includeMainClass,
-		Long continueToCaptureAfterSimulatorClassEndExecutionFor
+		Long continueToCaptureAfterSimulatorClassEndExecutionFor,
+		boolean recursive
 	) {
 		Result dependencies = capture(
 			mainClass,
@@ -218,10 +309,22 @@ public class DependenciesCapturer implements Component {
 				getStoreFunction()
 				: null,
 			includeMainClass,
-			continueToCaptureAfterSimulatorClassEndExecutionFor
+			continueToCaptureAfterSimulatorClassEndExecutionFor,
+			true
 		);
 		dependencies.store = FileSystemItem.ofPath(destinationPath);
 		return dependencies;
+	}
+	
+	public Result captureAndStore(
+		Class<?> mainClass,
+		Collection<String> baseClassPaths,
+		String destinationPath,
+		boolean storeResources,
+		boolean includeMainClass,
+		Long continueToCaptureAfterSimulatorClassEndExecutionFor
+	) {
+		return captureAndStore(mainClass, baseClassPaths, destinationPath, storeResources, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor, true);
 	}
 	
 	private QuadConsumer<String, String, String, ByteBuffer> getStoreFunction() {
@@ -399,9 +502,9 @@ public class DependenciesCapturer implements Component {
 	}
 	
 	private static class LazyHolder {
-		private static final DependenciesCapturer DEPENDECIES_CAPTURER_INSTANCE = DependenciesCapturer.create(ComponentContainer.getInstance());
+		private static final TwoPassDependenciesCapturer DEPENDECIES_CAPTURER_INSTANCE = TwoPassDependenciesCapturer.create(ComponentContainer.getInstance());
 		
-		private static DependenciesCapturer getDependeciesCapturerInstance() {
+		private static TwoPassDependenciesCapturer getDependeciesCapturerInstance() {
 			return DEPENDECIES_CAPTURER_INSTANCE;
 		}
 	}
