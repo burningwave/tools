@@ -58,8 +58,8 @@ import org.burningwave.core.classes.hunter.ByteCodeHunter;
 import org.burningwave.core.classes.hunter.ByteCodeHunter.SearchResult;
 import org.burningwave.core.classes.hunter.SearchConfig;
 import org.burningwave.core.common.Strings;
+import org.burningwave.core.function.QuadConsumer;
 import org.burningwave.core.io.ByteBufferInputStream;
-import org.burningwave.core.io.ByteBufferOutputStream;
 import org.burningwave.core.io.FileInputStream;
 import org.burningwave.core.io.FileOutputStream;
 import org.burningwave.core.io.FileSystemHelper.Scan;
@@ -104,8 +104,8 @@ public class DependenciesCapturer implements Component {
 	public Result capture(
 		Class<?> mainClass,
 		Collection<String> baseClassPaths,
-		Consumer<JavaClass> javaClassConsumer,
-		BiConsumer<String, ByteBuffer> resourceConsumer,
+		QuadConsumer<String, String, String, ByteBuffer>  javaClassConsumer,
+		QuadConsumer<String, String, String, ByteBuffer>  resourceConsumer,
 		boolean includeMainClass,
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) {
@@ -159,7 +159,7 @@ public class DependenciesCapturer implements Component {
 				public URL getResource(String name) {
 					URL resourceURL = contextClassLoader.getResource(name);
 					if (resourceURL != null) {
-						result.putResource(name, FileSystemItem.ofPath(resourceURL));
+						result.putResource(FileSystemItem.ofPath(resourceURL), name);
 					}
 					return resourceURL;
 				}
@@ -169,7 +169,7 @@ public class DependenciesCapturer implements Component {
 					Enumeration<URL> resourcesURL = contextClassLoader.getResources(name);
 					while (resourcesURL.hasMoreElements()) {
 						URL resourceURL = resourcesURL.nextElement();
-						result.putResource(name, FileSystemItem.ofPath(resourceURL));
+						result.putResource(FileSystemItem.ofPath(resourceURL), name);
 					}
 					return resourcesURL;
 				}
@@ -183,9 +183,7 @@ public class DependenciesCapturer implements Component {
 			    	
 			    	InputStream inputStream = inputStreamRetriever.apply(name);
 			    	if (inputStream != null) {
-				    	ByteBufferOutputStream bBOS = new ByteBufferOutputStream();
-				    	Streams.copy(inputStream, bBOS);
-				    	result.putResource(name, bBOS.toByteBuffer());
+			    		getResource(name);
 			    	}
 			    	return inputStreamRetriever.apply(name);
 			    }
@@ -251,38 +249,55 @@ public class DependenciesCapturer implements Component {
 		Class<?> mainClass,
 		Collection<String> baseClassPaths,
 		String destinationPath,
-		boolean storeAllResources,
+		boolean storeResources,
 		boolean includeMainClass,
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) {
 		Result dependencies = capture(
 			mainClass,
-			baseClassPaths, (javaClass) -> 
-				javaClass.storeToClassPath(destinationPath),
-			storeAllResources ?
-				(resourceName, resourceContent) -> {
-					FileSystemItem fileSystemItem = FileSystemItem.ofPath(destinationPath + "/" + resourceName);
-					File file =	new File(fileSystemItem.getAbsolutePath());
-					if (file.exists()) {
-						file.delete();
-					} else {
-						new File(fileSystemItem.getParent().getAbsolutePath()).mkdirs();
-					}
-					try (
-						ByteBufferInputStream inputStream = new ByteBufferInputStream(resourceContent);
-						FileOutputStream outputStream = FileOutputStream.create(file);
-					) {
-						Streams.copy(inputStream, outputStream);
-					} catch (IOException exc) {
-						logError("Could not persist resource resourceName", exc);
-					}
-				}
+			baseClassPaths, getStoreFunction(),
+			storeResources ?
+				getStoreFunction()
 				: null,
 			includeMainClass,
 			continueToCaptureAfterSimulatorClassEndExecutionFor
 		);
 		dependencies.store = FileSystemItem.ofPath(destinationPath);
 		return dependencies;
+	}
+	
+	private QuadConsumer<String, String, String, ByteBuffer> getStoreFunction() {
+		return (storeBasePath, resourceAbsolutePath, resourceRelativePath, resourceContent) -> {
+			String finalPath = getStoreEntryBasePath(storeBasePath, resourceAbsolutePath, resourceRelativePath);
+			FileSystemItem fileSystemItem = FileSystemItem.ofPath(finalPath + "/" + resourceRelativePath);
+			File file =	new File(fileSystemItem.getAbsolutePath());
+			if (file.exists()) {
+				file.delete();
+			} else {
+				new File(fileSystemItem.getParent().getAbsolutePath()).mkdirs();
+			}
+			try (
+				ByteBufferInputStream inputStream = new ByteBufferInputStream(resourceContent);
+				FileOutputStream outputStream = FileOutputStream.create(file);
+			) {
+				Streams.copy(inputStream, outputStream);
+			} catch (IOException exc) {
+				logError("Could not persist resource resourceName", exc);
+			}
+			logDebug("Resource {} has been stored to CLASSPATH {}", resourceRelativePath, finalPath);
+		};
+	}
+	
+	
+	protected String getStoreEntryBasePath(String storeBasePath, String itemAbsolutePath, String ItemRelativePath) {
+		String finalPath = itemAbsolutePath;
+		if (finalPath.chars().filter(ch -> ch == '/').count() > 1) {
+			finalPath = finalPath.substring(0, finalPath.lastIndexOf(ItemRelativePath) - 1).substring(finalPath.indexOf("/") + 1);
+			finalPath = "[" + finalPath.replace("/", "][") + "]";
+		} else {
+			finalPath = finalPath.replace("/", "");
+		}
+		return storeBasePath + "/" + finalPath;
 	}
 	
 	Consumer<Scan.ItemContext<FileInputStream>> getFileSystemEntryStorer(
@@ -328,13 +343,13 @@ public class DependenciesCapturer implements Component {
 		private Map<String, ByteBuffer> resources;
 		private Map<String, JavaClass> result;
 		private FileSystemItem store;
-		private Consumer<JavaClass> javaClassConsumer;
-		private BiConsumer<String, ByteBuffer> resourceConsumer;
+		private QuadConsumer<String, String, String, ByteBuffer> javaClassConsumer;
+		private QuadConsumer<String, String, String, ByteBuffer> resourceConsumer;
 		
 		private Result(
 			Map<String, JavaClass> classPathClasses,
-			Consumer<JavaClass> javaClassConsumer,
-			BiConsumer<String, ByteBuffer> resourceConsumer
+			QuadConsumer<String, String, String, ByteBuffer> javaClassConsumer,
+			QuadConsumer<String, String, String, ByteBuffer> resourceConsumer
 		) {
 			this.result = new ConcurrentHashMap<>();
 			this.classPathClasses = new ConcurrentHashMap<>();
@@ -350,8 +365,7 @@ public class DependenciesCapturer implements Component {
 					JavaClass javaClass = entry.getValue();
 					result.put(entry.getKey(), javaClass);
 					if (javaClassConsumer != null) {
-						logDebug("Storing class {} to CLASSPATH {}", javaClass, store.getAbsolutePath());
-						javaClassConsumer.accept(javaClass);
+						javaClassConsumer.accept(store.getAbsolutePath(), entry.getKey(), javaClass.getPath(), javaClass.getByteCode());
 					}
 					return entry.getValue();
 				}
@@ -368,27 +382,19 @@ public class DependenciesCapturer implements Component {
 					javaClassAdded.add(javaClass);
 					classesName.remove(javaClass.getName());
 					if (javaClassConsumer != null) {
-						logDebug("Storing class {} to CLASSPATH {}", javaClass, store.getAbsolutePath());
-						javaClassConsumer.accept(javaClass);
+						javaClassConsumer.accept(store.getAbsolutePath(), entry.getKey(), javaClass.getPath(), javaClass.getByteCode());
 					}
 				}
 			}
 			return javaClassAdded;
 		}
 		
-		public void putResource(String name, FileSystemItem fileSystemItem) {
+		public void putResource(FileSystemItem fileSystemItem, String resourceName) {
 			if (fileSystemItem.isFile() && fileSystemItem.exists()) {
-				putResource(name,
-					fileSystemItem.toByteBuffer()
-				);
+				if (resourceConsumer != null) {
+		    		resourceConsumer.accept(store.getAbsolutePath(), fileSystemItem.getAbsolutePath(), resourceName, fileSystemItem.toByteBuffer());
+		    	}
 			}
-		}
-		
-		public void putResource(String name, ByteBuffer bytes) {
-			resources.put(name, bytes);
-			if (resourceConsumer != null) {
-	    		resourceConsumer.accept(name, Streams.shareContent(bytes));
-	    	}
 		}
 		
 		private JavaClass put(String className) {
@@ -396,7 +402,8 @@ public class DependenciesCapturer implements Component {
 				if (entry.getValue().getName().equals(className)) {
 					result.put(entry.getKey(), entry.getValue());
 					if (javaClassConsumer != null) {
-						javaClassConsumer.accept(entry.getValue());
+						JavaClass javaClass = entry.getValue();
+						javaClassConsumer.accept(store.getAbsolutePath(), entry.getKey(), javaClass.getPath(), javaClass.getByteCode());
 					}
 					return entry.getValue();
 				}
