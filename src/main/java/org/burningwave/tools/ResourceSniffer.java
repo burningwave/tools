@@ -13,12 +13,12 @@ import org.burningwave.core.classes.ClassHelper;
 import org.burningwave.core.classes.MemoryClassLoader;
 import org.burningwave.core.io.FileSystemItem;
 
-public class ClassSniffer extends MemoryClassLoader {
+public class ResourceSniffer extends MemoryClassLoader {
 	private ClassLoader mainClassLoader;
 	private Consumer<String> classNameConsumer;
 	private BiConsumer<FileSystemItem, String> resourceConsumer;
 	
-	protected ClassSniffer(
+	protected ResourceSniffer(
 		ClassLoader mainClassLoader,
 		ClassHelper classHelper,
 		Consumer<String> classNameConsumer,
