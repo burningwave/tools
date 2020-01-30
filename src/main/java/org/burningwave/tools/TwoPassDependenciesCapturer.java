@@ -31,11 +31,9 @@ package org.burningwave.tools;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -44,9 +42,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.burningwave.Throwables;
@@ -57,7 +53,6 @@ import org.burningwave.core.assembler.ComponentSupplier;
 import org.burningwave.core.classes.ClassCriteria;
 import org.burningwave.core.classes.ClassHelper;
 import org.burningwave.core.classes.JavaClass;
-import org.burningwave.core.classes.MemoryClassLoader;
 import org.burningwave.core.classes.hunter.ByteCodeHunter;
 import org.burningwave.core.classes.hunter.ByteCodeHunter.SearchResult;
 import org.burningwave.core.classes.hunter.ClassPathHunter;
@@ -125,72 +120,25 @@ public class TwoPassDependenciesCapturer implements Component {
 				resourceConsumer
 			);
 		}
-		BiConsumer<Result, String> classNamePutter =
-			includeMainClass ? 
-				(res, className) -> 
-					res.put(className) 
-				:(res, className) -> {
-					if (!className.equals(mainClass.getName())) {
-						res.put(className);
-					}
-				};
+		Consumer<String> classNamePutter = includeMainClass ? 
+			(className) -> 
+				result.put(className) 
+			:(className) -> {
+				if (!className.equals(mainClass.getName())) {
+					result.put(className);
+				}
+			};
 		result.findingTask = CompletableFuture.runAsync(() -> {
 			ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
 			Class<?> cls;
-			try (MemoryClassLoader memoryClassLoader = new MemoryClassLoader(null, classHelper) {
-				@Override
-				public void addLoadedCompiledClass(String name, ByteBuffer byteCode) {
-					super.addLoadedCompiledClass(name, byteCode);
-					classNamePutter.accept(result, name);
-				};
-				
-				@Override
-			    protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-			    	Class<?> cls = super.loadClass(name, resolve);
-			    	classNamePutter.accept(result, name);
-			    	return cls;
-			    }
-				 @Override
-				public URL getResource(String name) {
-					URL resourceURL = contextClassLoader.getResource(name);
-					if (resourceURL != null) {
-						result.putResource(FileSystemItem.ofPath(resourceURL), name);
-					}
-					return resourceURL;
-				}
-				
-				@Override
-				public Enumeration<URL> getResources(String name) throws IOException {
-					Enumeration<URL> resourcesURL = contextClassLoader.getResources(name);
-					while (resourcesURL.hasMoreElements()) {
-						URL resourceURL = resourcesURL.nextElement();
-						result.putResource(FileSystemItem.ofPath(resourceURL), name);
-					}
-					return contextClassLoader.getResources(name);
-				}
-			    
-			    @Override
-			    public InputStream getResourceAsStream(String name) {
-			    	Function<String, InputStream> inputStreamRetriever =
-			    			name.endsWith(".class") ? 
-			    				super::getResourceAsStream :
-			    				contextClassLoader::getResourceAsStream;
-			    	
-			    	InputStream inputStream = inputStreamRetriever.apply(name);
-			    	if (inputStream != null) {
-			    		getResource(name);
-			    	}
-			    	return inputStreamRetriever.apply(name);
-			    }
-		
-			}) {
-				Thread.currentThread().setContextClassLoader(memoryClassLoader);
+			try (ClassSniffer classSniffer = new ClassSniffer(contextClassLoader, classHelper, classNamePutter, result::putResource)) {
+				Thread.currentThread().setContextClassLoader(classSniffer);
 				for (Entry<String, JavaClass> entry : result.classPathClasses.entrySet()) {
 					JavaClass javaClass = entry.getValue();
-					memoryClassLoader.addCompiledClass(javaClass.getName(), javaClass.getByteCode());
+					classSniffer.addCompiledClass(javaClass.getName(), javaClass.getByteCode());
 				}
 				try {
-					cls = classHelper.loadOrUploadClass(mainClass, memoryClassLoader);
+					cls = classHelper.loadOrUploadClass(mainClass, classSniffer);
 					cls.getMethod("main", String[].class).invoke(null, (Object)new String[]{});
 					if (continueToCaptureAfterSimulatorClassEndExecutionFor != null && continueToCaptureAfterSimulatorClassEndExecutionFor > 0) {
 						Thread.sleep(continueToCaptureAfterSimulatorClassEndExecutionFor);

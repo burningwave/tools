@@ -82,37 +82,37 @@ public interface ManagedLogger {
 		public static void enableLogging(Class<?> client) {}
 		
 		public static void logError(Class<?> client, String message, Throwable exc) {
-			System.out.println(client.getClass() + " - " + message + " - " + exc.getMessage());
+			System.out.println(client.getClass().getName() + " - " + message + " - " + exc.getMessage());
 		}
 		
 		public static void logError(Class<?> client, String message) {
-			System.out.println(client.getClass() + " - " + message);
+			System.out.println(client.getClass().getName() + " - " + message);
 		}
 		
 		public static void logDebug(Class<?> client, String message) {
-			System.out.println(client.getClass() + " - " + message);
+			System.out.println(client.getClass().getName() + " - " + message);
 		}
 		
 		public static void logDebug(Class<?> client, String message, Object... arguments) {
 			for (Object obj : arguments) {
 				message = message.replaceFirst("\\{\\}", clear(obj.toString()));
 			}
-			System.out.println(client.getClass() + " - " + message);
+			System.out.println(client.getClass().getName() + " - " + message);
 		}
 		
 		public static void logInfo(Class<?> client, String message) {
-			System.out.println(client.getClass() + " - " + message);
+			System.out.println(client.getClass().getName() + " - " + message);
 		}
 		
 		public static void logInfo(Class<?> client, String message, Object... arguments) {
 			for (Object obj : arguments) {
 				message = message.replaceFirst("\\{\\}", clear(obj.toString()));
 			}
-			System.out.println(client.getClass() + " - " + message);
+			System.out.println(client.getClass().getName() + " - " + message);
 		}
 		
 		public static void logWarn(Class<?> client, String message) {
-			System.out.println(client.getClass() + " - " + message);
+			System.out.println(client.getClass().getName() + " - " + message);
 		}
 		
 		public static void logWarn(Class<?> client, String message, Object... arguments) {
