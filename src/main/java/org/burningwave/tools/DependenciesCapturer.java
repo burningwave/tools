@@ -110,9 +110,6 @@ public class DependenciesCapturer implements Component {
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) {
 		final Result result;
-		/*if (resourceConsumer != null) {
-			resourceConsumer.accept(baseClassPaths);
-		}*/
 		try (SearchResult searchResult = byteCodeHunter.findBy(
 			SearchConfig.forPaths(
 				baseClassPaths
