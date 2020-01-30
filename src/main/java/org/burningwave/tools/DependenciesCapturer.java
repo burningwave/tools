@@ -118,14 +118,14 @@ public class DependenciesCapturer implements Component {
 		result.findingTask = CompletableFuture.runAsync(() -> {
 			ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
 			Class<?> cls;
-			try (ResourceSniffer classSniffer = new ResourceSniffer(contextClassLoader, classHelper, classNamePutter, result::putResource)) {
-				Thread.currentThread().setContextClassLoader(classSniffer);
+			try (ResourceSniffer resourceSniffer = new ResourceSniffer(contextClassLoader, classHelper, classNamePutter, result::putResource)) {
+				Thread.currentThread().setContextClassLoader(resourceSniffer);
 				for (Entry<String, JavaClass> entry : result.classPathClasses.entrySet()) {
 					JavaClass javaClass = entry.getValue();
-					classSniffer.addCompiledClass(javaClass.getName(), javaClass.getByteCode());
+					resourceSniffer.addCompiledClass(javaClass.getName(), javaClass.getByteCode());
 				}
 				try {
-					cls = classHelper.loadOrUploadClass(mainClass, classSniffer);
+					cls = classHelper.loadOrUploadClass(mainClass, resourceSniffer);
 					cls.getMethod("main", String[].class).invoke(null, (Object)new String[]{});
 					if (continueToCaptureAfterSimulatorClassEndExecutionFor != null && continueToCaptureAfterSimulatorClassEndExecutionFor > 0) {
 						Thread.sleep(continueToCaptureAfterSimulatorClassEndExecutionFor);
