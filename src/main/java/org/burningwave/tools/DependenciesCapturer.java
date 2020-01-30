@@ -31,7 +31,6 @@ package org.burningwave.tools;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.Collection;
@@ -171,7 +170,7 @@ public class DependenciesCapturer implements Component {
 						URL resourceURL = resourcesURL.nextElement();
 						result.putResource(FileSystemItem.ofPath(resourceURL), name);
 					}
-					return resourcesURL;
+					return contextClassLoader.getResources(name);
 				}
 			    
 			    @Override
@@ -201,34 +200,9 @@ public class DependenciesCapturer implements Component {
 						Thread.sleep(continueToCaptureAfterSimulatorClassEndExecutionFor);
 					}
 				} catch (Throwable exc) {
+					throw Throwables.toRuntimeException(exc);				
+				} finally {
 					Thread.currentThread().setContextClassLoader(contextClassLoader);
-					Set<String> allLoadedClasses = lowLevelObjectsHandler.retrieveAllLoadedClasses(
-						this.getClass().getClassLoader()
-					).stream().map(clsss -> 
-						clsss.getName()).collect((Collectors.toSet())
-					);
-					if (!includeMainClass) {
-						classesNameToBeExcluded.add(mainClass.getName());
-					}
-					allLoadedClasses.removeAll(classesNameToBeExcluded);
-					result.loadAll(allLoadedClasses);
-					try {
-						classesNameToBeExcluded.addAll(allLoadedClasses);
-						mainClass.getMethod("main", String[].class).invoke(null, (Object)new String[]{});
-						if (continueToCaptureAfterSimulatorClassEndExecutionFor != null && continueToCaptureAfterSimulatorClassEndExecutionFor > 0) {
-							Thread.sleep(continueToCaptureAfterSimulatorClassEndExecutionFor);
-						}
-						allLoadedClasses = lowLevelObjectsHandler.retrieveAllLoadedClasses(
-							this.getClass().getClassLoader()
-						).stream().map(clsss -> 
-							clsss.getName()).collect((Collectors.toSet())
-						);
-						allLoadedClasses.removeAll(classesNameToBeExcluded);
-						result.loadAll(allLoadedClasses);
-					} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException
-							| NoSuchMethodException | SecurityException | InterruptedException e) {
-						throw Throwables.toRuntimeException(exc);
-					}					
 				}
 			}
 		});
@@ -272,7 +246,7 @@ public class DependenciesCapturer implements Component {
 			FileSystemItem fileSystemItem = FileSystemItem.ofPath(finalPath + "/" + resourceRelativePath);
 			File file =	new File(fileSystemItem.getAbsolutePath());
 			if (file.exists()) {
-				file.delete();
+				return;
 			} else {
 				new File(fileSystemItem.getParent().getAbsolutePath()).mkdirs();
 			}
