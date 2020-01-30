@@ -64,7 +64,6 @@ import org.burningwave.core.classes.hunter.ClassPathHunter;
 import org.burningwave.core.classes.hunter.SearchConfig;
 import org.burningwave.core.common.Strings;
 import org.burningwave.core.function.QuadConsumer;
-import org.burningwave.core.io.ByteBufferInputStream;
 import org.burningwave.core.io.FileInputStream;
 import org.burningwave.core.io.FileOutputStream;
 import org.burningwave.core.io.FileSystemHelper.Scan;
@@ -331,21 +330,10 @@ public class TwoPassDependenciesCapturer implements Component {
 		return (storeBasePath, resourceAbsolutePath, resourceRelativePath, resourceContent) -> {
 			String finalPath = getStoreEntryBasePath(storeBasePath, resourceAbsolutePath, resourceRelativePath);
 			FileSystemItem fileSystemItem = FileSystemItem.ofPath(finalPath + "/" + resourceRelativePath);
-			File file =	new File(fileSystemItem.getAbsolutePath());
-			if (file.exists()) {
-				return;
-			} else {
-				new File(fileSystemItem.getParent().getAbsolutePath()).mkdirs();
+			if (!fileSystemItem.exists()) {
+				Streams.store(fileSystemItem.getAbsolutePath(), resourceContent);
+				logDebug("Resource {} has been stored to CLASSPATH {}", resourceRelativePath, finalPath);
 			}
-			try (
-				ByteBufferInputStream inputStream = new ByteBufferInputStream(resourceContent);
-				FileOutputStream outputStream = FileOutputStream.create(file);
-			) {
-				Streams.copy(inputStream, outputStream);
-			} catch (IOException exc) {
-				logError("Could not persist resource resourceName", exc);
-			}
-			logDebug("Resource {} has been stored to CLASSPATH {}", resourceRelativePath, finalPath);
 		};
 	}
 	
