@@ -216,7 +216,7 @@ public class Capturer implements Component {
 		CompletableFuture<Void> findingTask;
 		final Map<String, JavaClass> classPathClasses;
 		Map<String, ByteBuffer> resources;
-		Map<String, JavaClass> result;
+		Map<String, JavaClass> javaClasses;
 		FileSystemItem store;
 		QuadConsumer<String, String, String, ByteBuffer> javaClassConsumer;
 		QuadConsumer<String, String, String, ByteBuffer> resourceConsumer;
@@ -226,7 +226,7 @@ public class Capturer implements Component {
 			QuadConsumer<String, String, String, ByteBuffer> javaClassConsumer,
 			QuadConsumer<String, String, String, ByteBuffer> resourceConsumer
 		) {
-			this.result = new ConcurrentHashMap<>();
+			this.javaClasses = new ConcurrentHashMap<>();
 			this.classPathClasses = new ConcurrentHashMap<>();
 			this.resources = new ConcurrentHashMap<>();
 			this.classPathClasses.putAll(classPathClasses);
@@ -241,7 +241,7 @@ public class Capturer implements Component {
 					if (javaClassConsumer != null) {
 						javaClassConsumer.accept(store.getAbsolutePath(), entry.getKey(), javaClass.getPath(), javaClass.getByteCode());
 					}
-					result.put(entry.getKey(), javaClass);
+					javaClasses.put(entry.getKey(), javaClass);
 					return entry.getValue();
 				}
 			}
@@ -258,7 +258,7 @@ public class Capturer implements Component {
 					if (javaClassConsumer != null) {
 						javaClassConsumer.accept(store.getAbsolutePath(), entry.getKey(), javaClass.getPath(), javaClass.getByteCode());
 					}
-					result.put(entry.getKey(), javaClass);
+					javaClasses.put(entry.getKey(), javaClass);
 				}
 			}
 			return javaClassAdded;
@@ -280,7 +280,7 @@ public class Capturer implements Component {
 						JavaClass javaClass = entry.getValue();
 						javaClassConsumer.accept(store.getAbsolutePath(), entry.getKey(), javaClass.getPath(), javaClass.getByteCode());
 					}
-					result.put(entry.getKey(), entry.getValue());
+					javaClasses.put(entry.getKey(), entry.getValue());
 					return entry.getValue();
 				}
 			}
@@ -288,7 +288,7 @@ public class Capturer implements Component {
 		}
 		
 		public Map<String, JavaClass> get() {
-			return result;
+			return javaClasses;
 		}
 		
 		public CompletableFuture<Void> getFindingTask() {
@@ -310,8 +310,8 @@ public class Capturer implements Component {
 			classPathClasses.clear();
 			resources.clear();
 			resources = null;
-			result.clear();
-			result = null;
+			javaClasses.clear();
+			javaClasses = null;
 			store = null;
 		}
 	}
