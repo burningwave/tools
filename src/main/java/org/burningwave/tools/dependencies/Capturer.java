@@ -143,27 +143,24 @@ public class Capturer implements Component {
 	public Result captureAndStore(
 		Class<?> mainClass,
 		String destinationPath,
-		boolean storeAllResources,
 		boolean includeMainClass,
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) {
-		return captureAndStore(mainClass, pathHelper.getMainClassPaths(), destinationPath, storeAllResources, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor);
+		return captureAndStore(mainClass, pathHelper.getMainClassPaths(), destinationPath, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor);
 	}
 	
 	public Result captureAndStore(
 		Class<?> mainClass,
 		Collection<String> baseClassPaths,
 		String destinationPath,
-		boolean storeResources,
 		boolean includeMainClass,
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) {
 		Result dependencies = capture(
 			mainClass,
-			baseClassPaths, getStoreFunction(),
-			storeResources ?
-				getStoreFunction()
-				: null,
+			baseClassPaths, 
+			getStoreFunction(),
+			getStoreFunction(),
 			includeMainClass,
 			continueToCaptureAfterSimulatorClassEndExecutionFor
 		);
