@@ -36,6 +36,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -81,7 +82,7 @@ public class TwoPassCapturer extends Capturer {
 	}
 	
 	public static TwoPassCapturer getInstance() {
-		return LazyHolder.getDependeciesCapturerInstance();
+		return LazyHolder.getCapturerInstance();
 	}
 	
 	@Override
@@ -249,12 +250,22 @@ public class TwoPassCapturer extends Capturer {
 		dependencies.store = FileSystemItem.ofPath(destinationPath);
 		return dependencies;
 	}
-		
+	
+	private static class Result extends Capturer.Result {
+		Result(Map<String, JavaClass> classPathClasses,
+				QuadConsumer<String, String, String, ByteBuffer> javaClassConsumer,
+				QuadConsumer<String, String, String, ByteBuffer> resourceConsumer) {
+			super(classPathClasses, javaClassConsumer, resourceConsumer);
+		}
+
+	
+	}
+	
 	private static class LazyHolder {
-		private static final TwoPassCapturer DEPENDECIES_CAPTURER_INSTANCE = TwoPassCapturer.create(ComponentContainer.getInstance());
+		private static final TwoPassCapturer CAPTURER_INSTANCE = TwoPassCapturer.create(ComponentContainer.getInstance());
 		
-		private static TwoPassCapturer getDependeciesCapturerInstance() {
-			return DEPENDECIES_CAPTURER_INSTANCE;
+		private static TwoPassCapturer getCapturerInstance() {
+			return CAPTURER_INSTANCE;
 		}
 	}
 }

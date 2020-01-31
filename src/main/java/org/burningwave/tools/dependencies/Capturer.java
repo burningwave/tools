@@ -84,7 +84,7 @@ public class Capturer implements Component {
 	}
 	
 	public static Capturer getInstance() {
-		return LazyHolder.getDependeciesCapturerInstance();
+		return LazyHolder.getCapturerInstance();
 	}
 	
 	public Result capture(
@@ -183,7 +183,7 @@ public class Capturer implements Component {
 	}
 	
 	
-	protected String getStoreEntryBasePath(String storeBasePath, String itemAbsolutePath, String ItemRelativePath) {
+	String getStoreEntryBasePath(String storeBasePath, String itemAbsolutePath, String ItemRelativePath) {
 		String finalPath = itemAbsolutePath;
 		if (finalPath.chars().filter(ch -> ch == '/').count() > 1) {
 			finalPath = finalPath.substring(0, finalPath.lastIndexOf(ItemRelativePath) - 1).substring(finalPath.indexOf("/") + 1);
@@ -336,10 +336,10 @@ public class Capturer implements Component {
 	}
 	
 	static class LazyHolder {
-		static final Capturer DEPENDECIES_CAPTURER_INSTANCE = Capturer.create(ComponentContainer.getInstance());
+		static final Capturer CAPTURER_INSTANCE = Capturer.create(ComponentContainer.getInstance());
 		
-		static Capturer getDependeciesCapturerInstance() {
-			return DEPENDECIES_CAPTURER_INSTANCE;
+		static Capturer getCapturerInstance() {
+			return CAPTURER_INSTANCE;
 		}
 	}
 }
