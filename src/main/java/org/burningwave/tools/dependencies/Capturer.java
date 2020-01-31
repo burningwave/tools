@@ -28,9 +28,6 @@
  */
 package org.burningwave.tools.dependencies;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -52,7 +49,6 @@ import org.burningwave.core.classes.hunter.SearchConfig;
 import org.burningwave.core.common.Strings;
 import org.burningwave.core.function.QuadConsumer;
 import org.burningwave.core.io.FileInputStream;
-import org.burningwave.core.io.FileOutputStream;
 import org.burningwave.core.io.FileSystemHelper.Scan;
 import org.burningwave.core.io.FileSystemItem;
 import org.burningwave.core.io.PathHelper;
@@ -199,12 +195,7 @@ public class Capturer implements Component {
 				Strings.Paths.clean(scannedItemContext.getBasePath().getAbsolutePath()),
 				""
 			);
-			File file = new File(destinationPath + finalRelativePath);
-			file.mkdirs();
-			file.delete();
-			try(FileOutputStream fileOutputStream = FileOutputStream.create(file, true)) {
-				Streams.copy(scannedItemContext.getInput(), fileOutputStream);
-			}
+			Streams.store(finalRelativePath, scannedItemContext.getInput().toByteBuffer());
 		};
 	}
 	
@@ -217,14 +208,7 @@ public class Capturer implements Component {
 				Strings.Paths.clean(scannedItemContext.getBasePath().getAbsolutePath()),
 				""
 			);
-			File file = new File(destinationPath + finalRelativePath);
-			file.mkdirs();
-			file.delete();
-			try(InputStream inputStream = scannedItemContext.getInput().toInputStream(); FileOutputStream fileOutputStream = FileOutputStream.create(file, true)) {
-				Streams.copy(inputStream, fileOutputStream);
-			} catch (IOException e) {
-				logError("Excpetion occurred while trying to copy " + scannedItemContext.getInput().getAbsolutePath());
-			}
+			Streams.store(finalRelativePath, scannedItemContext.getInput().toByteBuffer());
 		};
 	}
 		
