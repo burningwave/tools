@@ -26,7 +26,7 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package org.burningwave.tools;
+package org.burningwave.tools.dependencies;
 
 import java.io.File;
 import java.io.IOException;
@@ -60,12 +60,12 @@ import org.burningwave.core.io.Streams;
 import org.burningwave.core.io.ZipInputStream;
 
 
-public class DependenciesCapturer implements Component {
-	private ByteCodeHunter byteCodeHunter;
-	private PathHelper pathHelper;
-	private ClassHelper classHelper;
+public class Capturer implements Component {
+	ByteCodeHunter byteCodeHunter;
+	PathHelper pathHelper;
+	ClassHelper classHelper;
 	
-	private DependenciesCapturer(
+	Capturer(
 		PathHelper pathHelper,
 		ByteCodeHunter byteCodeHunter,
 		ClassHelper classHelper
@@ -75,15 +75,15 @@ public class DependenciesCapturer implements Component {
 		this.classHelper = classHelper;
 	}
 	
-	public static DependenciesCapturer create(ComponentSupplier componentSupplier) {
-		return new DependenciesCapturer(
+	public static Capturer create(ComponentSupplier componentSupplier) {
+		return new Capturer(
 			componentSupplier.getPathHelper(),
 			componentSupplier.getByteCodeHunter(),
 			componentSupplier.getClassHelper()
 		);
 	}
 	
-	public static DependenciesCapturer getInstance() {
+	public static Capturer getInstance() {
 		return LazyHolder.getDependeciesCapturerInstance();
 	}
 	
@@ -118,7 +118,7 @@ public class DependenciesCapturer implements Component {
 		result.findingTask = CompletableFuture.runAsync(() -> {
 			ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
 			Class<?> cls;
-			try (ResourceSniffer resourceSniffer = new ResourceSniffer(contextClassLoader, classHelper, classNamePutter, result::putResource)) {
+			try (Sniffer resourceSniffer = new Sniffer(contextClassLoader, classHelper, classNamePutter, result::putResource)) {
 				Thread.currentThread().setContextClassLoader(resourceSniffer);
 				for (Entry<String, JavaClass> entry : result.classPathClasses.entrySet()) {
 					JavaClass javaClass = entry.getValue();
@@ -171,7 +171,7 @@ public class DependenciesCapturer implements Component {
 		return dependencies;
 	}
 	
-	private QuadConsumer<String, String, String, ByteBuffer> getStoreFunction() {
+	QuadConsumer<String, String, String, ByteBuffer> getStoreFunction() {
 		return (storeBasePath, resourceAbsolutePath, resourceRelativePath, resourceContent) -> {
 			String finalPath = getStoreEntryBasePath(storeBasePath, resourceAbsolutePath, resourceRelativePath);
 			FileSystemItem fileSystemItem = FileSystemItem.ofPath(finalPath + "/" + resourceRelativePath);
@@ -232,15 +232,15 @@ public class DependenciesCapturer implements Component {
 	}
 		
 	public static class Result implements Component {
-		private CompletableFuture<Void> findingTask;
-		private final Map<String, JavaClass> classPathClasses;
-		private Map<String, ByteBuffer> resources;
-		private Map<String, JavaClass> result;
-		private FileSystemItem store;
-		private QuadConsumer<String, String, String, ByteBuffer> javaClassConsumer;
-		private QuadConsumer<String, String, String, ByteBuffer> resourceConsumer;
+		CompletableFuture<Void> findingTask;
+		final Map<String, JavaClass> classPathClasses;
+		Map<String, ByteBuffer> resources;
+		Map<String, JavaClass> result;
+		FileSystemItem store;
+		QuadConsumer<String, String, String, ByteBuffer> javaClassConsumer;
+		QuadConsumer<String, String, String, ByteBuffer> resourceConsumer;
 		
-		private Result(
+		Result(
 			Map<String, JavaClass> classPathClasses,
 			QuadConsumer<String, String, String, ByteBuffer> javaClassConsumer,
 			QuadConsumer<String, String, String, ByteBuffer> resourceConsumer
@@ -257,10 +257,10 @@ public class DependenciesCapturer implements Component {
 			for (Map.Entry<String, JavaClass> entry : classPathClasses.entrySet()) {
 				if (entry.getValue().getName().equals(className)) {
 					JavaClass javaClass = entry.getValue();
-					result.put(entry.getKey(), javaClass);
 					if (javaClassConsumer != null) {
 						javaClassConsumer.accept(store.getAbsolutePath(), entry.getKey(), javaClass.getPath(), javaClass.getByteCode());
 					}
+					result.put(entry.getKey(), javaClass);
 					return entry.getValue();
 				}
 			}
@@ -272,12 +272,12 @@ public class DependenciesCapturer implements Component {
 			for (Map.Entry<String, JavaClass> entry : classPathClasses.entrySet()) {
 				if (classesName.contains(entry.getValue().getName())) {
 					JavaClass javaClass = entry.getValue();
-					result.put(entry.getKey(), javaClass);
 					javaClassAdded.add(javaClass);
 					classesName.remove(javaClass.getName());
 					if (javaClassConsumer != null) {
 						javaClassConsumer.accept(store.getAbsolutePath(), entry.getKey(), javaClass.getPath(), javaClass.getByteCode());
 					}
+					result.put(entry.getKey(), javaClass);
 				}
 			}
 			return javaClassAdded;
@@ -287,18 +287,19 @@ public class DependenciesCapturer implements Component {
 			if (fileSystemItem.isFile() && fileSystemItem.exists()) {
 				if (resourceConsumer != null) {
 		    		resourceConsumer.accept(store.getAbsolutePath(), fileSystemItem.getAbsolutePath(), resourceName, fileSystemItem.toByteBuffer());
+		    		resources.put(resourceName, fileSystemItem.toByteBuffer());
 		    	}
 			}
 		}
 		
-		private JavaClass put(String className) {
+		JavaClass put(String className) {
 			for (Map.Entry<String, JavaClass> entry : classPathClasses.entrySet()) {
 				if (entry.getValue().getName().equals(className)) {
-					result.put(entry.getKey(), entry.getValue());
 					if (javaClassConsumer != null) {
 						JavaClass javaClass = entry.getValue();
 						javaClassConsumer.accept(store.getAbsolutePath(), entry.getKey(), javaClass.getPath(), javaClass.getByteCode());
 					}
+					result.put(entry.getKey(), entry.getValue());
 					return entry.getValue();
 				}
 			}
@@ -334,10 +335,10 @@ public class DependenciesCapturer implements Component {
 		}
 	}
 	
-	private static class LazyHolder {
-		private static final DependenciesCapturer DEPENDECIES_CAPTURER_INSTANCE = DependenciesCapturer.create(ComponentContainer.getInstance());
+	static class LazyHolder {
+		static final Capturer DEPENDECIES_CAPTURER_INSTANCE = Capturer.create(ComponentContainer.getInstance());
 		
-		private static DependenciesCapturer getDependeciesCapturerInstance() {
+		static Capturer getDependeciesCapturerInstance() {
 			return DEPENDECIES_CAPTURER_INSTANCE;
 		}
 	}

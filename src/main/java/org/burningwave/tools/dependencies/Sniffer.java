@@ -1,4 +1,4 @@
-package org.burningwave.tools;
+package org.burningwave.tools.dependencies;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,12 +13,12 @@ import org.burningwave.core.classes.ClassHelper;
 import org.burningwave.core.classes.MemoryClassLoader;
 import org.burningwave.core.io.FileSystemItem;
 
-public class ResourceSniffer extends MemoryClassLoader {
+public class Sniffer extends MemoryClassLoader {
 	private ClassLoader mainClassLoader;
 	private Consumer<String> classNameConsumer;
 	private BiConsumer<FileSystemItem, String> resourceConsumer;
 	
-	protected ResourceSniffer(
+	protected Sniffer(
 		ClassLoader mainClassLoader,
 		ClassHelper classHelper,
 		Consumer<String> classNameConsumer,

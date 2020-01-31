@@ -1,7 +1,8 @@
 package org.burningwave.tools;
 
 import org.burningwave.core.io.FileSystemItem;
-import org.burningwave.tools.DependenciesCapturer.Result;
+import org.burningwave.tools.dependencies.Capturer;
+import org.burningwave.tools.dependencies.Capturer.Result;
 import org.junit.jupiter.api.Test;
 
 public class DependenciesCapturerTest extends BaseTest {
@@ -9,7 +10,7 @@ public class DependenciesCapturerTest extends BaseTest {
 	@Test
 	public void storeDependenciesTestOne() {
 		testNotEmpty(() -> {
-			Result dependencies = DependenciesCapturer.getInstance().captureAndStore(
+			Result dependencies = Capturer.getInstance().captureAndStore(
 				DependenciesCapturerTest.class, 
 				System.getProperty("user.home") + "/Desktop/bw-tests",
 				false, false, 0L

@@ -26,11 +26,9 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package org.burningwave.tools;
+package org.burningwave.tools.dependencies;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collection;
@@ -38,15 +36,12 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.burningwave.Throwables;
-import org.burningwave.core.Component;
 import org.burningwave.core.ManagedLogger;
 import org.burningwave.core.assembler.ComponentContainer;
 import org.burningwave.core.assembler.ComponentSupplier;
@@ -59,35 +54,25 @@ import org.burningwave.core.classes.hunter.ClassPathHunter;
 import org.burningwave.core.classes.hunter.SearchConfig;
 import org.burningwave.core.common.Strings;
 import org.burningwave.core.function.QuadConsumer;
-import org.burningwave.core.io.FileInputStream;
-import org.burningwave.core.io.FileOutputStream;
-import org.burningwave.core.io.FileSystemHelper.Scan;
 import org.burningwave.core.io.FileSystemItem;
 import org.burningwave.core.io.PathHelper;
-import org.burningwave.core.io.Streams;
-import org.burningwave.core.io.ZipInputStream;
 
 
-public class TwoPassDependenciesCapturer implements Component {
-	private ByteCodeHunter byteCodeHunter;
-	private PathHelper pathHelper;
-	private ClassHelper classHelper;
-	private ClassPathHunter classPathHunter;
+public class TwoPassCapturer extends Capturer {
+	ClassPathHunter classPathHunter;
 	
-	private TwoPassDependenciesCapturer(
+	private TwoPassCapturer(
 		PathHelper pathHelper,
 		ByteCodeHunter byteCodeHunter,
 		ClassPathHunter classPathHunter,
 		ClassHelper classHelper
 	) {
-		this.byteCodeHunter = byteCodeHunter;
+		super(pathHelper, byteCodeHunter, classHelper);
 		this.classPathHunter = classPathHunter;
-		this.pathHelper = pathHelper;
-		this.classHelper = classHelper;
 	}
 	
-	public static TwoPassDependenciesCapturer create(ComponentSupplier componentSupplier) {
-		return new TwoPassDependenciesCapturer(
+	public static TwoPassCapturer create(ComponentSupplier componentSupplier) {
+		return new TwoPassCapturer(
 			componentSupplier.getPathHelper(),
 			componentSupplier.getByteCodeHunter(),
 			componentSupplier.getClassPathHunter(),
@@ -95,8 +80,20 @@ public class TwoPassDependenciesCapturer implements Component {
 		);
 	}
 	
-	public static TwoPassDependenciesCapturer getInstance() {
+	public static TwoPassCapturer getInstance() {
 		return LazyHolder.getDependeciesCapturerInstance();
+	}
+	
+	@Override
+	public Result capture(
+		Class<?> mainClass,
+		Collection<String> baseClassPaths,
+		QuadConsumer<String, String, String, ByteBuffer>  javaClassConsumer,
+		QuadConsumer<String, String, String, ByteBuffer>  resourceConsumer,
+		boolean includeMainClass,
+		Long continueToCaptureAfterSimulatorClassEndExecutionFor
+	) {
+		return capture(mainClass, baseClassPaths, javaClassConsumer, resourceConsumer, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor, true);
 	}
 	
 	public Result capture(
@@ -131,7 +128,7 @@ public class TwoPassDependenciesCapturer implements Component {
 		result.findingTask = CompletableFuture.runAsync(() -> {
 			ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
 			Class<?> cls;
-			try (ResourceSniffer resourceSniffer = new ResourceSniffer(contextClassLoader, classHelper, classNamePutter, result::putResource)) {
+			try (Sniffer resourceSniffer = new Sniffer(contextClassLoader, classHelper, classNamePutter, result::putResource)) {
 				Thread.currentThread().setContextClassLoader(resourceSniffer);
 				for (Entry<String, JavaClass> entry : result.classPathClasses.entrySet()) {
 					JavaClass javaClass = entry.getValue();
@@ -225,19 +222,9 @@ public class TwoPassDependenciesCapturer implements Component {
 		long continueToCaptureAfterSimulatorClassEndExecutionFor = Long.valueOf(args[5]);
 		Class<?> mainClass = Class.forName(mainClassName);
 		
-		TwoPassDependenciesCapturer.getInstance().captureAndStore(
+		TwoPassCapturer.getInstance().captureAndStore(
 			mainClass, paths, destinationPath, storeAllResources, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor, false
 		).waitForTaskEnding();
-	}
-	
-	public Result captureAndStore(
-		Class<?> mainClass,
-		String destinationPath,
-		boolean storeAllResources,
-		boolean includeMainClass,
-		Long continueToCaptureAfterSimulatorClassEndExecutionFor
-	) {
-		return captureAndStore(mainClass, pathHelper.getMainClassPaths(), destinationPath, storeAllResources, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor);
 	}
 	
 	private Result captureAndStore(
@@ -262,185 +249,11 @@ public class TwoPassDependenciesCapturer implements Component {
 		dependencies.store = FileSystemItem.ofPath(destinationPath);
 		return dependencies;
 	}
-	
-	public Result captureAndStore(
-		Class<?> mainClass,
-		Collection<String> baseClassPaths,
-		String destinationPath,
-		boolean storeResources,
-		boolean includeMainClass,
-		Long continueToCaptureAfterSimulatorClassEndExecutionFor
-	) {
-		return captureAndStore(mainClass, baseClassPaths, destinationPath, storeResources, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor, true);
-	}
-	
-	private QuadConsumer<String, String, String, ByteBuffer> getStoreFunction() {
-		return (storeBasePath, resourceAbsolutePath, resourceRelativePath, resourceContent) -> {
-			String finalPath = getStoreEntryBasePath(storeBasePath, resourceAbsolutePath, resourceRelativePath);
-			FileSystemItem fileSystemItem = FileSystemItem.ofPath(finalPath + "/" + resourceRelativePath);
-			if (!fileSystemItem.exists()) {
-				Streams.store(fileSystemItem.getAbsolutePath(), resourceContent);
-				logDebug("Resource {} has been stored to CLASSPATH {}", resourceRelativePath, finalPath);
-			}
-		};
-	}
-	
-	
-	protected String getStoreEntryBasePath(String storeBasePath, String itemAbsolutePath, String ItemRelativePath) {
-		String finalPath = itemAbsolutePath;
-		if (finalPath.chars().filter(ch -> ch == '/').count() > 1) {
-			finalPath = finalPath.substring(0, finalPath.lastIndexOf(ItemRelativePath) - 1).substring(finalPath.indexOf("/") + 1);
-			finalPath = "[" + finalPath.replace("/", "][") + "]";
-		} else {
-			finalPath = finalPath.replace("/", "");
-		}
-		return storeBasePath + "/" + finalPath;
-	}
-	
-	Consumer<Scan.ItemContext<FileInputStream>> getFileSystemEntryStorer(
-		String destinationPath
-	) {
-		return (scannedItemContext) -> {
-			String finalRelativePath = Strings.Paths.clean(scannedItemContext.getInput().getAbsolutePath()).replaceFirst(
-				Strings.Paths.clean(scannedItemContext.getBasePath().getAbsolutePath()),
-				""
-			);
-			File file = new File(destinationPath + finalRelativePath);
-			file.mkdirs();
-			file.delete();
-			try(FileOutputStream fileOutputStream = FileOutputStream.create(file, true)) {
-				Streams.copy(scannedItemContext.getInput(), fileOutputStream);
-			}
-		};
-	}
-	
-	
-	Consumer<Scan.ItemContext<ZipInputStream.Entry>> getZipEntryStorer(
-		String destinationPath
-	) {
-		return (scannedItemContext) -> {
-			String finalRelativePath = Strings.Paths.clean(scannedItemContext.getInput().getAbsolutePath()).replaceFirst(
-				Strings.Paths.clean(scannedItemContext.getBasePath().getAbsolutePath()),
-				""
-			);
-			File file = new File(destinationPath + finalRelativePath);
-			file.mkdirs();
-			file.delete();
-			try(InputStream inputStream = scannedItemContext.getInput().toInputStream(); FileOutputStream fileOutputStream = FileOutputStream.create(file, true)) {
-				Streams.copy(inputStream, fileOutputStream);
-			} catch (IOException e) {
-				logError("Excpetion occurred while trying to copy " + scannedItemContext.getInput().getAbsolutePath());
-			}
-		};
-	}
 		
-	public static class Result implements Component {
-		private CompletableFuture<Void> findingTask;
-		private final Map<String, JavaClass> classPathClasses;
-		private Map<String, ByteBuffer> resources;
-		private Map<String, JavaClass> result;
-		private FileSystemItem store;
-		private QuadConsumer<String, String, String, ByteBuffer> javaClassConsumer;
-		private QuadConsumer<String, String, String, ByteBuffer> resourceConsumer;
-		
-		private Result(
-			Map<String, JavaClass> classPathClasses,
-			QuadConsumer<String, String, String, ByteBuffer> javaClassConsumer,
-			QuadConsumer<String, String, String, ByteBuffer> resourceConsumer
-		) {
-			this.result = new ConcurrentHashMap<>();
-			this.classPathClasses = new ConcurrentHashMap<>();
-			this.resources = new ConcurrentHashMap<>();
-			this.classPathClasses.putAll(classPathClasses);
-			this.javaClassConsumer = javaClassConsumer;
-			this.resourceConsumer = resourceConsumer;
-		}
-		
-		public JavaClass load(String className) {
-			for (Map.Entry<String, JavaClass> entry : classPathClasses.entrySet()) {
-				if (entry.getValue().getName().equals(className)) {
-					JavaClass javaClass = entry.getValue();
-					result.put(entry.getKey(), javaClass);
-					if (javaClassConsumer != null) {
-						javaClassConsumer.accept(store.getAbsolutePath(), entry.getKey(), javaClass.getPath(), javaClass.getByteCode());
-					}
-					return entry.getValue();
-				}
-			}
-			return null;
-		}
-		
-		public Collection<JavaClass> loadAll(Collection<String> classesName) {
-			Collection<JavaClass> javaClassAdded = new LinkedHashSet<>();
-			for (Map.Entry<String, JavaClass> entry : classPathClasses.entrySet()) {
-				if (classesName.contains(entry.getValue().getName())) {
-					JavaClass javaClass = entry.getValue();
-					result.put(entry.getKey(), javaClass);
-					javaClassAdded.add(javaClass);
-					classesName.remove(javaClass.getName());
-					if (javaClassConsumer != null) {
-						javaClassConsumer.accept(store.getAbsolutePath(), entry.getKey(), javaClass.getPath(), javaClass.getByteCode());
-					}
-				}
-			}
-			return javaClassAdded;
-		}
-		
-		public void putResource(FileSystemItem fileSystemItem, String resourceName) {
-			if (fileSystemItem.isFile() && fileSystemItem.exists()) {
-				if (resourceConsumer != null) {
-		    		resourceConsumer.accept(store.getAbsolutePath(), fileSystemItem.getAbsolutePath(), resourceName, fileSystemItem.toByteBuffer());
-		    	}
-			}
-		}
-		
-		private JavaClass put(String className) {
-			for (Map.Entry<String, JavaClass> entry : classPathClasses.entrySet()) {
-				if (entry.getValue().getName().equals(className)) {
-					result.put(entry.getKey(), entry.getValue());
-					if (javaClassConsumer != null) {
-						JavaClass javaClass = entry.getValue();
-						javaClassConsumer.accept(store.getAbsolutePath(), entry.getKey(), javaClass.getPath(), javaClass.getByteCode());
-					}
-					return entry.getValue();
-				}
-			}
-			return null;
-		}
-		
-		public Map<String, JavaClass> get() {
-			return result;
-		}
-		
-		public CompletableFuture<Void> getFindingTask() {
-			return this.findingTask;
-		}
-		
-		public void waitForTaskEnding() {
-			findingTask.join();
-		}
-		
-		public FileSystemItem getStore() {
-			return store;
-		}
-		
-		@Override
-		public void close() {
-			findingTask.cancel(true);
-			findingTask = null;
-			classPathClasses.clear();
-			resources.clear();
-			resources = null;
-			result.clear();
-			result = null;
-			store = null;
-		}
-	}
-	
 	private static class LazyHolder {
-		private static final TwoPassDependenciesCapturer DEPENDECIES_CAPTURER_INSTANCE = TwoPassDependenciesCapturer.create(ComponentContainer.getInstance());
+		private static final TwoPassCapturer DEPENDECIES_CAPTURER_INSTANCE = TwoPassCapturer.create(ComponentContainer.getInstance());
 		
-		private static TwoPassDependenciesCapturer getDependeciesCapturerInstance() {
+		private static TwoPassCapturer getDependeciesCapturerInstance() {
 			return DEPENDECIES_CAPTURER_INSTANCE;
 		}
 	}
