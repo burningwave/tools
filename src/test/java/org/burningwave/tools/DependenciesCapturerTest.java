@@ -13,7 +13,7 @@ public class DependenciesCapturerTest extends BaseTest {
 			Result dependencies = Capturer.getInstance().captureAndStore(
 				DependenciesCapturerTest.class, 
 				System.getProperty("user.home") + "/Desktop/bw-tests",
-				false, false, 0L
+				false, 0L
 			);
 			dependencies.waitForTaskEnding();
 			return dependencies.getStore().getAllChildren();
