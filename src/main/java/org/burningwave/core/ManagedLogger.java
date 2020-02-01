@@ -126,6 +126,7 @@ public interface ManagedLogger {
 
 		protected static String clear(String text) {
 			return text
+			.replace("\\", "\\\\")
 			.replaceAll("\\{", "\\\\{")
 			.replaceAll("\\}", "\\\\}")
 			.replaceAll("\\(", "\\\\(")

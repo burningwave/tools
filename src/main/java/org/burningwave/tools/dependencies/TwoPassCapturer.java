@@ -161,7 +161,7 @@ public class TwoPassCapturer extends Capturer {
 			getStoreFunction(destinationPath),
 			includeMainClass,
 			continueToCaptureAfterSimulatorClassEndExecutionFor,
-			true
+			recursive
 		);
 		dependencies.store = FileSystemItem.ofPath(destinationPath);
 		return dependencies;
@@ -208,9 +208,9 @@ public class TwoPassCapturer extends Capturer {
         generatedClassPath.append("\"");
         command.add(generatedClassPath.toString());
         command.add(this.getClass().getName());
-        command.add(mainClass.getName());
         String classPathsToBeScannedParam = "\"" + String.join(System.getProperty("path.separator"), classPathsToBeScanned) + "\"";
-        command.add(classPathsToBeScannedParam);        
+        command.add(classPathsToBeScannedParam);
+        command.add(mainClass.getName());
         command.add("\"" + destinationPath + "\"");
         command.add(Boolean.valueOf(includeMainClass).toString());
         command.add(continueToCaptureAfterSimulatorClassEndExecutionFor.toString());
@@ -225,8 +225,8 @@ public class TwoPassCapturer extends Capturer {
 	public static void main(String[] args) throws ClassNotFoundException {
 		logReceivedParameters(args, 0);
 		Class.forName(ManagedLogger.class.getName());		
-		String mainClassName = args[0];
-		Collection<String> paths = Arrays.asList(args[1].split(System.getProperty("path.separator")));
+		Collection<String> paths = Arrays.asList(args[0].split(System.getProperty("path.separator")));
+		String mainClassName = args[1];		
 		String destinationPath = args[2];
 		boolean includeMainClass = Boolean.valueOf(args[3]);
 		long continueToCaptureAfterSimulatorClassEndExecutionFor = Long.valueOf(args[4]);
@@ -238,15 +238,15 @@ public class TwoPassCapturer extends Capturer {
 	
 	private static void logReceivedParameters(String[] args, long wait) {
 		try {
-			ManagedLogger.Repository.logDebug(TwoPassCapturer.class, "mainClassName: {}", args[0]);
 			ManagedLogger.Repository.logDebug(TwoPassCapturer.class, "classpath: {}", System.getProperty("java.class.path"));
 			ManagedLogger.Repository.logDebug(TwoPassCapturer.class, "path to be scanned: {}",
 				String.join(";",
 					Arrays.asList(
-						args[1].split(System.getProperty("path.separator"))
+						args[0].split(System.getProperty("path.separator"))
 					)
 				)
 			);
+			ManagedLogger.Repository.logDebug(TwoPassCapturer.class, "mainClassName: {}", args[1]);
 			ManagedLogger.Repository.logDebug(TwoPassCapturer.class, "destinationPath: {}", args[2]);
 			ManagedLogger.Repository.logDebug(TwoPassCapturer.class, "includeMainClass: {}", args[3]);
 			ManagedLogger.Repository.logDebug(TwoPassCapturer.class, "continueToCaptureAfterSimulatorClassEndExecutionFor: {}", args[4]);
