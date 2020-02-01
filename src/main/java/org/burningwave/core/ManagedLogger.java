@@ -123,7 +123,9 @@ public interface ManagedLogger {
 			}
 			System.out.println(client + " - " + message);
 		}
-
+		
+		
+		//TODO: migliorare logging
 		protected static String clear(String text) {
 			return text
 			.replace("\\", "\\\\")

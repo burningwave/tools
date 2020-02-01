@@ -29,6 +29,7 @@
 package org.burningwave.tools.dependencies;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collection;
@@ -37,6 +38,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -50,6 +52,7 @@ import org.burningwave.core.classes.JavaClass;
 import org.burningwave.core.classes.hunter.ByteCodeHunter;
 import org.burningwave.core.classes.hunter.ClassPathHunter;
 import org.burningwave.core.classes.hunter.SearchConfig;
+import org.burningwave.core.common.Classes;
 import org.burningwave.core.common.Strings;
 import org.burningwave.core.function.TriConsumer;
 import org.burningwave.core.io.FileSystemHelper;
@@ -104,6 +107,7 @@ public class TwoPassCapturer extends Capturer {
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor,
 		boolean recursive
 	) {
+		logDebug("Entered");
 		final Result result = new Result();
 		Consumer<JavaClass> javaClassAdder = includeMainClass ? 
 			(javaClass) -> 
@@ -113,28 +117,66 @@ public class TwoPassCapturer extends Capturer {
 					result.put(javaClass);
 				}
 			};
+		final AtomicBoolean recuriveWrapper = new AtomicBoolean(recursive);
 		result.findingTask = CompletableFuture.runAsync(() -> {
 			Class<?> cls;
 			try (Sniffer resourceSniffer = new Sniffer(
-				!recursive,
+				false,
 				baseClassPaths,
 				fileSystemHelper,
 				classHelper,
 				javaClassAdder,
 				result::putResource,
 				resourceConsumer)
-			) {
-				try {
-					cls = classHelper.loadOrUploadClass(mainClass, resourceSniffer);
-					cls.getMethod("main", String[].class).invoke(null, (Object)new String[]{});
-					if (continueToCaptureAfterSimulatorClassEndExecutionFor != null && continueToCaptureAfterSimulatorClassEndExecutionFor > 0) {
-						Thread.sleep(continueToCaptureAfterSimulatorClassEndExecutionFor);
+			) {	
+				if (!recuriveWrapper.get()) {
+					Throwable resourceNotFoundException = null;
+					do {
+						try {
+							cls = classHelper.loadOrUploadClass(mainClass, resourceSniffer);
+							cls.getMethod("main", String[].class).invoke(null, (Object)new String[]{});
+							resourceNotFoundException = null;
+							if (continueToCaptureAfterSimulatorClassEndExecutionFor != null && continueToCaptureAfterSimulatorClassEndExecutionFor > 0) {
+								Thread.sleep(continueToCaptureAfterSimulatorClassEndExecutionFor);
+							}
+						} catch (ClassNotFoundException | NoClassDefFoundError | InvocationTargetException exc) {
+							String penultimateNotFoundClass = resourceNotFoundException != null? Classes.retrieveName(resourceNotFoundException) : null;
+							resourceNotFoundException = exc;
+							if (resourceNotFoundException instanceof InvocationTargetException) {
+								resourceNotFoundException = ((InvocationTargetException)exc).getTargetException();
+							}
+							String currentNotFoundClass = Classes.retrieveName(resourceNotFoundException);
+							if (!currentNotFoundClass.equals(penultimateNotFoundClass)) {
+								try {
+									resourceSniffer.loadClass(currentNotFoundClass);
+								} catch (Throwable exc2) {
+									logError("Exception occurred", exc2);
+									throw Throwables.toRuntimeException(exc2);				
+								}
+							} else {
+								recuriveWrapper.set(true);
+								resourceNotFoundException = null;
+							}
+						} catch (Throwable genericException) {
+							logError("Exception occurred", genericException);
+							throw Throwables.toRuntimeException(genericException);				
+						}
+					} while (resourceNotFoundException != null);
+					
+				} else {
+					try {
+						cls = classHelper.loadOrUploadClass(mainClass, resourceSniffer);
+						cls.getMethod("main", String[].class).invoke(null, (Object)new String[]{});
+						if (continueToCaptureAfterSimulatorClassEndExecutionFor != null && continueToCaptureAfterSimulatorClassEndExecutionFor > 0) {
+							Thread.sleep(continueToCaptureAfterSimulatorClassEndExecutionFor);
+						}
+					} catch (Throwable exc) {
+						logError("Exception occurred", exc);
+						throw Throwables.toRuntimeException(exc);				
 					}
-				} catch (Throwable exc) {
-					throw Throwables.toRuntimeException(exc);				
 				}
 			}
-			if (recursive) {
+			if (recuriveWrapper.get()) {
 				try {
 					launchExternalCapturer(
 						mainClass, result.getStore().getAbsolutePath(), baseClassPaths, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor
@@ -174,7 +216,7 @@ public class TwoPassCapturer extends Capturer {
 		String javaExecutablePath = System.getProperty("java.home") + "/bin/java";
 		List<String> command = new LinkedList<String>();
         command.add(Strings.Paths.clean(javaExecutablePath));
-        command.add("-cp");
+        command.add("-classpath");
         StringBuffer generatedClassPath = new StringBuffer("\"");
         Collection<String> classPathsToBeScanned = new LinkedHashSet<>(baseClassPaths);
         classPathsToBeScanned.remove(destinationPath);
@@ -185,7 +227,7 @@ public class TwoPassCapturer extends Capturer {
         //Adding Burningwave to classpath
         ClassPathHunter.SearchResult searchResult = classPathHunter.findBy(
 			SearchConfig.forPaths(
-				baseClassPaths
+				pathHelper.getMainClassPaths()
 			).by(
 				ClassCriteria.create().className(clsName -> 
 					clsName.equals(this.getClass().getName()) || clsName.equals(ComponentSupplier.class.getName())
@@ -216,10 +258,10 @@ public class TwoPassCapturer extends Capturer {
         command.add(continueToCaptureAfterSimulatorClassEndExecutionFor.toString());
         ProcessBuilder builder = new ProcessBuilder(command);
 
-        Process process = builder.inheritIO().start();
+        //Process process =
+        	builder.inheritIO().start();
         
-        process.waitFor();
-
+        //process.waitFor();
 	}
 	
 	public static void main(String[] args) throws ClassNotFoundException {
