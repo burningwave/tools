@@ -186,6 +186,10 @@ public class Sniffer extends MemoryClassLoader {
     @Override
     public void close() {
     	Thread.currentThread().setContextClassLoader(mainClassLoader);
+    	resources.clear();
+    	resources = null;
+    	javaClasses.clear();
+    	javaClasses = null;
     	mainClassLoader = null;
     	javaClassAdder = null;
     	resourceAdder = null;
