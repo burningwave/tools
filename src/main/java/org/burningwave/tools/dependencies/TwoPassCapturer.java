@@ -36,8 +36,6 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -50,11 +48,11 @@ import org.burningwave.core.classes.ClassCriteria;
 import org.burningwave.core.classes.ClassHelper;
 import org.burningwave.core.classes.JavaClass;
 import org.burningwave.core.classes.hunter.ByteCodeHunter;
-import org.burningwave.core.classes.hunter.ByteCodeHunter.SearchResult;
 import org.burningwave.core.classes.hunter.ClassPathHunter;
 import org.burningwave.core.classes.hunter.SearchConfig;
 import org.burningwave.core.common.Strings;
-import org.burningwave.core.function.QuadConsumer;
+import org.burningwave.core.function.TriConsumer;
+import org.burningwave.core.io.FileSystemHelper;
 import org.burningwave.core.io.FileSystemItem;
 import org.burningwave.core.io.PathHelper;
 
@@ -63,17 +61,19 @@ public class TwoPassCapturer extends Capturer {
 	ClassPathHunter classPathHunter;
 	
 	private TwoPassCapturer(
+		FileSystemHelper fileSystemHelper,
 		PathHelper pathHelper,
 		ByteCodeHunter byteCodeHunter,
 		ClassPathHunter classPathHunter,
 		ClassHelper classHelper
 	) {
-		super(pathHelper, byteCodeHunter, classHelper);
+		super(fileSystemHelper, pathHelper, byteCodeHunter, classHelper);
 		this.classPathHunter = classPathHunter;
 	}
 	
 	public static TwoPassCapturer create(ComponentSupplier componentSupplier) {
 		return new TwoPassCapturer(
+			componentSupplier.getFileSystemHelper(),
 			componentSupplier.getPathHelper(),
 			componentSupplier.getByteCodeHunter(),
 			componentSupplier.getClassPathHunter(),
@@ -89,67 +89,57 @@ public class TwoPassCapturer extends Capturer {
 	public Result capture(
 		Class<?> mainClass,
 		Collection<String> baseClassPaths,
-		QuadConsumer<String, String, String, ByteBuffer>  javaClassConsumer,
-		QuadConsumer<String, String, String, ByteBuffer>  resourceConsumer,
+		TriConsumer<String, String, ByteBuffer> resourceConsumer,
 		boolean includeMainClass,
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) {
-		return capture(mainClass, baseClassPaths, javaClassConsumer, resourceConsumer, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor, true);
+		return capture(mainClass, baseClassPaths, resourceConsumer, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor, true);
 	}
 	
 	public Result capture(
 		Class<?> mainClass,
 		Collection<String> baseClassPaths,
-		QuadConsumer<String, String, String, ByteBuffer>  javaClassConsumer,
-		QuadConsumer<String, String, String, ByteBuffer>  resourceConsumer,
+		TriConsumer<String, String, ByteBuffer> resourceConsumer,
 		boolean includeMainClass,
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor,
 		boolean recursive
 	) {
-		final Result result;
-		try (SearchResult searchResult = byteCodeHunter.findBy(
-			SearchConfig.forPaths(
-				baseClassPaths
-			)
-		)) {
-			result = new Result(
-				searchResult.getClassesFlatMap(), 
-				javaClassConsumer,
-				resourceConsumer
-			);
-		}
-		Consumer<String> classNamePutter = includeMainClass ? 
-			(className) -> 
-				result.put(className) 
-			:(className) -> {
-				if (!className.equals(mainClass.getName())) {
-					result.put(className);
+		final Result result = new Result();
+		Consumer<JavaClass> javaClassAdder = includeMainClass ? 
+			(javaClass) -> 
+				result.put(javaClass) 
+			:(javaClass) -> {
+				if (!javaClass.getName().equals(mainClass.getName())) {
+					result.put(javaClass);
 				}
 			};
 		result.findingTask = CompletableFuture.runAsync(() -> {
-			ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
 			Class<?> cls;
-			try (Sniffer resourceSniffer = new Sniffer(contextClassLoader, classHelper, classNamePutter, result::putResource)) {
-				Thread.currentThread().setContextClassLoader(resourceSniffer);
-				for (Entry<String, JavaClass> entry : result.classPathClasses.entrySet()) {
-					JavaClass javaClass = entry.getValue();
-					resourceSniffer.addCompiledClass(javaClass.getName(), javaClass.getByteCode());
-				}
+			try (Sniffer resourceSniffer = new Sniffer(
+				baseClassPaths,
+				fileSystemHelper,
+				classHelper,
+				javaClassAdder,
+				result::putResource,
+				resourceConsumer)
+			) {
 				try {
 					cls = classHelper.loadOrUploadClass(mainClass, resourceSniffer);
 					cls.getMethod("main", String[].class).invoke(null, (Object)new String[]{});
 					if (continueToCaptureAfterSimulatorClassEndExecutionFor != null && continueToCaptureAfterSimulatorClassEndExecutionFor > 0) {
 						Thread.sleep(continueToCaptureAfterSimulatorClassEndExecutionFor);
 					}
-					if (recursive) {
-						launchExternalCapturer(
-							mainClass, result.getStore().getAbsolutePath(), baseClassPaths, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor
-						);
-					}
 				} catch (Throwable exc) {
 					throw Throwables.toRuntimeException(exc);				
-				} finally {
-					Thread.currentThread().setContextClassLoader(contextClassLoader);
+				}
+			}
+			if (recursive) {
+				try {
+					launchExternalCapturer(
+						mainClass, result.getStore().getAbsolutePath(), baseClassPaths, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor
+					);
+				} catch (IOException | InterruptedException exc) {
+					throw Throwables.toRuntimeException(exc);
 				}
 			}
 		});
@@ -167,8 +157,7 @@ public class TwoPassCapturer extends Capturer {
 		Result dependencies = capture(
 			mainClass,
 			baseClassPaths,
-			getStoreFunction(),
-			getStoreFunction(),
+			getStoreFunction(destinationPath),
 			includeMainClass,
 			continueToCaptureAfterSimulatorClassEndExecutionFor,
 			true
@@ -268,10 +257,8 @@ public class TwoPassCapturer extends Capturer {
 	}
 	
 	private static class Result extends Capturer.Result {
-		Result(Map<String, JavaClass> classPathClasses,
-				QuadConsumer<String, String, String, ByteBuffer> javaClassConsumer,
-				QuadConsumer<String, String, String, ByteBuffer> resourceConsumer) {
-			super(classPathClasses, javaClassConsumer, resourceConsumer);
+		Result() {
+			super();
 		}
 
 	

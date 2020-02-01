@@ -30,11 +30,8 @@ package org.burningwave.tools.dependencies;
 
 import java.nio.ByteBuffer;
 import java.util.Collection;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
 import org.burningwave.Throwables;
@@ -44,28 +41,26 @@ import org.burningwave.core.assembler.ComponentSupplier;
 import org.burningwave.core.classes.ClassHelper;
 import org.burningwave.core.classes.JavaClass;
 import org.burningwave.core.classes.hunter.ByteCodeHunter;
-import org.burningwave.core.classes.hunter.ByteCodeHunter.SearchResult;
-import org.burningwave.core.classes.hunter.SearchConfig;
-import org.burningwave.core.common.Strings;
-import org.burningwave.core.function.QuadConsumer;
-import org.burningwave.core.io.FileInputStream;
-import org.burningwave.core.io.FileSystemHelper.Scan;
+import org.burningwave.core.function.TriConsumer;
+import org.burningwave.core.io.FileSystemHelper;
 import org.burningwave.core.io.FileSystemItem;
 import org.burningwave.core.io.PathHelper;
 import org.burningwave.core.io.Streams;
-import org.burningwave.core.io.ZipInputStream;
 
 
 public class Capturer implements Component {
 	ByteCodeHunter byteCodeHunter;
 	PathHelper pathHelper;
 	ClassHelper classHelper;
+	FileSystemHelper fileSystemHelper;
 	
 	Capturer(
+		FileSystemHelper fileSystemHelper,
 		PathHelper pathHelper,
 		ByteCodeHunter byteCodeHunter,
 		ClassHelper classHelper
 	) {
+		this.fileSystemHelper = fileSystemHelper;
 		this.byteCodeHunter = byteCodeHunter;
 		this.pathHelper = pathHelper;
 		this.classHelper = classHelper;
@@ -73,6 +68,7 @@ public class Capturer implements Component {
 	
 	public static Capturer create(ComponentSupplier componentSupplier) {
 		return new Capturer(
+			componentSupplier.getFileSystemHelper(),
 			componentSupplier.getPathHelper(),
 			componentSupplier.getByteCodeHunter(),
 			componentSupplier.getClassHelper()
@@ -86,40 +82,29 @@ public class Capturer implements Component {
 	public Result capture(
 		Class<?> mainClass,
 		Collection<String> baseClassPaths,
-		QuadConsumer<String, String, String, ByteBuffer>  javaClassConsumer,
-		QuadConsumer<String, String, String, ByteBuffer>  resourceConsumer,
+		TriConsumer<String, String, ByteBuffer> resourceConsumer,
 		boolean includeMainClass,
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) {
-		final Result result;
-		try (SearchResult searchResult = byteCodeHunter.findBy(
-			SearchConfig.forPaths(
-				baseClassPaths
-			)
-		)) {
-			result = new Result(
-				searchResult.getClassesFlatMap(), 
-				javaClassConsumer,
-				resourceConsumer
-			);
-		}
-		Consumer<String> classNamePutter = includeMainClass ? 
-			(className) -> 
-				result.put(className) 
-			:(className) -> {
-				if (!className.equals(mainClass.getName())) {
-					result.put(className);
+		final Result result = new Result();
+		Consumer<JavaClass> javaClassAdder = includeMainClass ? 
+			(javaClass) -> 
+				result.put(javaClass) 
+			:(javaClass) -> {
+				if (!javaClass.getName().equals(mainClass.getName())) {
+					result.put(javaClass);
 				}
 			};
 		result.findingTask = CompletableFuture.runAsync(() -> {
-			ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
 			Class<?> cls;
-			try (Sniffer resourceSniffer = new Sniffer(contextClassLoader, classHelper, classNamePutter, result::putResource)) {
-				Thread.currentThread().setContextClassLoader(resourceSniffer);
-				for (Entry<String, JavaClass> entry : result.classPathClasses.entrySet()) {
-					JavaClass javaClass = entry.getValue();
-					resourceSniffer.addCompiledClass(javaClass.getName(), javaClass.getByteCode());
-				}
+			try (Sniffer resourceSniffer = new Sniffer(
+				baseClassPaths,
+				fileSystemHelper,
+				classHelper,
+				javaClassAdder,
+				result::putResource,
+				resourceConsumer)
+			) {
 				try {
 					cls = classHelper.loadOrUploadClass(mainClass, resourceSniffer);
 					cls.getMethod("main", String[].class).invoke(null, (Object)new String[]{});
@@ -128,8 +113,6 @@ public class Capturer implements Component {
 					}
 				} catch (Throwable exc) {
 					throw Throwables.toRuntimeException(exc);				
-				} finally {
-					Thread.currentThread().setContextClassLoader(contextClassLoader);
 				}
 			}
 		});
@@ -155,8 +138,7 @@ public class Capturer implements Component {
 		Result dependencies = capture(
 			mainClass,
 			baseClassPaths, 
-			getStoreFunction(),
-			getStoreFunction(),
+			getStoreFunction(destinationPath),
 			includeMainClass,
 			continueToCaptureAfterSimulatorClassEndExecutionFor
 		);
@@ -164,13 +146,13 @@ public class Capturer implements Component {
 		return dependencies;
 	}
 	
-	QuadConsumer<String, String, String, ByteBuffer> getStoreFunction() {
-		return (storeBasePath, resourceAbsolutePath, resourceRelativePath, resourceContent) -> {
-			String finalPath = getStoreEntryBasePath(storeBasePath, resourceAbsolutePath, resourceRelativePath);
+	TriConsumer<String, String, ByteBuffer> getStoreFunction(String destinationPath) {
+		return (resourceAbsolutePath, resourceRelativePath, resourceContent) -> {
+			String finalPath = getStoreEntryBasePath(destinationPath, resourceAbsolutePath, resourceRelativePath);
 			FileSystemItem fileSystemItem = FileSystemItem.ofPath(finalPath + "/" + resourceRelativePath);
 			if (!fileSystemItem.exists()) {
 				Streams.store(fileSystemItem.getAbsolutePath(), resourceContent);
-				logDebug("Resource {} has been stored to CLASSPATH {}", resourceRelativePath, finalPath);
+				logDebug("Resource {} has been stored to CLASSPATH {}", resourceRelativePath, fileSystemItem.getAbsolutePath());
 			}
 		};
 	}
@@ -187,107 +169,29 @@ public class Capturer implements Component {
 		return storeBasePath + "/" + finalPath;
 	}
 	
-	Consumer<Scan.ItemContext<FileInputStream>> getFileSystemEntryStorer(
-		String destinationPath
-	) {
-		return (scannedItemContext) -> {
-			String finalRelativePath = Strings.Paths.clean(scannedItemContext.getInput().getAbsolutePath()).replaceFirst(
-				Strings.Paths.clean(scannedItemContext.getBasePath().getAbsolutePath()),
-				""
-			);
-			Streams.store(finalRelativePath, scannedItemContext.getInput().toByteBuffer());
-		};
-	}
 	
-	
-	Consumer<Scan.ItemContext<ZipInputStream.Entry>> getZipEntryStorer(
-		String destinationPath
-	) {
-		return (scannedItemContext) -> {
-			String finalRelativePath = Strings.Paths.clean(scannedItemContext.getInput().getAbsolutePath()).replaceFirst(
-				Strings.Paths.clean(scannedItemContext.getBasePath().getAbsolutePath()),
-				""
-			);
-			Streams.store(finalRelativePath, scannedItemContext.getInput().toByteBuffer());
-		};
-	}
 		
 	public static class Result implements Component {
 		CompletableFuture<Void> findingTask;
-		final Map<String, JavaClass> classPathClasses;
-		Map<String, ByteBuffer> resources;
-		Map<String, JavaClass> javaClasses;
+		Collection<FileSystemItem> resources;
+		Collection<JavaClass> javaClasses;
 		FileSystemItem store;
-		QuadConsumer<String, String, String, ByteBuffer> javaClassConsumer;
-		QuadConsumer<String, String, String, ByteBuffer> resourceConsumer;
 		
-		Result(
-			Map<String, JavaClass> classPathClasses,
-			QuadConsumer<String, String, String, ByteBuffer> javaClassConsumer,
-			QuadConsumer<String, String, String, ByteBuffer> resourceConsumer
-		) {
-			this.javaClasses = new ConcurrentHashMap<>();
-			this.classPathClasses = new ConcurrentHashMap<>();
-			this.resources = new ConcurrentHashMap<>();
-			this.classPathClasses.putAll(classPathClasses);
-			this.javaClassConsumer = javaClassConsumer;
-			this.resourceConsumer = resourceConsumer;
+		Result() {
+			this.javaClasses = new CopyOnWriteArrayList<>();
+			this.resources = new CopyOnWriteArrayList<>();
 		}
 		
-		public JavaClass load(String className) {
-			for (Map.Entry<String, JavaClass> entry : classPathClasses.entrySet()) {
-				if (entry.getValue().getName().equals(className)) {
-					JavaClass javaClass = entry.getValue();
-					if (javaClassConsumer != null) {
-						javaClassConsumer.accept(store.getAbsolutePath(), entry.getKey(), javaClass.getPath(), javaClass.getByteCode());
-					}
-					javaClasses.put(entry.getKey(), javaClass);
-					return entry.getValue();
-				}
-			}
-			return null;
+		public void putResource(FileSystemItem fileSystemItem) {
+			resources.add(fileSystemItem);
 		}
 		
-		public Collection<JavaClass> loadAll(Collection<String> classesName) {
-			Collection<JavaClass> javaClassAdded = new LinkedHashSet<>();
-			for (Map.Entry<String, JavaClass> entry : classPathClasses.entrySet()) {
-				if (classesName.contains(entry.getValue().getName())) {
-					JavaClass javaClass = entry.getValue();
-					javaClassAdded.add(javaClass);
-					classesName.remove(javaClass.getName());
-					if (javaClassConsumer != null) {
-						javaClassConsumer.accept(store.getAbsolutePath(), entry.getKey(), javaClass.getPath(), javaClass.getByteCode());
-					}
-					javaClasses.put(entry.getKey(), javaClass);
-				}
-			}
-			return javaClassAdded;
+		JavaClass put(JavaClass javaClass) {
+			javaClasses.add(javaClass);
+			return javaClass;
 		}
 		
-		public void putResource(FileSystemItem fileSystemItem, String resourceName) {
-			if (fileSystemItem.isFile() && fileSystemItem.exists()) {
-				if (resourceConsumer != null) {
-		    		resourceConsumer.accept(store.getAbsolutePath(), fileSystemItem.getAbsolutePath(), resourceName, fileSystemItem.toByteBuffer());
-		    		resources.put(resourceName, fileSystemItem.toByteBuffer());
-		    	}
-			}
-		}
-		
-		JavaClass put(String className) {
-			for (Map.Entry<String, JavaClass> entry : classPathClasses.entrySet()) {
-				if (entry.getValue().getName().equals(className)) {
-					if (javaClassConsumer != null) {
-						JavaClass javaClass = entry.getValue();
-						javaClassConsumer.accept(store.getAbsolutePath(), entry.getKey(), javaClass.getPath(), javaClass.getByteCode());
-					}
-					javaClasses.put(entry.getKey(), entry.getValue());
-					return entry.getValue();
-				}
-			}
-			return null;
-		}
-		
-		public Map<String, JavaClass> get() {
+		public Collection<JavaClass> get() {
 			return javaClasses;
 		}
 		
@@ -307,7 +211,6 @@ public class Capturer implements Component {
 		public void close() {
 			findingTask.cancel(true);
 			findingTask = null;
-			classPathClasses.clear();
 			resources.clear();
 			resources = null;
 			javaClasses.clear();
