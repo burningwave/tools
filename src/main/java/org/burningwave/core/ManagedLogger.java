@@ -94,9 +94,7 @@ public interface ManagedLogger {
 		}
 		
 		public static void logDebug(Class<?> client, String message, Object... arguments) {
-			for (Object obj : arguments) {
-				message = message.replaceFirst("\\{\\}", clear(obj.toString()));
-			}
+			message = replacePlaceHolder(message, arguments);
 			System.out.println(client.getName() + " - " + message);
 		}
 		
@@ -105,9 +103,7 @@ public interface ManagedLogger {
 		}
 		
 		public static void logInfo(Class<?> client, String message, Object... arguments) {
-			for (Object obj : arguments) {
-				message = message.replaceFirst("\\{\\}", clear(obj.toString()));
-			}
+			message = replacePlaceHolder(message, arguments);
 			System.out.println(client.getName() + " - " + message);
 		}
 		
@@ -116,15 +112,18 @@ public interface ManagedLogger {
 		}
 		
 		public static void logWarn(Class<?> client, String message, Object... arguments) {
-			for (Object obj : arguments) {
-				message = message.replaceFirst("\\{\\}", 
-					clear(obj.toString())
-				);
-			}
+			message = replacePlaceHolder(message, arguments);
 			System.out.println(client + " - " + message);
 		}
 		
-		protected static String clear(String text) {
+		private static String replacePlaceHolder(String message, Object... arguments) {
+			for (Object obj : arguments) {
+				message = message.replaceFirst("\\{\\}", clear(obj.toString()));
+			}
+			return message;
+		}
+		
+		private static String clear(String text) {
 			return text
 			.replace("\\", "\\")
 			.replace("{", "\\{")
