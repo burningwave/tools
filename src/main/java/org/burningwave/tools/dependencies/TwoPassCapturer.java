@@ -107,7 +107,6 @@ public class TwoPassCapturer extends Capturer {
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor,
 		boolean recursive
 	) {
-		logDebug("Entered");
 		final Result result = new Result();
 		Consumer<JavaClass> javaClassAdder = includeMainClass ? 
 			(javaClass) -> 
@@ -256,12 +255,11 @@ public class TwoPassCapturer extends Capturer {
         command.add("\"" + destinationPath + "\"");
         command.add(Boolean.valueOf(includeMainClass).toString());
         command.add(continueToCaptureAfterSimulatorClassEndExecutionFor.toString());
-        ProcessBuilder builder = new ProcessBuilder(command);
+        ProcessBuilder processBuilder = new ProcessBuilder(command);
 
-        //Process process =
-        	builder.inheritIO().start();
+        Process process = processBuilder.inheritIO().start();
         
-        //process.waitFor();
+        process.waitFor();
 	}
 	
 	public static void main(String[] args) throws ClassNotFoundException {
