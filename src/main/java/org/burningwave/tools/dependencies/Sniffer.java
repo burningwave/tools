@@ -51,22 +51,31 @@ import org.burningwave.core.io.FileInputStream;
 import org.burningwave.core.io.FileScanConfig;
 import org.burningwave.core.io.FileSystemHelper;
 import org.burningwave.core.io.FileSystemHelper.Scan;
+
 import org.burningwave.core.io.FileSystemItem;
 import org.burningwave.core.io.ZipInputStream;
 
 public class Sniffer extends MemoryClassLoader {
-	private ClassLoader mainClassLoader;
 	private Consumer<JavaClass> javaClassAdder;
 	private Consumer<FileSystemItem> resourceAdder;
 	private Map<String, FileSystemItem> resources;
 	private Map<String, JavaClass> javaClasses;
 	private TriConsumer<String, String, ByteBuffer> resourcesConsumer;
+	private ClassLoader mainClassLoader;
 	
-	protected Sniffer(Collection<String> baseClassPaths,
-		FileSystemHelper fileSystemHelper, ClassHelper classHelper, Consumer<JavaClass> javaClassAdder,
-		Consumer<FileSystemItem> resourceAdder, TriConsumer<String, String, ByteBuffer> resourcesConsumer
+	protected Sniffer(boolean useThreadContextClassLoaderAsParent,
+		Collection<String> baseClassPaths,
+		FileSystemHelper fileSystemHelper,
+		ClassHelper classHelper,
+		Consumer<JavaClass> javaClassAdder,
+		Consumer<FileSystemItem> resourceAdder,
+		TriConsumer<String, String, ByteBuffer> resourcesConsumer
 	) {
-		super(null, classHelper);
+		super(useThreadContextClassLoaderAsParent?
+			Thread.currentThread().getContextClassLoader() 
+			: null, 
+			classHelper
+		);
 		this.javaClassAdder = javaClassAdder;
 		this.resourceAdder = resourceAdder;
 		this.resourcesConsumer = resourcesConsumer;
@@ -78,8 +87,10 @@ public class Sniffer extends MemoryClassLoader {
 				getZipEntryMapStorer()
 			)
 		);
-		this.mainClassLoader = Thread.currentThread().getContextClassLoader();
-		Thread.currentThread().setContextClassLoader(this);
+		if (!useThreadContextClassLoaderAsParent) {
+			mainClassLoader = Thread.currentThread().getContextClassLoader();
+			Thread.currentThread().setContextClassLoader(this);
+		}
 	}
 	
     Consumer<Scan.ItemContext<FileInputStream>> getFileSystemMapStorer() {
@@ -185,14 +196,16 @@ public class Sniffer extends MemoryClassLoader {
     
     @Override
     public void close() {
-    	Thread.currentThread().setContextClassLoader(mainClassLoader);
+    	if (mainClassLoader != null) {
+    		Thread.currentThread().setContextClassLoader(mainClassLoader);
+    	}    	
     	resources.clear();
     	resources = null;
     	javaClasses.clear();
     	javaClasses = null;
-    	mainClassLoader = null;
     	javaClassAdder = null;
     	resourceAdder = null;
+    	mainClassLoader = null;
     	super.close();
     }
 }

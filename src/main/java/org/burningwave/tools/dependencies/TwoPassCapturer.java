@@ -116,6 +116,7 @@ public class TwoPassCapturer extends Capturer {
 		result.findingTask = CompletableFuture.runAsync(() -> {
 			Class<?> cls;
 			try (Sniffer resourceSniffer = new Sniffer(
+				!recursive,
 				baseClassPaths,
 				fileSystemHelper,
 				classHelper,
@@ -181,6 +182,7 @@ public class TwoPassCapturer extends Capturer {
         	child -> child.getAbsolutePath()
         ).collect(Collectors.toList());
         generatedClassPath.append(String.join(System.getProperty("path.separator"), classPaths));
+        //Adding Burningwave to classpath
         ClassPathHunter.SearchResult searchResult = classPathHunter.findBy(
 			SearchConfig.forPaths(
 				baseClassPaths

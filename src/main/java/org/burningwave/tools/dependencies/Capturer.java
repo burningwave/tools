@@ -98,6 +98,7 @@ public class Capturer implements Component {
 		result.findingTask = CompletableFuture.runAsync(() -> {
 			Class<?> cls;
 			try (Sniffer resourceSniffer = new Sniffer(
+				false,
 				baseClassPaths,
 				fileSystemHelper,
 				classHelper,
