@@ -121,7 +121,7 @@ public class TwoPassCapturer extends Capturer {
 		result.findingTask = CompletableFuture.runAsync(() -> {
 			Class<?> cls;
 			try (Sniffer resourceSniffer = new Sniffer(
-				false,
+				!recuriveWrapper.get(),
 				baseClassPaths,
 				fileSystemHelper,
 				classHelper,
