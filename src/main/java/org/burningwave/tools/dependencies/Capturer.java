@@ -32,7 +32,7 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.burningwave.Throwables;
 import org.burningwave.core.Component;
@@ -87,13 +87,17 @@ public class Capturer implements Component {
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) {
 		final Result result = new Result();
-		Consumer<JavaClass> javaClassAdder = includeMainClass ? 
-			(javaClass) -> 
-				result.put(javaClass) 
+		Function<JavaClass, Boolean> javaClassAdder = includeMainClass ? 
+			(javaClass) -> {
+				result.put(javaClass);
+				return true;
+			}
 			:(javaClass) -> {
 				if (!javaClass.getName().equals(mainClass.getName())) {
 					result.put(javaClass);
+					return true;
 				}
+				return false;
 			};
 		result.findingTask = CompletableFuture.runAsync(() -> {
 			Class<?> cls;
@@ -103,7 +107,10 @@ public class Capturer implements Component {
 				fileSystemHelper,
 				classHelper,
 				javaClassAdder,
-				result::putResource,
+				fileSystemItem -> {
+					result.putResource(fileSystemItem);
+					return true;
+				},
 				resourceConsumer)
 			) {
 				try {
@@ -192,8 +199,12 @@ public class Capturer implements Component {
 			return javaClass;
 		}
 		
-		public Collection<JavaClass> get() {
+		public Collection<JavaClass> getClasses() {
 			return javaClasses;
+		}
+		
+		public Collection<FileSystemItem> getResources() {
+			return resources;
 		}
 		
 		public CompletableFuture<Void> getFindingTask() {

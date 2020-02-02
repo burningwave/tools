@@ -39,7 +39,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.burningwave.Throwables;
@@ -107,15 +107,13 @@ public class TwoPassCapturer extends Capturer {
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor,
 		boolean recursive
 	) {
-		final Result result = new Result();
-		Consumer<JavaClass> javaClassAdder = includeMainClass ? 
-			(javaClass) -> 
-				result.put(javaClass) 
-			:(javaClass) -> {
-				if (!javaClass.getName().equals(mainClass.getName())) {
-					result.put(javaClass);
-				}
-			};
+		final Result result = new Result(
+			this.fileSystemHelper,
+			includeMainClass ? 
+				(javaClass) -> true
+				:(javaClass) -> !javaClass.getName().equals(mainClass.getName()),
+				fileSystemItem -> true
+		);
 		final AtomicBoolean recuriveWrapper = new AtomicBoolean(recursive);
 		result.findingTask = CompletableFuture.runAsync(() -> {
 			Class<?> cls;
@@ -124,8 +122,8 @@ public class TwoPassCapturer extends Capturer {
 				baseClassPaths,
 				fileSystemHelper,
 				classHelper,
-				javaClassAdder,
-				result::putResource,
+				result.javaClassFilter,
+				result.resourceFilter,
 				resourceConsumer)
 			) {	
 				if (!recuriveWrapper.get()) {
@@ -299,11 +297,51 @@ public class TwoPassCapturer extends Capturer {
 	}
 	
 	private static class Result extends Capturer.Result {
-		Result() {
-			super();
+		FileSystemHelper fileSystemHelper;
+		Function<JavaClass, Boolean> javaClassFilter;
+		Function<FileSystemItem, Boolean> resourceFilter;
+		
+		Result(
+			FileSystemHelper fileSystemHelper,
+			Function<JavaClass, Boolean> javaClassFilter,
+			Function<FileSystemItem, Boolean> resourceFilter
+		) {
+			this.fileSystemHelper = fileSystemHelper;
+			this.javaClassFilter = javaClassFilter;
+			this.resourceFilter = resourceFilter;
 		}
 
-	
+//		@Override
+//		public Collection<JavaClass> getClasses() {
+//			if (this.findingTask.isDone()) {
+//				if (this.javaClasses == null) {
+//					synchronized (this.toString() + "_" + "javaClasses") {
+//						if (this.javaClasses == null) {
+//							javaClasses = new CopyOnWriteArrayList<JavaClass>();
+//						}
+//					}
+//				}
+//				return this.javaClasses;
+//			} else {
+//				
+//			}
+//			return super.getClasses();
+//		}
+//		
+//		private void loadResources() {
+//			fileSystemHelper.scan(
+//					FileScanConfig.forPaths(store).toScanConfiguration(
+//						getFileSystemMapStorer(),
+//						getZipEntryMapStorer()
+//					)
+//				)
+//		}
+//		
+//		@Override
+//		public Collection<FileSystemItem> getResources() {
+//			// TODO Auto-generated method stub
+//			return super.getResources();
+//		}
 	}
 	
 	private static class LazyHolder {
