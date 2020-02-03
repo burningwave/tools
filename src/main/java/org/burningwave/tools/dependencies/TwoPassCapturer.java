@@ -286,8 +286,7 @@ public class TwoPassCapturer extends Capturer {
 	}
 	
 	public static void main(String[] args) throws ClassNotFoundException {
-		logReceivedParameters(args, 0);
-		Class.forName(ManagedLogger.class.getName());		
+		logReceivedParameters(args, 0);	
 		Collection<String> paths = Arrays.asList(args[0].split(System.getProperty("path.separator")));
 		String mainClassName = args[1];		
 		String destinationPath = args[2];
@@ -301,18 +300,18 @@ public class TwoPassCapturer extends Capturer {
 	
 	private static void logReceivedParameters(String[] args, long wait) {
 		try {
-			ManagedLogger.Repository.logDebug(TwoPassCapturer.class, "classpath: {}", System.getProperty("java.class.path"));
-			ManagedLogger.Repository.logDebug(TwoPassCapturer.class, "path to be scanned: {}",
+			ManagedLogger.Repository.getInstance().logDebug(TwoPassCapturer.class, "classpath: {}", System.getProperty("java.class.path"));
+			ManagedLogger.Repository.getInstance().logDebug(TwoPassCapturer.class, "path to be scanned: {}",
 				String.join(";",
 					Arrays.asList(
 						args[0].split(System.getProperty("path.separator"))
 					)
 				)
 			);
-			ManagedLogger.Repository.logDebug(TwoPassCapturer.class, "mainClassName: {}", args[1]);
-			ManagedLogger.Repository.logDebug(TwoPassCapturer.class, "destinationPath: {}", args[2]);
-			ManagedLogger.Repository.logDebug(TwoPassCapturer.class, "includeMainClass: {}", args[3]);
-			ManagedLogger.Repository.logDebug(TwoPassCapturer.class, "continueToCaptureAfterSimulatorClassEndExecutionFor: {}", args[4]);
+			ManagedLogger.Repository.getInstance().logDebug(TwoPassCapturer.class, "mainClassName: {}", args[1]);
+			ManagedLogger.Repository.getInstance().logDebug(TwoPassCapturer.class, "destinationPath: {}", args[2]);
+			ManagedLogger.Repository.getInstance().logDebug(TwoPassCapturer.class, "includeMainClass: {}", args[3]);
+			ManagedLogger.Repository.getInstance().logDebug(TwoPassCapturer.class, "continueToCaptureAfterSimulatorClassEndExecutionFor: {}", args[4]);
 			if (wait > 0) {
 				Thread.sleep(wait);
 			}
