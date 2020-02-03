@@ -113,7 +113,7 @@ public interface ManagedLogger {
 		
 		public static void logWarn(Class<?> client, String message, Object... arguments) {
 			message = replacePlaceHolder(message, arguments);
-			System.out.println(client + " - " + message);
+			System.out.println(client.getName() + " - " + message);
 		}
 		
 		private static String replacePlaceHolder(String message, Object... arguments) {

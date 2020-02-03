@@ -28,6 +28,7 @@
  */
 package org.burningwave.tools.dependencies;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
@@ -38,7 +39,10 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -55,9 +59,13 @@ import org.burningwave.core.classes.hunter.SearchConfig;
 import org.burningwave.core.common.Classes;
 import org.burningwave.core.common.Strings;
 import org.burningwave.core.function.TriConsumer;
+import org.burningwave.core.io.FileInputStream;
+import org.burningwave.core.io.FileScanConfig;
 import org.burningwave.core.io.FileSystemHelper;
+import org.burningwave.core.io.FileSystemHelper.Scan;
 import org.burningwave.core.io.FileSystemItem;
 import org.burningwave.core.io.PathHelper;
+import org.burningwave.core.io.ZipInputStream;
 
 
 public class TwoPassCapturer extends Capturer {
@@ -109,16 +117,14 @@ public class TwoPassCapturer extends Capturer {
 	) {
 		final Result result = new Result(
 			this.fileSystemHelper,
-			includeMainClass ? 
-				(javaClass) -> true
-				:(javaClass) -> !javaClass.getName().equals(mainClass.getName()),
+				javaClass -> true,
 				fileSystemItem -> true
 		);
-		final AtomicBoolean recuriveWrapper = new AtomicBoolean(recursive);
+		final AtomicBoolean recursiveFlagWrapper = new AtomicBoolean(recursive);
 		result.findingTask = CompletableFuture.runAsync(() -> {
 			Class<?> cls;
 			try (Sniffer resourceSniffer = new Sniffer(
-				!recuriveWrapper.get(),
+				!recursiveFlagWrapper.get(),
 				baseClassPaths,
 				fileSystemHelper,
 				classHelper,
@@ -126,7 +132,7 @@ public class TwoPassCapturer extends Capturer {
 				result.resourceFilter,
 				resourceConsumer)
 			) {	
-				if (!recuriveWrapper.get()) {
+				if (!recursiveFlagWrapper.get()) {
 					Throwable resourceNotFoundException = null;
 					do {
 						try {
@@ -151,7 +157,7 @@ public class TwoPassCapturer extends Capturer {
 									throw Throwables.toRuntimeException(exc2);				
 								}
 							} else {
-								recuriveWrapper.set(true);
+								recursiveFlagWrapper.set(true);
 								resourceNotFoundException = null;
 							}
 						} catch (Throwable genericException) {
@@ -173,13 +179,33 @@ public class TwoPassCapturer extends Capturer {
 					}
 				}
 			}
-			if (recuriveWrapper.get()) {
+			if (recursiveFlagWrapper.get()) {
 				try {
 					launchExternalCapturer(
 						mainClass, result.getStore().getAbsolutePath(), baseClassPaths, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor
 					);
 				} catch (IOException | InterruptedException exc) {
 					throw Throwables.toRuntimeException(exc);
+				}
+			}
+			if (recursive && !includeMainClass) {	
+				JavaClass mainJavaClass = result.getJavaClass(javaClass -> javaClass.getName().equals(mainClass.getName()));
+				Collection<FileSystemItem> mainJavaClassesFiles =
+					result.getResources(fileSystemItem -> 
+						fileSystemItem.getAbsolutePath().endsWith(mainJavaClass.getPath())
+					);
+				FileSystemItem store = result.getStore();
+				for (FileSystemItem fileSystemItem : mainJavaClassesFiles) {
+					fileSystemHelper.delete(fileSystemItem.getAbsolutePath());
+					fileSystemItem = fileSystemItem.getParent();
+					while (fileSystemItem != null && !fileSystemItem.getAbsolutePath().equals(store.getAbsolutePath())) {
+						if (fileSystemItem.getChildren().isEmpty()) {
+							fileSystemHelper.delete(fileSystemItem.getAbsolutePath());
+						} else {
+							break;
+						}
+						fileSystemItem = fileSystemItem.getParent();
+					}
 				}
 			}
 		});
@@ -300,7 +326,7 @@ public class TwoPassCapturer extends Capturer {
 		FileSystemHelper fileSystemHelper;
 		Function<JavaClass, Boolean> javaClassFilter;
 		Function<FileSystemItem, Boolean> resourceFilter;
-		
+
 		Result(
 			FileSystemHelper fileSystemHelper,
 			Function<JavaClass, Boolean> javaClassFilter,
@@ -309,39 +335,81 @@ public class TwoPassCapturer extends Capturer {
 			this.fileSystemHelper = fileSystemHelper;
 			this.javaClassFilter = javaClassFilter;
 			this.resourceFilter = resourceFilter;
+			this.javaClasses = null;
+			this.resources = null;
 		}
-
-//		@Override
-//		public Collection<JavaClass> getClasses() {
-//			if (this.findingTask.isDone()) {
-//				if (this.javaClasses == null) {
-//					synchronized (this.toString() + "_" + "javaClasses") {
-//						if (this.javaClasses == null) {
-//							javaClasses = new CopyOnWriteArrayList<JavaClass>();
-//						}
-//					}
-//				}
-//				return this.javaClasses;
-//			} else {
-//				
-//			}
-//			return super.getClasses();
-//		}
-//		
-//		private void loadResources() {
-//			fileSystemHelper.scan(
-//					FileScanConfig.forPaths(store).toScanConfiguration(
-//						getFileSystemMapStorer(),
-//						getZipEntryMapStorer()
-//					)
-//				)
-//		}
-//		
-//		@Override
-//		public Collection<FileSystemItem> getResources() {
-//			// TODO Auto-generated method stub
-//			return super.getResources();
-//		}
+		
+		Consumer<Scan.ItemContext<FileInputStream>> getFileSystemItemResourceRetriever(Collection<FileSystemItem> resources) {
+			return (scannedItemContext) -> {
+				FileSystemItem fileSystemItem = FileSystemItem.ofPath(scannedItemContext.getInput().getAbsolutePath());
+				if (resourceFilter.apply(fileSystemItem)) {
+					resources.add(fileSystemItem);
+				}
+			};
+		}    	
+		    	
+		Consumer<Scan.ItemContext<ZipInputStream.Entry>> getZipEntryResourceRetriever(Collection<FileSystemItem> resources) {
+			return (scannedItemContext) -> {
+				FileSystemItem fileSystemItem = FileSystemItem.ofPath(scannedItemContext.getInput().getAbsolutePath());
+				if (resourceFilter.apply(fileSystemItem)) {
+					resources.add(fileSystemItem);
+				}
+			};
+		}
+		
+		@Override
+		public Collection<JavaClass> getJavaClasses() {
+			if (this.findingTask.isDone()) {
+				if (this.javaClasses == null) {
+					synchronized (this.toString() + "_" + "javaClasses") {
+						if (this.javaClasses == null) {
+							return this.javaClasses = retrieveJavaClasses();
+						}
+					}
+				}
+				return this.javaClasses;
+			} else {
+				return retrieveJavaClasses();
+			}
+		}
+		
+		private Collection<JavaClass> retrieveJavaClasses() {
+			Collection<FileSystemItem> resources = getResources();
+			return resources.stream().filter(resource -> 
+				resource.getExtension().equals("class")
+			).map(javaClassResource -> 
+				JavaClass.create(javaClassResource.toByteBuffer())
+			).filter(javaClass -> 
+				javaClassFilter.apply(javaClass)
+			).collect(Collectors.toCollection(ConcurrentHashMap::newKeySet));
+		}
+		
+		@Override
+		public Collection<FileSystemItem> getResources() {
+			if (this.findingTask.isDone()) {
+				if (this.resources == null) {
+					synchronized (this.toString() + "_" + "resources") {
+						if (this.resources == null) {
+							return this.resources = retrieveResources();
+						}
+					}
+				}
+				return this.resources;
+			} else {
+				return retrieveResources();
+			}			
+		}
+		
+		private Collection<FileSystemItem> retrieveResources() {
+			Collection<FileSystemItem> resources = new CopyOnWriteArrayList<>();
+			fileSystemHelper.scan(
+				FileScanConfig.forPaths(store.getAbsolutePath()).toScanConfiguration(
+					getFileSystemItemResourceRetriever(resources),
+					getZipEntryResourceRetriever(resources)
+				)
+			);
+			return resources;
+		}
 	}
 	
 	private static class LazyHolder {

@@ -33,6 +33,8 @@ import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.burningwave.Throwables;
 import org.burningwave.core.Component;
@@ -199,12 +201,20 @@ public class Capturer implements Component {
 			return javaClass;
 		}
 		
-		public Collection<JavaClass> getClasses() {
+		public Collection<JavaClass> getJavaClasses() {
 			return javaClasses;
 		}
 		
 		public Collection<FileSystemItem> getResources() {
 			return resources;
+		}
+		
+		public JavaClass getJavaClass(Predicate<JavaClass> predicate) {
+			return getJavaClasses().stream().filter(predicate).findFirst().orElseGet(() -> null);
+		}
+		
+		public Collection<FileSystemItem> getResources(Predicate<FileSystemItem> predicate) {
+			return getResources().stream().filter(predicate).collect(Collectors.toSet());
 		}
 		
 		public CompletableFuture<Void> getFindingTask() {

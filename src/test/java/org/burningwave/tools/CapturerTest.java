@@ -5,13 +5,13 @@ import org.burningwave.tools.dependencies.Capturer;
 import org.burningwave.tools.dependencies.Capturer.Result;
 import org.junit.jupiter.api.Test;
 
-public class DependenciesCapturerTest extends BaseTest {
+public class CapturerTest extends BaseTest {
 	
 	@Test
 	public void storeDependenciesTestOne() {
 		testNotEmpty(() -> {
 			Result dependencies = Capturer.getInstance().captureAndStore(
-				DependenciesCapturerTest.class, 
+				CapturerTest.class, 
 				System.getProperty("user.home") + "/Desktop/bw-tests",
 				false, 0L
 			);
