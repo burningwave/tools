@@ -58,13 +58,11 @@ import org.burningwave.core.classes.hunter.ClassPathHunter;
 import org.burningwave.core.classes.hunter.SearchConfig;
 import org.burningwave.core.common.Strings;
 import org.burningwave.core.function.TriConsumer;
-import org.burningwave.core.io.FileInputStream;
 import org.burningwave.core.io.FileScanConfig;
 import org.burningwave.core.io.FileSystemHelper;
 import org.burningwave.core.io.FileSystemHelper.Scan;
 import org.burningwave.core.io.FileSystemItem;
 import org.burningwave.core.io.PathHelper;
-import org.burningwave.core.io.ZipInputStream;
 
 
 public class TwoPassCapturer extends Capturer {
@@ -337,16 +335,7 @@ public class TwoPassCapturer extends Capturer {
 			this.resources = null;
 		}
 		
-		Consumer<Scan.ItemContext<FileInputStream>> getFileSystemItemResourceRetriever(Collection<FileSystemItem> resources) {
-			return (scannedItemContext) -> {
-				FileSystemItem fileSystemItem = FileSystemItem.ofPath(scannedItemContext.getInput().getAbsolutePath());
-				if (resourceFilter.apply(fileSystemItem)) {
-					resources.add(fileSystemItem);
-				}
-			};
-		}    	
-		    	
-		Consumer<Scan.ItemContext<ZipInputStream.Entry>> getZipEntryResourceRetriever(Collection<FileSystemItem> resources) {
+		Consumer<Scan.ItemContext> getResourceRetriever(Collection<FileSystemItem> resources) {
 			return (scannedItemContext) -> {
 				FileSystemItem fileSystemItem = FileSystemItem.ofPath(scannedItemContext.getInput().getAbsolutePath());
 				if (resourceFilter.apply(fileSystemItem)) {
@@ -402,8 +391,7 @@ public class TwoPassCapturer extends Capturer {
 			Collection<FileSystemItem> resources = new CopyOnWriteArrayList<>();
 			fileSystemHelper.scan(
 				FileScanConfig.forPaths(store.getAbsolutePath()).toScanConfiguration(
-					getFileSystemItemResourceRetriever(resources),
-					getZipEntryResourceRetriever(resources)
+					getResourceRetriever(resources)
 				)
 			);
 			return resources;

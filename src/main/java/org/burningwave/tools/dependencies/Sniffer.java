@@ -48,12 +48,10 @@ import org.burningwave.core.classes.JavaClass;
 import org.burningwave.core.classes.MemoryClassLoader;
 import org.burningwave.core.common.Strings;
 import org.burningwave.core.function.TriConsumer;
-import org.burningwave.core.io.FileInputStream;
 import org.burningwave.core.io.FileScanConfig;
 import org.burningwave.core.io.FileSystemHelper;
 import org.burningwave.core.io.FileSystemHelper.Scan;
 import org.burningwave.core.io.FileSystemItem;
-import org.burningwave.core.io.ZipInputStream;
 
 public class Sniffer extends MemoryClassLoader {
 	private Function<JavaClass, Boolean> javaClassFilterAndAdder;
@@ -83,8 +81,7 @@ public class Sniffer extends MemoryClassLoader {
 		this.javaClasses = new ConcurrentHashMap<>();
 		fileSystemHelper.scan(
 			FileScanConfig.forPaths(baseClassPaths).toScanConfiguration(
-				getFileSystemMapStorer(),
-				getZipEntryMapStorer()
+				getMapStorer()
 			)
 		);
 		if (!useThreadContextClassLoaderAsParent) {
@@ -93,7 +90,7 @@ public class Sniffer extends MemoryClassLoader {
 		}
 	}
 	
-    Consumer<Scan.ItemContext<FileInputStream>> getFileSystemMapStorer() {
+    Consumer<Scan.ItemContext> getMapStorer() {
 		return (scannedItemContext) -> {
 			String absolutePath = scannedItemContext.getInput().getAbsolutePath();
 			resources.put(absolutePath, FileSystemItem.ofPath(absolutePath));
@@ -104,21 +101,6 @@ public class Sniffer extends MemoryClassLoader {
 			}
 		};
 	}    	
-    	
-	Consumer<Scan.ItemContext<ZipInputStream.Entry>> getZipEntryMapStorer() {
-		return (scannedItemContext) -> {
-			String absolutePath = scannedItemContext.getInput().getAbsolutePath();
-			resources.put(absolutePath, FileSystemItem.ofPath(absolutePath));
-			if (absolutePath.endsWith(".class")) {
-				JavaClass javaClass = JavaClass.create(scannedItemContext.getInput().toByteBuffer());
-				if (javaClass.getName().contains("Base64Variant")) {
-					logDebug("Entered");
-				}
-				addCompiledClass(javaClass.getName(), javaClass.getByteCode());
-				javaClasses.put(absolutePath, javaClass);
-			}
-		};
-	}
 	
 	protected void consumeClass(String className) {
 		for (Map.Entry<String, JavaClass> entry : javaClasses.entrySet()) {
