@@ -337,7 +337,7 @@ public class TwoPassCapturer extends Capturer {
 		
 		Consumer<Scan.ItemContext> getResourceRetriever(Collection<FileSystemItem> resources) {
 			return (scannedItemContext) -> {
-				FileSystemItem fileSystemItem = FileSystemItem.ofPath(scannedItemContext.getInput().getAbsolutePath());
+				FileSystemItem fileSystemItem = FileSystemItem.ofPath(scannedItemContext.getScannedItem().getAbsolutePath());
 				if (resourceFilter.apply(fileSystemItem)) {
 					resources.add(fileSystemItem);
 				}
