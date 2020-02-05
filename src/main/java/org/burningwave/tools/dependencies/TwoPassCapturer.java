@@ -53,7 +53,6 @@ import org.burningwave.core.assembler.ComponentSupplier;
 import org.burningwave.core.classes.ClassCriteria;
 import org.burningwave.core.classes.ClassHelper;
 import org.burningwave.core.classes.Classes;
-import org.burningwave.core.classes.FieldHelper;
 import org.burningwave.core.classes.JavaClass;
 import org.burningwave.core.classes.hunter.ByteCodeHunter;
 import org.burningwave.core.classes.hunter.ClassPathHunter;
@@ -64,32 +63,20 @@ import org.burningwave.core.io.FileSystemHelper;
 import org.burningwave.core.io.FileSystemHelper.Scan;
 import org.burningwave.core.io.FileSystemItem;
 import org.burningwave.core.io.PathHelper;
-import org.burningwave.core.iterable.IterableObjectHelper;
 
 
 public class TwoPassCapturer extends Capturer {
-	private final static String SECOND_PASS_ADDITIONAL_CLASSPATH_CONFIG_KEY = "dependencies-two-pass-capturer.second-pass.additional-class-paths";
 	ClassPathHunter classPathHunter;
-	Collection<FileSystemItem> secondPassAdditionalClassPaths;
-	
 	private TwoPassCapturer(
 		FileSystemHelper fileSystemHelper,
 		PathHelper pathHelper,
 		ByteCodeHunter byteCodeHunter,
 		ClassPathHunter classPathHunter,
 		ClassHelper classHelper,
-		FieldHelper fieldHelper,
-		IterableObjectHelper iterableObjectHelper,
 		String secondPassAdditionalClassPath
 	) {
-		super(fileSystemHelper, pathHelper, byteCodeHunter, classHelper, fieldHelper);
+		super(fileSystemHelper, pathHelper, byteCodeHunter, classHelper, secondPassAdditionalClassPath);
 		this.classPathHunter = classPathHunter;
-		secondPassAdditionalClassPaths = ConcurrentHashMap.newKeySet();
-		if (Strings.isNotEmpty(secondPassAdditionalClassPath)) {
-			Arrays.asList(secondPassAdditionalClassPath.split(";")).stream().map(absolutePath -> 
-				FileSystemItem.ofPath(absolutePath)
-			).collect(Collectors.toCollection(() -> secondPassAdditionalClassPaths));
-		}
 	}
 	
 	public static TwoPassCapturer create(ComponentContainer componentSupplier) {
@@ -99,8 +86,6 @@ public class TwoPassCapturer extends Capturer {
 			componentSupplier.getByteCodeHunter(),
 			componentSupplier.getClassPathHunter(),
 			componentSupplier.getClassHelper(),
-			componentSupplier.getFieldHelper(),
-			componentSupplier.getIterableObjectHelper(),
 			componentSupplier.getConfigProperty(SECOND_PASS_ADDITIONAL_CLASSPATH_CONFIG_KEY)
 		);
 	}
@@ -133,13 +118,13 @@ public class TwoPassCapturer extends Capturer {
 				javaClass -> true,
 				fileSystemItem -> true
 		);
+		baseClassPaths.addAll(secondPassAdditionalClassPaths.stream().filter(fileSystemItem -> fileSystemItem.exists()).map(fileSystemItem -> fileSystemItem.getAbsolutePath()).collect(Collectors.toSet()));
 		final AtomicBoolean recursiveFlagWrapper = new AtomicBoolean(recursive);
 		result.findingTask = CompletableFuture.runAsync(() -> {
 			try (Sniffer resourceSniffer = new Sniffer(
 				!recursiveFlagWrapper.get(),
 				fileSystemHelper,
 				classHelper,
-				fieldHelper,
 				baseClassPaths,
 				result.javaClassFilter,
 				result.resourceFilter,

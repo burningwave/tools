@@ -30,7 +30,6 @@ package org.burningwave.tools.dependencies;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -45,10 +44,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.burningwave.Throwables;
 import org.burningwave.core.Strings;
 import org.burningwave.core.classes.ClassHelper;
-import org.burningwave.core.classes.FieldHelper;
 import org.burningwave.core.classes.JavaClass;
 import org.burningwave.core.classes.MemoryClassLoader;
 import org.burningwave.core.function.TriConsumer;
@@ -58,7 +55,6 @@ import org.burningwave.core.io.FileSystemHelper.Scan;
 import org.burningwave.core.io.FileSystemItem;
 
 public class Sniffer extends MemoryClassLoader {
-	private FieldHelper fieldHelper;
 	private Function<JavaClass, Boolean> javaClassFilterAndAdder;
 	private Function<FileSystemItem, Boolean> resourceFilterAndAdder;
 	private Map<String, FileSystemItem> resources;
@@ -69,7 +65,6 @@ public class Sniffer extends MemoryClassLoader {
 	protected Sniffer(boolean useAsMasterClassLoader,
 		FileSystemHelper fileSystemHelper,
 		ClassHelper classHelper,
-		FieldHelper fieldHelper,
 		Collection<String> baseClassPaths,
 		Function<JavaClass, Boolean> javaClassAdder,
 		Function<FileSystemItem, Boolean> resourceAdder,
@@ -82,14 +77,13 @@ public class Sniffer extends MemoryClassLoader {
 		this.resourcesConsumer = resourcesConsumer;
 		this.resources = new ConcurrentHashMap<>();
 		this.javaClasses = new ConcurrentHashMap<>();
-		this.fieldHelper = fieldHelper;
 		fileSystemHelper.scan(
 			FileScanConfig.forPaths(baseClassPaths).toScanConfiguration(
 				getMapStorer()
 			)
 		);
 		if (useAsMasterClassLoader) {
-			setAsMasterClassLoader();
+			classHelper.setMasterClassLoader(Thread.currentThread().getContextClassLoader(), this);
 		} else {
 			Thread.currentThread().setContextClassLoader(this);
 		}
@@ -98,19 +92,6 @@ public class Sniffer extends MemoryClassLoader {
 	@Override
 	public synchronized void addCompiledClass(String className, ByteBuffer byteCode) {
 		super.addCompiledClass(className, byteCode);
-	}
-	
-	protected void setAsMasterClassLoader() {
-		ClassLoader classLoaderParent = Thread.currentThread().getContextClassLoader();
-		while (classLoaderParent.getParent() != null) {
-			classLoaderParent = classLoaderParent.getParent();
-		}
-		Field field = fieldHelper.findOneAndMakeItAccessible(classLoaderParent, "parent");
-		try {
-			field.set(classLoaderParent, this);
-		} catch (IllegalArgumentException | IllegalAccessException exc) {
-			Throwables.toRuntimeException(exc);
-		}
 	}
 	
     Consumer<Scan.ItemContext> getMapStorer() {
