@@ -142,7 +142,7 @@ public class TwoPassCapturer extends Capturer {
 								Thread.sleep(continueToCaptureAfterSimulatorClassEndExecutionFor);
 							}
 						} catch (NoClassDefFoundError | InvocationTargetException exc) {
-							Collection<String> penultimateNotFoundClasses = resourceNotFoundException != null? Classes.retrieveNames(resourceNotFoundException) : null;
+							Collection<String> penultimateNotFoundClasses = resourceNotFoundException != null? Classes.retrieveNames(resourceNotFoundException) : new LinkedHashSet<>();
 							resourceNotFoundException = exc;
 							Collection<String> currentNotFoundClass = Classes.retrieveNames(resourceNotFoundException);
 							if (!currentNotFoundClass.containsAll(penultimateNotFoundClasses)) {
