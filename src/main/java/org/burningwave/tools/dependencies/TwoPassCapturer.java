@@ -52,6 +52,7 @@ import org.burningwave.core.assembler.ComponentSupplier;
 import org.burningwave.core.classes.ClassCriteria;
 import org.burningwave.core.classes.ClassHelper;
 import org.burningwave.core.classes.Classes;
+import org.burningwave.core.classes.FieldHelper;
 import org.burningwave.core.classes.JavaClass;
 import org.burningwave.core.classes.hunter.ByteCodeHunter;
 import org.burningwave.core.classes.hunter.ClassPathHunter;
@@ -73,9 +74,10 @@ public class TwoPassCapturer extends Capturer {
 		PathHelper pathHelper,
 		ByteCodeHunter byteCodeHunter,
 		ClassPathHunter classPathHunter,
-		ClassHelper classHelper
+		ClassHelper classHelper,
+		FieldHelper fieldHelper
 	) {
-		super(fileSystemHelper, pathHelper, byteCodeHunter, classHelper);
+		super(fileSystemHelper, pathHelper, byteCodeHunter, classHelper, fieldHelper);
 		this.classPathHunter = classPathHunter;
 	}
 	
@@ -85,7 +87,8 @@ public class TwoPassCapturer extends Capturer {
 			componentSupplier.getPathHelper(),
 			componentSupplier.getByteCodeHunter(),
 			componentSupplier.getClassPathHunter(),
-			componentSupplier.getClassHelper()
+			componentSupplier.getClassHelper(),
+			componentSupplier.getFieldHelper()
 		);
 	}
 	
@@ -119,12 +122,12 @@ public class TwoPassCapturer extends Capturer {
 		);
 		final AtomicBoolean recursiveFlagWrapper = new AtomicBoolean(recursive);
 		result.findingTask = CompletableFuture.runAsync(() -> {
-			Class<?> cls;
 			try (Sniffer resourceSniffer = new Sniffer(
 				!recursiveFlagWrapper.get(),
-				baseClassPaths,
 				fileSystemHelper,
 				classHelper,
+				fieldHelper,
+				baseClassPaths,
 				result.javaClassFilter,
 				result.resourceFilter,
 				resourceConsumer)
@@ -133,22 +136,21 @@ public class TwoPassCapturer extends Capturer {
 					Throwable resourceNotFoundException = null;
 					do {
 						try {
-							cls = classHelper.loadOrUploadClass(mainClass, resourceSniffer);
-							cls.getMethod("main", String[].class).invoke(null, (Object)new String[]{});
+							mainClass.getMethod("main", String[].class).invoke(null, (Object)new String[]{});
 							resourceNotFoundException = null;
 							if (continueToCaptureAfterSimulatorClassEndExecutionFor != null && continueToCaptureAfterSimulatorClassEndExecutionFor > 0) {
 								Thread.sleep(continueToCaptureAfterSimulatorClassEndExecutionFor);
 							}
-						} catch (ClassNotFoundException | NoClassDefFoundError | InvocationTargetException exc) {
-							String penultimateNotFoundClass = resourceNotFoundException != null? Classes.retrieveName(resourceNotFoundException) : null;
+						} catch (NoClassDefFoundError | InvocationTargetException exc) {
+							Collection<String> penultimateNotFoundClasses = resourceNotFoundException != null? Classes.retrieveNames(resourceNotFoundException) : null;
 							resourceNotFoundException = exc;
-							if (resourceNotFoundException instanceof InvocationTargetException) {
-								resourceNotFoundException = ((InvocationTargetException)exc).getTargetException();
-							}
-							String currentNotFoundClass = Classes.retrieveName(resourceNotFoundException);
-							if (!currentNotFoundClass.equals(penultimateNotFoundClass)) {
+							Collection<String> currentNotFoundClass = Classes.retrieveNames(resourceNotFoundException);
+							if (!currentNotFoundClass.containsAll(penultimateNotFoundClasses)) {
 								try {
-									resourceSniffer.loadClass(currentNotFoundClass);
+									logDebug("Searching for {}", currentNotFoundClass);
+									for (JavaClass javaClass : resourceSniffer.consumeClasses(currentNotFoundClass)) {
+										classHelper.loadOrUploadClass(javaClass, resourceSniffer.mainClassLoader);
+									}
 								} catch (Throwable exc2) {
 									logError("Exception occurred", exc2);
 									throw Throwables.toRuntimeException(exc2);				
@@ -165,7 +167,7 @@ public class TwoPassCapturer extends Capturer {
 					
 				} else {
 					try {
-						cls = classHelper.loadOrUploadClass(mainClass, resourceSniffer);
+						Class<?> cls = classHelper.loadOrUploadClass(mainClass, resourceSniffer);
 						cls.getMethod("main", String[].class).invoke(null, (Object)new String[]{});
 						if (continueToCaptureAfterSimulatorClassEndExecutionFor != null && continueToCaptureAfterSimulatorClassEndExecutionFor > 0) {
 							Thread.sleep(continueToCaptureAfterSimulatorClassEndExecutionFor);

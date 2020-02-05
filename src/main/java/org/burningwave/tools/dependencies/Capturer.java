@@ -41,6 +41,7 @@ import org.burningwave.core.Component;
 import org.burningwave.core.assembler.ComponentContainer;
 import org.burningwave.core.assembler.ComponentSupplier;
 import org.burningwave.core.classes.ClassHelper;
+import org.burningwave.core.classes.FieldHelper;
 import org.burningwave.core.classes.JavaClass;
 import org.burningwave.core.classes.hunter.ByteCodeHunter;
 import org.burningwave.core.function.TriConsumer;
@@ -54,18 +55,21 @@ public class Capturer implements Component {
 	ByteCodeHunter byteCodeHunter;
 	PathHelper pathHelper;
 	ClassHelper classHelper;
+	FieldHelper fieldHelper;
 	FileSystemHelper fileSystemHelper;
 	
 	Capturer(
 		FileSystemHelper fileSystemHelper,
 		PathHelper pathHelper,
 		ByteCodeHunter byteCodeHunter,
-		ClassHelper classHelper
+		ClassHelper classHelper,
+		FieldHelper fieldHelper
 	) {
 		this.fileSystemHelper = fileSystemHelper;
 		this.byteCodeHunter = byteCodeHunter;
 		this.pathHelper = pathHelper;
 		this.classHelper = classHelper;
+		this.fieldHelper = fieldHelper;
 	}
 	
 	public static Capturer create(ComponentSupplier componentSupplier) {
@@ -73,7 +77,8 @@ public class Capturer implements Component {
 			componentSupplier.getFileSystemHelper(),
 			componentSupplier.getPathHelper(),
 			componentSupplier.getByteCodeHunter(),
-			componentSupplier.getClassHelper()
+			componentSupplier.getClassHelper(),
+			componentSupplier.getFieldHelper()
 		);
 	}
 	
@@ -105,9 +110,10 @@ public class Capturer implements Component {
 			Class<?> cls;
 			try (Sniffer resourceSniffer = new Sniffer(
 				false,
-				baseClassPaths,
 				fileSystemHelper,
 				classHelper,
+				fieldHelper,
+				baseClassPaths,
 				javaClassAdder,
 				fileSystemItem -> {
 					result.putResource(fileSystemItem);

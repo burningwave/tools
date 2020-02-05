@@ -30,6 +30,7 @@ package org.burningwave.tools.dependencies;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.Collection;
@@ -43,7 +44,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.burningwave.Throwables;
 import org.burningwave.core.classes.ClassHelper;
+import org.burningwave.core.classes.FieldHelper;
 import org.burningwave.core.classes.JavaClass;
 import org.burningwave.core.classes.MemoryClassLoader;
 import org.burningwave.core.common.Strings;
@@ -54,39 +57,54 @@ import org.burningwave.core.io.FileSystemHelper.Scan;
 import org.burningwave.core.io.FileSystemItem;
 
 public class Sniffer extends MemoryClassLoader {
+	private FieldHelper fieldHelper;
 	private Function<JavaClass, Boolean> javaClassFilterAndAdder;
 	private Function<FileSystemItem, Boolean> resourceFilterAndAdder;
 	private Map<String, FileSystemItem> resources;
 	private Map<String, JavaClass> javaClasses;
 	private TriConsumer<String, String, ByteBuffer> resourcesConsumer;
-	private ClassLoader mainClassLoader;
+	ClassLoader mainClassLoader;
 	
-	protected Sniffer(boolean useThreadContextClassLoaderAsParent,
-		Collection<String> baseClassPaths,
+	protected Sniffer(boolean useAsMasterClassLoader,
 		FileSystemHelper fileSystemHelper,
 		ClassHelper classHelper,
+		FieldHelper fieldHelper,
+		Collection<String> baseClassPaths,
 		Function<JavaClass, Boolean> javaClassAdder,
 		Function<FileSystemItem, Boolean> resourceAdder,
 		TriConsumer<String, String, ByteBuffer> resourcesConsumer
 	) {
-		super(useThreadContextClassLoaderAsParent?
-			Thread.currentThread().getContextClassLoader() 
-			: null, 
-			classHelper
-		);
+		super(null, classHelper);
+		mainClassLoader = Thread.currentThread().getContextClassLoader();
 		this.javaClassFilterAndAdder = javaClassAdder;
 		this.resourceFilterAndAdder = resourceAdder;
 		this.resourcesConsumer = resourcesConsumer;
 		this.resources = new ConcurrentHashMap<>();
 		this.javaClasses = new ConcurrentHashMap<>();
+		this.fieldHelper = fieldHelper;
+		if (useAsMasterClassLoader) {
+			setAsMasterClassLoader();
+		}
 		fileSystemHelper.scan(
 			FileScanConfig.forPaths(baseClassPaths).toScanConfiguration(
 				getMapStorer()
 			)
 		);
-		if (!useThreadContextClassLoaderAsParent) {
-			mainClassLoader = Thread.currentThread().getContextClassLoader();
+		if (!useAsMasterClassLoader) {
 			Thread.currentThread().setContextClassLoader(this);
+		}
+	}
+
+	protected void setAsMasterClassLoader() {
+		ClassLoader classLoaderParent = Thread.currentThread().getContextClassLoader();
+		while (classLoaderParent.getParent() != null) {
+			classLoaderParent = classLoaderParent.getParent();
+		}
+		Field field = fieldHelper.findOneAndMakeItAccessible(classLoaderParent, "parent");
+		try {
+			field.set(classLoaderParent, this);
+		} catch (IllegalArgumentException | IllegalAccessException exc) {
+			Throwables.toRuntimeException(exc);
 		}
 	}
 	
@@ -102,15 +120,32 @@ public class Sniffer extends MemoryClassLoader {
 		};
 	}    	
 	
-	protected void consumeClass(String className) {
+	protected Collection<JavaClass> consumeClass(String className) {
+		Collection<JavaClass> javaClassesFound = new LinkedHashSet<>();
 		for (Map.Entry<String, JavaClass> entry : javaClasses.entrySet()) {
 			if (entry.getValue().getName().equals(className)) {
 				JavaClass javaClass = entry.getValue();
 				if (javaClassFilterAndAdder.apply(javaClass)) {
 					resourcesConsumer.accept(entry.getKey(), javaClass.getPath(), javaClass.getByteCode());
+					javaClassesFound.add(javaClass);
 				}
 			}
 		}
+		return javaClassesFound;
+	}
+	
+	public Collection<JavaClass> consumeClasses(Collection<String> currentNotFoundClasses) {
+		Collection<JavaClass> javaClassesFound = new LinkedHashSet<>();
+		for (Map.Entry<String, JavaClass> entry : javaClasses.entrySet()) {
+			if (currentNotFoundClasses.contains(entry.getValue().getName())) {
+				JavaClass javaClass = entry.getValue();
+				if (javaClassFilterAndAdder.apply(javaClass)) {
+					resourcesConsumer.accept(entry.getKey(), javaClass.getPath(), javaClass.getByteCode());
+					javaClassesFound.add(javaClass);
+				}
+			}
+		}
+		return javaClassesFound;
 	}
 	
 	protected Collection<FileSystemItem> consumeResource(String relativePath, boolean breakWhenFound) {
@@ -184,9 +219,9 @@ public class Sniffer extends MemoryClassLoader {
     		Thread.currentThread().setContextClassLoader(mainClassLoader);
     	}    	
     	resources.clear();
-    	resources = null;
+    	//resources = null;
     	javaClasses.clear();
-    	javaClasses = null;
+    	//javaClasses = null;
     	javaClassFilterAndAdder = null;
     	resourceFilterAndAdder = null;
     	mainClassLoader = null;
