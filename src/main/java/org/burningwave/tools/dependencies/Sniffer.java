@@ -46,11 +46,11 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.burningwave.Throwables;
+import org.burningwave.core.Strings;
 import org.burningwave.core.classes.ClassHelper;
 import org.burningwave.core.classes.FieldHelper;
 import org.burningwave.core.classes.JavaClass;
 import org.burningwave.core.classes.MemoryClassLoader;
-import org.burningwave.core.common.Strings;
 import org.burningwave.core.function.TriConsumer;
 import org.burningwave.core.io.FileScanConfig;
 import org.burningwave.core.io.FileSystemHelper;

@@ -36,6 +36,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -46,6 +47,7 @@ import java.util.stream.Collectors;
 
 import org.burningwave.Throwables;
 import org.burningwave.core.ManagedLogger;
+import org.burningwave.core.Strings;
 import org.burningwave.core.assembler.ComponentContainer;
 import org.burningwave.core.assembler.ComponentSupplier;
 import org.burningwave.core.classes.ClassCriteria;
@@ -56,17 +58,19 @@ import org.burningwave.core.classes.JavaClass;
 import org.burningwave.core.classes.hunter.ByteCodeHunter;
 import org.burningwave.core.classes.hunter.ClassPathHunter;
 import org.burningwave.core.classes.hunter.SearchConfig;
-import org.burningwave.core.common.Strings;
 import org.burningwave.core.function.TriConsumer;
 import org.burningwave.core.io.FileScanConfig;
 import org.burningwave.core.io.FileSystemHelper;
 import org.burningwave.core.io.FileSystemHelper.Scan;
 import org.burningwave.core.io.FileSystemItem;
 import org.burningwave.core.io.PathHelper;
+import org.burningwave.core.iterable.IterableObjectHelper;
 
 
 public class TwoPassCapturer extends Capturer {
+	private final static String SECOND_PASS_ADDITIONAL_CLASSPATH_CONFIG_KEY = "dependencies-two-pass-capturer.second-pass.additional-class-paths";
 	ClassPathHunter classPathHunter;
+	Collection<FileSystemItem> secondPassAdditionalClassPaths;
 	
 	private TwoPassCapturer(
 		FileSystemHelper fileSystemHelper,
@@ -74,20 +78,30 @@ public class TwoPassCapturer extends Capturer {
 		ByteCodeHunter byteCodeHunter,
 		ClassPathHunter classPathHunter,
 		ClassHelper classHelper,
-		FieldHelper fieldHelper
+		FieldHelper fieldHelper,
+		IterableObjectHelper iterableObjectHelper,
+		String secondPassAdditionalClassPath
 	) {
 		super(fileSystemHelper, pathHelper, byteCodeHunter, classHelper, fieldHelper);
 		this.classPathHunter = classPathHunter;
+		secondPassAdditionalClassPaths = ConcurrentHashMap.newKeySet();
+		if (Strings.isNotEmpty(secondPassAdditionalClassPath)) {
+			Arrays.asList(secondPassAdditionalClassPath.split(";")).stream().map(absolutePath -> 
+				FileSystemItem.ofPath(absolutePath)
+			).collect(Collectors.toCollection(() -> secondPassAdditionalClassPaths));
+		}
 	}
 	
-	public static TwoPassCapturer create(ComponentSupplier componentSupplier) {
+	public static TwoPassCapturer create(ComponentContainer componentSupplier) {
 		return new TwoPassCapturer(
 			componentSupplier.getFileSystemHelper(),
 			componentSupplier.getPathHelper(),
 			componentSupplier.getByteCodeHunter(),
 			componentSupplier.getClassPathHunter(),
 			componentSupplier.getClassHelper(),
-			componentSupplier.getFieldHelper()
+			componentSupplier.getFieldHelper(),
+			componentSupplier.getIterableObjectHelper(),
+			componentSupplier.getConfigProperty(SECOND_PASS_ADDITIONAL_CLASSPATH_CONFIG_KEY)
 		);
 	}
 	
@@ -245,9 +259,9 @@ public class TwoPassCapturer extends Capturer {
         StringBuffer generatedClassPath = new StringBuffer("\"");
         Collection<String> classPathsToBeScanned = new LinkedHashSet<>(baseClassPaths);
         classPathsToBeScanned.remove(destinationPath);
-        List<String> classPaths = FileSystemItem.ofPath(destinationPath).getChildren().stream().map(
+        Set<String> classPaths = FileSystemItem.ofPath(destinationPath).getChildren().stream().map(
         	child -> child.getAbsolutePath()
-        ).collect(Collectors.toList());
+        ).collect(Collectors.toSet());
         generatedClassPath.append(String.join(System.getProperty("path.separator"), classPaths));
         //Adding Burningwave to classpath
         ClassPathHunter.SearchResult searchResult = classPathHunter.findBy(
@@ -275,7 +289,14 @@ public class TwoPassCapturer extends Capturer {
         generatedClassPath.append("\"");
         command.add(generatedClassPath.toString());
         command.add(this.getClass().getName());
-        String classPathsToBeScannedParam = "\"" + String.join(System.getProperty("path.separator"), classPathsToBeScanned) + "\"";
+        String classPathsToBeScannedParam = "\"" + String.join(System.getProperty("path.separator"), classPathsToBeScanned);
+        Set<String> extraClassPath = secondPassAdditionalClassPaths.stream().filter(fileSystemItem -> 
+			fileSystemItem.exists()
+		).map(fileSystemItem -> fileSystemItem.getAbsolutePath()).collect(Collectors.toSet());
+        if (!extraClassPath.isEmpty()) {
+        	classPathsToBeScannedParam += System.getProperty("path.separator") + String.join(System.getProperty("path.separator"), extraClassPath);
+        }
+        classPathsToBeScannedParam += "\"";
         command.add(classPathsToBeScannedParam);
         command.add(mainClass.getName());
         command.add("\"" + destinationPath + "\"");
