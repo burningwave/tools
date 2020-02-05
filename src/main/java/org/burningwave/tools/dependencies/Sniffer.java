@@ -83,15 +83,14 @@ public class Sniffer extends MemoryClassLoader {
 		this.resources = new ConcurrentHashMap<>();
 		this.javaClasses = new ConcurrentHashMap<>();
 		this.fieldHelper = fieldHelper;
-		if (useAsMasterClassLoader) {
-			setAsMasterClassLoader();
-		}
 		fileSystemHelper.scan(
 			FileScanConfig.forPaths(baseClassPaths).toScanConfiguration(
 				getMapStorer()
 			)
 		);
-		if (!useAsMasterClassLoader) {
+		if (useAsMasterClassLoader) {
+			setAsMasterClassLoader();
+		} else {
 			Thread.currentThread().setContextClassLoader(this);
 		}
 	}
