@@ -33,6 +33,7 @@ import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -94,7 +95,12 @@ public class Sniffer extends MemoryClassLoader {
 			Thread.currentThread().setContextClassLoader(this);
 		}
 	}
-
+	
+	@Override
+	public synchronized void addCompiledClass(String className, ByteBuffer byteCode) {
+		super.addCompiledClass(className, byteCode);
+	}
+	
 	protected void setAsMasterClassLoader() {
 		ClassLoader classLoaderParent = Thread.currentThread().getContextClassLoader();
 		while (classLoaderParent.getParent() != null) {
@@ -121,17 +127,7 @@ public class Sniffer extends MemoryClassLoader {
 	}    	
 	
 	protected Collection<JavaClass> consumeClass(String className) {
-		Collection<JavaClass> javaClassesFound = new LinkedHashSet<>();
-		for (Map.Entry<String, JavaClass> entry : javaClasses.entrySet()) {
-			if (entry.getValue().getName().equals(className)) {
-				JavaClass javaClass = entry.getValue();
-				if (javaClassFilterAndAdder.apply(javaClass)) {
-					resourcesConsumer.accept(entry.getKey(), javaClass.getPath(), javaClass.getByteCode());
-					javaClassesFound.add(javaClass);
-				}
-			}
-		}
-		return javaClassesFound;
+		return consumeClasses(Arrays.asList(className));
 	}
 	
 	public Collection<JavaClass> consumeClasses(Collection<String> currentNotFoundClasses) {
@@ -219,12 +215,15 @@ public class Sniffer extends MemoryClassLoader {
     		Thread.currentThread().setContextClassLoader(mainClassLoader);
     	}    	
     	resources.clear();
+    	//Nulling resources will cause crash
     	//resources = null;
     	javaClasses.clear();
+    	//Nulling javaClasses will cause crash
     	//javaClasses = null;
     	javaClassFilterAndAdder = null;
     	resourceFilterAndAdder = null;
     	mainClassLoader = null;
-    	super.close();
+		clear();
+		classHelper.unregister(this);
     }
 }

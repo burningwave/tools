@@ -29,7 +29,6 @@
 package org.burningwave.tools.dependencies;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collection;
@@ -141,27 +140,31 @@ public class TwoPassCapturer extends Capturer {
 							if (continueToCaptureAfterSimulatorClassEndExecutionFor != null && continueToCaptureAfterSimulatorClassEndExecutionFor > 0) {
 								Thread.sleep(continueToCaptureAfterSimulatorClassEndExecutionFor);
 							}
-						} catch (NoClassDefFoundError | InvocationTargetException exc) {
-							Collection<String> penultimateNotFoundClasses = resourceNotFoundException != null? Classes.retrieveNames(resourceNotFoundException) : new LinkedHashSet<>();
+						} catch (Throwable exc) {
+							Collection<String> penultimateNotFoundClasses = resourceNotFoundException != null?
+								Classes.retrieveNames(resourceNotFoundException) : 
+								new LinkedHashSet<>();
 							resourceNotFoundException = exc;
 							Collection<String> currentNotFoundClass = Classes.retrieveNames(resourceNotFoundException);
-							if (!currentNotFoundClass.containsAll(penultimateNotFoundClasses)) {
-								try {
-									logDebug("Searching for {}", currentNotFoundClass);
-									for (JavaClass javaClass : resourceSniffer.consumeClasses(currentNotFoundClass)) {
-										classHelper.loadOrUploadClass(javaClass, resourceSniffer.mainClassLoader);
+							if (!currentNotFoundClass.isEmpty()) {
+								if (!currentNotFoundClass.containsAll(penultimateNotFoundClasses)) {
+									try {
+										for (JavaClass javaClass : resourceSniffer.consumeClasses(currentNotFoundClass)) {
+											logDebug("Searching for {}", currentNotFoundClass);
+											classHelper.loadOrUploadClass(javaClass, resourceSniffer.mainClassLoader);
+										}
+									} catch (Throwable exc2) {
+										logError("Exception occurred", exc2);
+										throw Throwables.toRuntimeException(exc2);				
 									}
-								} catch (Throwable exc2) {
-									logError("Exception occurred", exc2);
-									throw Throwables.toRuntimeException(exc2);				
+								} else {
+									recursiveFlagWrapper.set(true);
+									resourceNotFoundException = null;
 								}
 							} else {
-								recursiveFlagWrapper.set(true);
-								resourceNotFoundException = null;
-							}
-						} catch (Throwable genericException) {
-							logError("Exception occurred", genericException);
-							throw Throwables.toRuntimeException(genericException);				
+								logError("Exception occurred", exc);
+								throw Throwables.toRuntimeException(exc);
+							}	
 						}
 					} while (resourceNotFoundException != null);
 					
