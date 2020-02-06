@@ -105,7 +105,7 @@ public class TwoPassCapturer extends Capturer {
 	
 	public Result capture(
 		Class<?> mainClass,
-		Collection<String> baseClassPaths,
+		Collection<String> _baseClassPaths,
 		TriConsumer<String, String, ByteBuffer> resourceConsumer,
 		boolean includeMainClass,
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor,
@@ -116,6 +116,7 @@ public class TwoPassCapturer extends Capturer {
 				javaClass -> true,
 				fileSystemItem -> true
 		);
+		Collection<String> baseClassPaths = new LinkedHashSet<>(_baseClassPaths);
 		baseClassPaths.addAll(secondPassAdditionalClassPaths.stream().map(fileSystemItem -> fileSystemItem.getAbsolutePath()).collect(Collectors.toSet()));
 		final AtomicBoolean recursiveFlagWrapper = new AtomicBoolean(recursive);
 		result.findingTask = CompletableFuture.runAsync(() -> {
