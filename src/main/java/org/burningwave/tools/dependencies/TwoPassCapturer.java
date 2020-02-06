@@ -72,10 +72,9 @@ public class TwoPassCapturer extends Capturer {
 		PathHelper pathHelper,
 		ByteCodeHunter byteCodeHunter,
 		ClassPathHunter classPathHunter,
-		ClassHelper classHelper,
-		String secondPassAdditionalClassPath
+		ClassHelper classHelper
 	) {
-		super(fileSystemHelper, pathHelper, byteCodeHunter, classHelper, secondPassAdditionalClassPath);
+		super(fileSystemHelper, pathHelper, byteCodeHunter, classHelper);
 		this.classPathHunter = classPathHunter;
 	}
 	
@@ -85,8 +84,7 @@ public class TwoPassCapturer extends Capturer {
 			componentSupplier.getPathHelper(),
 			componentSupplier.getByteCodeHunter(),
 			componentSupplier.getClassPathHunter(),
-			componentSupplier.getClassHelper(),
-			componentSupplier.getConfigProperty(SECOND_PASS_ADDITIONAL_CLASSPATH_CONFIG_KEY)
+			componentSupplier.getClassHelper()
 		);
 	}
 	
@@ -118,7 +116,7 @@ public class TwoPassCapturer extends Capturer {
 				javaClass -> true,
 				fileSystemItem -> true
 		);
-		baseClassPaths.addAll(secondPassAdditionalClassPaths.stream().filter(fileSystemItem -> fileSystemItem.exists()).map(fileSystemItem -> fileSystemItem.getAbsolutePath()).collect(Collectors.toSet()));
+		baseClassPaths.addAll(secondPassAdditionalClassPaths.stream().map(fileSystemItem -> fileSystemItem.getAbsolutePath()).collect(Collectors.toSet()));
 		final AtomicBoolean recursiveFlagWrapper = new AtomicBoolean(recursive);
 		result.findingTask = CompletableFuture.runAsync(() -> {
 			try (Sniffer resourceSniffer = new Sniffer(
@@ -275,12 +273,12 @@ public class TwoPassCapturer extends Capturer {
         command.add(generatedClassPath.toString());
         command.add(this.getClass().getName());
         String classPathsToBeScannedParam = "\"" + String.join(System.getProperty("path.separator"), classPathsToBeScanned);
-        Set<String> extraClassPath = secondPassAdditionalClassPaths.stream().filter(fileSystemItem -> 
-			fileSystemItem.exists()
-		).map(fileSystemItem -> fileSystemItem.getAbsolutePath()).collect(Collectors.toSet());
-        if (!extraClassPath.isEmpty()) {
-        	classPathsToBeScannedParam += System.getProperty("path.separator") + String.join(System.getProperty("path.separator"), extraClassPath);
-        }
+//        Set<String> extraClassPath = secondPassAdditionalClassPaths.stream().filter(fileSystemItem -> 
+//			fileSystemItem.exists()
+//		).map(fileSystemItem -> fileSystemItem.getAbsolutePath()).collect(Collectors.toSet());
+//        if (!extraClassPath.isEmpty()) {
+//        	classPathsToBeScannedParam += System.getProperty("path.separator") + String.join(System.getProperty("path.separator"), extraClassPath);
+//        }
         classPathsToBeScannedParam += "\"";
         command.add(classPathsToBeScannedParam);
         command.add(mainClass.getName());

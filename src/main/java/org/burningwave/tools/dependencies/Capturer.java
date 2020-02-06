@@ -29,7 +29,6 @@
 package org.burningwave.tools.dependencies;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,7 +39,6 @@ import java.util.stream.Collectors;
 
 import org.burningwave.Throwables;
 import org.burningwave.core.Component;
-import org.burningwave.core.Strings;
 import org.burningwave.core.assembler.ComponentContainer;
 import org.burningwave.core.classes.ClassHelper;
 import org.burningwave.core.classes.JavaClass;
@@ -53,7 +51,7 @@ import org.burningwave.core.io.Streams;
 
 
 public class Capturer implements Component {
-	protected static final String SECOND_PASS_ADDITIONAL_CLASSPATH_CONFIG_KEY = "dependencies-two-pass-capturer.second-pass.additional-class-paths";
+	protected static final String CLASS_REPOSITORIES = "dependencies-capturer.additional-class-paths";
 	ByteCodeHunter byteCodeHunter;
 	PathHelper pathHelper;
 	ClassHelper classHelper;
@@ -64,19 +62,16 @@ public class Capturer implements Component {
 		FileSystemHelper fileSystemHelper,
 		PathHelper pathHelper,
 		ByteCodeHunter byteCodeHunter,
-		ClassHelper classHelper,
-		String secondPassAdditionalClassPath
+		ClassHelper classHelper
 	) {
 		this.fileSystemHelper = fileSystemHelper;
 		this.byteCodeHunter = byteCodeHunter;
 		this.pathHelper = pathHelper;
 		this.classHelper = classHelper;
 		secondPassAdditionalClassPaths = ConcurrentHashMap.newKeySet();
-		if (Strings.isNotEmpty(secondPassAdditionalClassPath)) {
-			Arrays.asList(secondPassAdditionalClassPath.split(";")).stream().map(absolutePath -> 
-				FileSystemItem.ofPath(absolutePath)
-			).collect(Collectors.toCollection(() -> secondPassAdditionalClassPaths));
-		}
+		pathHelper.getClassPaths(CLASS_REPOSITORIES).stream().map(absolutePath -> 
+			FileSystemItem.ofPath(absolutePath)
+		).collect(Collectors.toCollection(() -> secondPassAdditionalClassPaths));
 	}
 	
 	public static Capturer create(ComponentContainer componentSupplier) {
@@ -84,8 +79,7 @@ public class Capturer implements Component {
 			componentSupplier.getFileSystemHelper(),
 			componentSupplier.getPathHelper(),
 			componentSupplier.getByteCodeHunter(),
-			componentSupplier.getClassHelper(),
-			componentSupplier.getConfigProperty(SECOND_PASS_ADDITIONAL_CLASSPATH_CONFIG_KEY)
+			componentSupplier.getClassHelper()
 		);
 	}
 	
@@ -100,7 +94,7 @@ public class Capturer implements Component {
 		boolean includeMainClass,
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) {	
-		baseClassPaths.addAll(secondPassAdditionalClassPaths.stream().filter(fileSystemItem -> fileSystemItem.exists()).map(fileSystemItem -> fileSystemItem.getAbsolutePath()).collect(Collectors.toSet()));
+		baseClassPaths.addAll(secondPassAdditionalClassPaths.stream().map(fileSystemItem -> fileSystemItem.getAbsolutePath()).collect(Collectors.toSet()));
 		final Result result = new Result();
 		Function<JavaClass, Boolean> javaClassAdder = includeMainClass ? 
 			(javaClass) -> {
