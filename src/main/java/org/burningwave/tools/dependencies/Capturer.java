@@ -30,6 +30,7 @@ package org.burningwave.tools.dependencies;
 
 import java.nio.ByteBuffer;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -89,11 +90,12 @@ public class Capturer implements Component {
 	
 	public Result capture(
 		Class<?> mainClass,
-		Collection<String> baseClassPaths,
+		Collection<String> _baseClassPaths,
 		TriConsumer<String, String, ByteBuffer> resourceConsumer,
 		boolean includeMainClass,
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) {	
+		Collection<String> baseClassPaths = new LinkedHashSet<>(_baseClassPaths);
 		baseClassPaths.addAll(secondPassAdditionalClassPaths.stream().map(fileSystemItem -> fileSystemItem.getAbsolutePath()).collect(Collectors.toSet()));
 		final Result result = new Result();
 		Function<JavaClass, Boolean> javaClassAdder = includeMainClass ? 
