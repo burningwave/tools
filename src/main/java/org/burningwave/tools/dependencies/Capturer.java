@@ -70,7 +70,7 @@ public class Capturer implements Component {
 		this.pathHelper = pathHelper;
 		this.classHelper = classHelper;
 		secondPassAdditionalClassPaths = ConcurrentHashMap.newKeySet();
-		pathHelper.getClassPaths(CLASS_REPOSITORIES).stream().map(absolutePath -> 
+		pathHelper.getPaths(CLASS_REPOSITORIES).stream().map(absolutePath -> 
 			FileSystemItem.ofPath(absolutePath)
 		).collect(Collectors.toCollection(() -> secondPassAdditionalClassPaths));
 	}
