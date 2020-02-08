@@ -117,7 +117,7 @@ public class TwoPassCapturer extends Capturer {
 				fileSystemItem -> true
 		);
 		Collection<String> baseClassPaths = new LinkedHashSet<>(_baseClassPaths);
-		baseClassPaths.addAll(secondPassAdditionalClassPaths.stream().map(fileSystemItem -> fileSystemItem.getAbsolutePath()).collect(Collectors.toSet()));
+		baseClassPaths.addAll(additionalClassPaths);
 		final AtomicBoolean recursiveFlagWrapper = new AtomicBoolean(recursive);
 		result.findingTask = CompletableFuture.runAsync(() -> {
 			try (Sniffer resourceSniffer = new Sniffer(
@@ -196,11 +196,11 @@ public class TwoPassCapturer extends Capturer {
 					);
 				FileSystemItem store = result.getStore();
 				for (FileSystemItem fileSystemItem : mainJavaClassesFiles) {
-					fileSystemHelper.delete(fileSystemItem.getAbsolutePath());
+					FileSystemHelper.delete(fileSystemItem.getAbsolutePath());
 					fileSystemItem = fileSystemItem.getParent();
 					while (fileSystemItem != null && !fileSystemItem.getAbsolutePath().equals(store.getAbsolutePath())) {
 						if (fileSystemItem.getChildren().isEmpty()) {
-							fileSystemHelper.delete(fileSystemItem.getAbsolutePath());
+							FileSystemHelper.delete(fileSystemItem.getAbsolutePath());
 						} else {
 							break;
 						}

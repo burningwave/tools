@@ -32,7 +32,6 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -52,12 +51,11 @@ import org.burningwave.core.io.Streams;
 
 
 public class Capturer implements Component {
-	protected static final String CLASS_REPOSITORIES = "dependencies-capturer.additional-class-paths";
 	ByteCodeHunter byteCodeHunter;
 	PathHelper pathHelper;
 	ClassHelper classHelper;
 	FileSystemHelper fileSystemHelper;
-	protected Collection<FileSystemItem> secondPassAdditionalClassPaths;
+	protected Collection<String> additionalClassPaths;
 	
 	Capturer(
 		FileSystemHelper fileSystemHelper,
@@ -69,10 +67,7 @@ public class Capturer implements Component {
 		this.byteCodeHunter = byteCodeHunter;
 		this.pathHelper = pathHelper;
 		this.classHelper = classHelper;
-		secondPassAdditionalClassPaths = ConcurrentHashMap.newKeySet();
-		pathHelper.getPaths(CLASS_REPOSITORIES).stream().map(absolutePath -> 
-			FileSystemItem.ofPath(absolutePath)
-		).collect(Collectors.toCollection(() -> secondPassAdditionalClassPaths));
+		additionalClassPaths = pathHelper.getPaths(PathHelper.MAIN_CLASS_PATHS_EXTENSION);
 	}
 	
 	public static Capturer create(ComponentContainer componentSupplier) {
@@ -96,7 +91,7 @@ public class Capturer implements Component {
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) {	
 		Collection<String> baseClassPaths = new LinkedHashSet<>(_baseClassPaths);
-		baseClassPaths.addAll(secondPassAdditionalClassPaths.stream().map(fileSystemItem -> fileSystemItem.getAbsolutePath()).collect(Collectors.toSet()));
+		baseClassPaths.addAll(additionalClassPaths);
 		final Result result = new Result();
 		Function<JavaClass, Boolean> javaClassAdder = includeMainClass ? 
 			(javaClass) -> {
