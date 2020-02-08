@@ -155,7 +155,7 @@ public class Sniffer extends MemoryClassLoader {
 		try {
 			cls = super.loadClass(className, resolve);
 		} catch (SecurityException exc) {
-			cls = mainClassLoader.loadClass(className);
+			cls = Class.forName(className);
 		}
     	consumeClass(className);
     	return cls;
