@@ -298,16 +298,21 @@ public class TwoPassCapturer extends Capturer {
 	}
 	
 	public static void main(String[] args) throws ClassNotFoundException {
-		logReceivedParameters(args, 0);	
-		Collection<String> paths = Arrays.asList(args[0].split(System.getProperty("path.separator")));
-		String mainClassName = args[1];		
-		String destinationPath = args[2];
-		boolean includeMainClass = Boolean.valueOf(args[3]);
-		long continueToCaptureAfterSimulatorClassEndExecutionFor = Long.valueOf(args[4]);
-		Class<?> mainClass = Class.forName(mainClassName);
-		TwoPassCapturer.getInstance().captureAndStore(
-			mainClass, paths, destinationPath, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor, false
-		).waitForTaskEnding();
+		try {
+			Collection<String> paths = Arrays.asList(args[0].split(System.getProperty("path.separator")));
+			String mainClassName = args[1];		
+			String destinationPath = args[2];
+			boolean includeMainClass = Boolean.valueOf(args[3]);
+			long continueToCaptureAfterSimulatorClassEndExecutionFor = Long.valueOf(args[4]);
+			Class<?> mainClass = Class.forName(mainClassName);
+			TwoPassCapturer.getInstance().captureAndStore(
+				mainClass, paths, destinationPath, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor, false
+			).waitForTaskEnding();
+		} catch (Throwable exc) {
+			ManagedLogger.Repository.getInstance().logError(TwoPassCapturer.class, "Exception occurred", exc);
+		} finally {
+			logReceivedParameters(args, 0);	
+		}
 	}
 	
 	private static void logReceivedParameters(String[] args, long wait) {
@@ -327,6 +332,11 @@ public class TwoPassCapturer extends Capturer {
 			
 			Files.write(Paths.get(args[2] + "\\params-" + UUID.randomUUID().toString() + ".txt"), logs.getBytes());
 			ManagedLogger.Repository.getInstance().logDebug(TwoPassCapturer.class, "\n\n" + logs + "\n\n");
+			String externalExecutor = System.getProperty("java.home") + "/java -classpath \"" +
+				String.join(";",	
+					FileSystemItem.ofPath(args[2]).getChildren().stream().map(fileSystemItem -> fileSystemItem.getAbsolutePath()).collect(Collectors.toList())
+				) + "\" " + args[1];
+			Files.write(Paths.get(args[2] + "\\executor-" + UUID.randomUUID().toString() + ".cmd"), externalExecutor.getBytes());
 			if (wait > 0) {
 				Thread.sleep(wait);
 			}

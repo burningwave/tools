@@ -182,10 +182,14 @@ public class Capturer implements Component {
 		} else {
 			finalPath = finalPath.replace("/", "");
 		}
-		return storeBasePath + "/" + finalPath;
+		return storeBasePath + "/" + getReducedPath(finalPath);
 	}
 	
-	
+	private String getReducedPath(String path) {
+		String temp = path.substring(0, path.lastIndexOf("["));
+		temp = temp.substring(0, temp.lastIndexOf("["));
+		return path.substring(temp.lastIndexOf("["));
+	}
 		
 	public static class Result implements Component {
 		CompletableFuture<Void> findingTask;
