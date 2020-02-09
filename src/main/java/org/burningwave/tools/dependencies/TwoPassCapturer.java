@@ -123,14 +123,15 @@ public class TwoPassCapturer extends Capturer {
 		baseClassPaths.addAll(additionalClassPaths);
 		final AtomicBoolean recursiveFlagWrapper = new AtomicBoolean(recursive);
 		result.findingTask = CompletableFuture.runAsync(() -> {
-			try (Sniffer resourceSniffer = new Sniffer(
-				!recursiveFlagWrapper.get(),
-				fileSystemHelper,
-				classHelper,
-				baseClassPaths,
-				result.javaClassFilter,
-				result.resourceFilter,
-				resourceConsumer)
+			try (Sniffer resourceSniffer = new Sniffer(null).init(
+					!recursiveFlagWrapper.get(),
+					fileSystemHelper,
+					classHelper,
+					baseClassPaths,
+					result.javaClassFilter,
+					result.resourceFilter,
+					resourceConsumer
+				)
 			) {	
 				if (!recursiveFlagWrapper.get()) {
 					Throwable resourceNotFoundException = null;

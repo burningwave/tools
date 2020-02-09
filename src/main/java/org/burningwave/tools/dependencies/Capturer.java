@@ -84,6 +84,7 @@ public class Capturer implements Component {
 		return LazyHolder.getCapturerInstance();
 	}
 	
+	@SuppressWarnings("resource")
 	public Result capture(
 		Class<?> mainClass,
 		Collection<String> _baseClassPaths,
@@ -108,7 +109,7 @@ public class Capturer implements Component {
 			};
 		result.findingTask = CompletableFuture.runAsync(() -> {
 			Class<?> cls;
-			try (Sniffer resourceSniffer = new Sniffer(
+			try (Sniffer resourceSniffer = new Sniffer(null).init(
 				false,
 				fileSystemHelper,
 				classHelper,

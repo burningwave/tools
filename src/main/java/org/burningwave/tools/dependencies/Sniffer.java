@@ -62,7 +62,15 @@ public class Sniffer extends MemoryClassLoader {
 	private TriConsumer<String, String, ByteBuffer> resourcesConsumer;
 	ClassLoader mainClassLoader;
 	
-	protected Sniffer(boolean useAsMasterClassLoader,
+	public Sniffer(ClassLoader parent) {
+		super(parent, null);
+	}
+	
+	static {
+        ClassLoader.registerAsParallelCapable();
+    }
+	
+	protected  Sniffer init(boolean useAsMasterClassLoader,
 		FileSystemHelper fileSystemHelper,
 		ClassHelper classHelper,
 		Collection<String> baseClassPaths,
@@ -70,8 +78,8 @@ public class Sniffer extends MemoryClassLoader {
 		Function<FileSystemItem, Boolean> resourceAdder,
 		TriConsumer<String, String, ByteBuffer> resourcesConsumer
 	) {
-		super(null, classHelper);
-		mainClassLoader = Thread.currentThread().getContextClassLoader();
+		this.classHelper = classHelper;
+		this.mainClassLoader = Thread.currentThread().getContextClassLoader();
 		this.javaClassFilterAndAdder = javaClassAdder;
 		this.resourceFilterAndAdder = resourceAdder;
 		this.resourcesConsumer = resourcesConsumer;
@@ -87,7 +95,8 @@ public class Sniffer extends MemoryClassLoader {
 		} else {
 			Thread.currentThread().setContextClassLoader(this);
 		}
-	}
+		return this;
+	} 
 	
 	@Override
 	public synchronized void addCompiledClass(String className, ByteBuffer byteCode) {
