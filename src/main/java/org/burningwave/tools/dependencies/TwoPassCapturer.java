@@ -332,7 +332,7 @@ public class TwoPassCapturer extends Capturer {
 			
 			Files.write(Paths.get(args[2] + "\\params-" + UUID.randomUUID().toString() + ".txt"), logs.getBytes());
 			ManagedLogger.Repository.getInstance().logDebug(TwoPassCapturer.class, "\n\n" + logs + "\n\n");
-			String externalExecutor = System.getProperty("java.home") + "/java -classpath \"" +
+			String externalExecutor = FileSystemItem.ofPath(System.getProperty("java.home")).getAbsolutePath() + "/bin/java -classpath \"" +
 				String.join(";",	
 					FileSystemItem.ofPath(args[2]).getChildren().stream().map(fileSystemItem -> fileSystemItem.getAbsolutePath()).collect(Collectors.toList())
 				) + "\" " + args[1];
