@@ -151,12 +151,7 @@ public class Sniffer extends MemoryClassLoader {
 	
 	@Override
     protected Class<?> loadClass(String className, boolean resolve) throws ClassNotFoundException {
-		Class<?> cls = null;
-		try {
-			cls = super.loadClass(className, resolve);
-		} catch (SecurityException exc) {
-			cls = Class.forName(className);
-		}
+		Class<?> cls = super.loadClass(className, resolve);
     	consumeClass(className);
     	return cls;
     }

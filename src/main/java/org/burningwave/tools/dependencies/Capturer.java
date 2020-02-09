@@ -51,6 +51,7 @@ import org.burningwave.core.io.Streams;
 
 
 public class Capturer implements Component {
+	protected static final String ADDITIONAL_RESOURCES_PATH = "dependencies-capturer.additional-resources-path";
 	ByteCodeHunter byteCodeHunter;
 	PathHelper pathHelper;
 	ClassHelper classHelper;
@@ -67,7 +68,7 @@ public class Capturer implements Component {
 		this.byteCodeHunter = byteCodeHunter;
 		this.pathHelper = pathHelper;
 		this.classHelper = classHelper;
-		additionalClassPaths = pathHelper.getPaths(PathHelper.MAIN_CLASS_PATHS_EXTENSION);
+		additionalClassPaths = pathHelper.getPaths(PathHelper.MAIN_CLASS_PATHS_EXTENSION, ADDITIONAL_RESOURCES_PATH);
 	}
 	
 	public static Capturer create(ComponentContainer componentSupplier) {
