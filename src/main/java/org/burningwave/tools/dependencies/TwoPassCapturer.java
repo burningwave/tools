@@ -30,6 +30,8 @@ package org.burningwave.tools.dependencies;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
@@ -37,6 +39,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -308,22 +311,25 @@ public class TwoPassCapturer extends Capturer {
 	
 	private static void logReceivedParameters(String[] args, long wait) {
 		try {
-			ManagedLogger.Repository.getInstance().logDebug(TwoPassCapturer.class, "classpath: {}", System.getProperty("java.class.path"));
-			ManagedLogger.Repository.getInstance().logDebug(TwoPassCapturer.class, "path to be scanned: {}",
-				String.join(";",
-					Arrays.asList(
-						args[0].split(System.getProperty("path.separator"))
-					)
-				)
-			);
-			ManagedLogger.Repository.getInstance().logDebug(TwoPassCapturer.class, "mainClassName: {}", args[1]);
-			ManagedLogger.Repository.getInstance().logDebug(TwoPassCapturer.class, "destinationPath: {}", args[2]);
-			ManagedLogger.Repository.getInstance().logDebug(TwoPassCapturer.class, "includeMainClass: {}", args[3]);
-			ManagedLogger.Repository.getInstance().logDebug(TwoPassCapturer.class, "continueToCaptureAfterSimulatorClassEndExecutionFor: {}", args[4]);
+			String logs =
+					"classpath: " + System.getProperty("java.class.path") + "\n" +
+					"path to be scanned: " + 
+						String.join(";",
+							Arrays.asList(
+								args[0].split(System.getProperty("path.separator"))
+							)
+						) + "\n" +
+					"mainClassName: " + args[1] + "\n" +
+					"destinationPath: " + args[2] + "\n" +
+					"includeMainClass: " + args[3] + "\n" +
+					"continueToCaptureAfterSimulatorClassEndExecutionFor: " + args[4];
+			
+			Files.write(Paths.get(args[2] + "\\params-" + UUID.randomUUID().toString() + ".txt"), logs.getBytes());
+			ManagedLogger.Repository.getInstance().logDebug(TwoPassCapturer.class, "\n\n" + logs + "\n\n");
 			if (wait > 0) {
 				Thread.sleep(wait);
 			}
-		} catch (InterruptedException e) {
+		} catch (Throwable e) {
 			e.printStackTrace();
 		}
 	}
