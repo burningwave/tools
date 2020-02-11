@@ -111,12 +111,14 @@ public class Sniffer extends MemoryClassLoader {
 	protected void setAsMasterClassLoader() {
 		Class<?> builtinClassLoaderClass = retrieveBuiltinClassLoaderClass();
 		if (builtinClassLoaderClass != null) {
-			try (InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("jdk/internal/loader/SnifferDelegate.class");
-				ByteBufferOutputStream bBOS = new ByteBufferOutputStream()) {
+			try (
+				InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("jdk/internal/loader/SnifferDelegate.class");
+				ByteBufferOutputStream bBOS = new ByteBufferOutputStream()
+			) {
 				Streams.copy(inputStream, bBOS);
-				Class<?> cls = classHelper.loadOrUploadClass(bBOS.toByteBuffer(), ClassLoader.getSystemClassLoader());
-				Object snifferDelegate = LowLevelObjectsHandler.getUnsafe().allocateInstance(cls);
-				snifferDelegate.getClass().getDeclaredMethod("init", this.getClass()).invoke(snifferDelegate, this);
+				Class<?> snifferDelegateClass = classHelper.loadOrUploadClass(bBOS.toByteBuffer(), ClassLoader.getSystemClassLoader());
+				Object snifferDelegate = LowLevelObjectsHandler.getUnsafe().allocateInstance(snifferDelegateClass);
+				snifferDelegateClass.getDeclaredMethod("init", this.getClass()).invoke(snifferDelegate, this);
 				Field parentClassLoaderField = getParentClassLoaderField(builtinClassLoaderClass);
 				Long offset = LowLevelObjectsHandler.getUnsafe().objectFieldOffset(parentClassLoaderField);
 				ClassLoader futureChild = getMasterClassLoader(Thread.currentThread().getContextClassLoader());
