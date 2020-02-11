@@ -107,6 +107,7 @@ public class Sniffer extends MemoryClassLoader {
 		return this;
 	}
 
+	@SuppressWarnings("restriction")
 	protected void setAsMasterClassLoader() {
 		Class<?> builtinClassLoaderClass = retrieveBuiltinClassLoaderClass();
 		if (builtinClassLoaderClass != null) {

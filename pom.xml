@@ -1,14 +1,16 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	
+
 	<groupId>org.burningwave</groupId>
 	<artifactId>tools</artifactId>
-	
+
 	<version>0.3.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>Burningwave Tools</name>
 	<url>https://www.burningwave.org/</url>
-	
+
 	<licenses>
 		<license>
 			<name>MIT License</name>
@@ -20,7 +22,7 @@
 		<name>Burningwave</name>
 		<url>https://www.burningwave.org/</url>
 	</organization>
-	
+
 	<description>
 		A framework for create toolss of synchronous/asynchronous Java method calls using a JSon configuration
 	</description>
@@ -81,8 +83,9 @@
 				</includes>
 				<excludes>
 					<exclude>compileSnifferDelegate.cmd</exclude>
-					<exclude>jdk-internal.jar</exclude>
 					<exclude>jdk/internal/loader/SnifferDelegate.java</exclude>
+					<exclude>jdk/internal/loader/BuiltinClassLoader.class</exclude>
+					<exclude>jdk/internal/loader/URLClassPath.class</exclude>
 				</excludes>
 			</resource>
 		</resources>
@@ -104,8 +107,8 @@
 				<version>3.8.1</version>
 				<configuration>
 					<source>${project.jdk.version}</source>
-        			<target>${project.jdk.version}</target>
-        			<verbose>true</verbose>
+					<target>${project.jdk.version}</target>
+					<verbose>true</verbose>
 				</configuration>
 			</plugin>
 			<plugin>

@@ -282,12 +282,9 @@ public class TwoPassCapturer extends Capturer {
         command.add(generatedClassPath.toString());
         command.add(this.getClass().getName());
         String classPathsToBeScannedParam = "\"" + String.join(System.getProperty("path.separator"), classPathsToBeScanned);
-//        Set<String> extraClassPath = secondPassAdditionalClassPaths.stream().filter(fileSystemItem -> 
-//			fileSystemItem.exists()
-//		).map(fileSystemItem -> fileSystemItem.getAbsolutePath()).collect(Collectors.toSet());
-//        if (!extraClassPath.isEmpty()) {
-//        	classPathsToBeScannedParam += System.getProperty("path.separator") + String.join(System.getProperty("path.separator"), extraClassPath);
-//        }
+        if (additionalClassPaths != null && !additionalClassPaths.isEmpty()) {
+        	classPathsToBeScannedParam += System.getProperty("path.separator") + String.join(System.getProperty("path.separator"), additionalClassPaths);
+        }
         classPathsToBeScannedParam += "\"";
         command.add(classPathsToBeScannedParam);
         command.add(mainClass.getName());

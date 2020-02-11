@@ -4,13 +4,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Enumeration;
-
-import org.burningwave.Throwables;
-import org.burningwave.core.Component;
 import org.burningwave.tools.dependencies.Sniffer;
 
-
-public class SnifferDelegate extends BuiltinClassLoader implements Component {
+public class SnifferDelegate extends BuiltinClassLoader {
 	private Sniffer sniffer;
 	
 	SnifferDelegate(String name, BuiltinClassLoader parent, URLClassPath ucp) {
@@ -26,7 +22,8 @@ public class SnifferDelegate extends BuiltinClassLoader implements Component {
 		try {
 			return sniffer._loadClass(cn, resolve);
 		} catch (ClassNotFoundException exc) {
-			throw Throwables.toRuntimeException(exc);
+			System.out.println("Class " + cn + " not found");
+			return null;
 		}
 	}
 	
