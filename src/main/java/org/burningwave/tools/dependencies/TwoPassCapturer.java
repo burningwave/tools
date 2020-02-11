@@ -243,6 +243,10 @@ public class TwoPassCapturer extends Capturer {
 		String javaExecutablePath = System.getProperty("java.home") + "/bin/java";
 		List<String> command = new LinkedList<String>();
         command.add(Strings.Paths.clean(javaExecutablePath));
+        if (Sniffer.retrieveBuiltinClassLoaderClass() != null) {
+        	command.add("--add-exports");
+        	command.add("java.base/jdk.internal.loader=ALL-UNNAMED");
+        }
         command.add("-classpath");
         StringBuffer generatedClassPath = new StringBuffer("\"");
         Collection<String> classPathsToBeScanned = new LinkedHashSet<>(baseClassPaths);

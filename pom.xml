@@ -79,6 +79,11 @@
 				<includes>
 					<include>**</include>
 				</includes>
+				<excludes>
+					<exclude>compileSnifferDelegate.cmd</exclude>
+					<exclude>jdk-internal.jar</exclude>
+					<exclude>jdk/internal/loader/SnifferDelegate.java</exclude>
+				</excludes>
 			</resource>
 		</resources>
 		<testResources>
