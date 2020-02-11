@@ -48,8 +48,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.burningwave.ManagedLogger;
 import org.burningwave.Throwables;
-import org.burningwave.core.ManagedLogger;
 import org.burningwave.core.Strings;
 import org.burningwave.core.assembler.ComponentContainer;
 import org.burningwave.core.assembler.ComponentSupplier;
