@@ -2,7 +2,6 @@ package org.burningwave.tools.jvm;
 
 import java.io.InputStream;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -11,6 +10,7 @@ import org.burningwave.Throwables;
 import org.burningwave.core.assembler.ComponentSupplier;
 import org.burningwave.core.classes.ClassFactory;
 import org.burningwave.core.classes.ClassHelper;
+import org.burningwave.core.classes.Classes;
 import org.burningwave.core.classes.MemberFinder;
 import org.burningwave.core.io.ByteBufferOutputStream;
 import org.burningwave.core.io.StreamHelper;
@@ -92,22 +92,12 @@ public class LowLevelObjectsHandler extends org.burningwave.core.jvm.LowLevelObj
 	}
 
 	protected Field getParentClassLoaderField(Class<?> classLoaderClass)  {
-		Field parentClassLoaderField;
-		try {
-			Method method = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
-			method.setAccessible(true);
-			Field[] fields = (Field[]) method.invoke(classLoaderClass, false);
-			parentClassLoaderField = null;
-			for (Field field : fields) {
-				if (field.getName().equals("parent")) {
-					parentClassLoaderField = field;
-					break;
-				}
+		for (Field field : Classes.getDeclaredFields(classLoaderClass)) {
+			if (field.getName().equals("parent")) {
+				return field;
 			}
-		} catch (Throwable exc) {
-			throw Throwables.toRuntimeException(exc);
 		}
-		return parentClassLoaderField;
+		return null;
 	}
 
 	public Class<?> retrieveBuiltinClassLoaderClass() {
