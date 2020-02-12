@@ -81,7 +81,7 @@
 				</includes>
 				<excludes>
 					<exclude>compileSnifferDelegate.cmd</exclude>
-					<exclude>jdk/internal/loader/SnifferDelegate.java</exclude>
+					<exclude>jdk/internal/loader/ClassLoaderDelegate.java</exclude>
 					<exclude>jdk/internal/loader/BuiltinClassLoader.class</exclude>
 					<exclude>jdk/internal/loader/URLClassPath.class</exclude>
 				</excludes>

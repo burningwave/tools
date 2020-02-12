@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 import org.burningwave.Throwables;
 import org.burningwave.core.Component;
 import org.burningwave.core.assembler.ComponentContainer;
+import org.burningwave.core.assembler.ComponentSupplier;
 import org.burningwave.core.classes.ClassHelper;
 import org.burningwave.core.classes.JavaClass;
 import org.burningwave.core.classes.hunter.ByteCodeHunter;
@@ -48,6 +49,7 @@ import org.burningwave.core.io.FileSystemHelper;
 import org.burningwave.core.io.FileSystemItem;
 import org.burningwave.core.io.PathHelper;
 import org.burningwave.core.io.Streams;
+import org.burningwave.tools.jvm.LowLevelObjectsHandler;
 
 
 public class Capturer implements Component {
@@ -56,27 +58,31 @@ public class Capturer implements Component {
 	PathHelper pathHelper;
 	ClassHelper classHelper;
 	FileSystemHelper fileSystemHelper;
-	protected Collection<String> additionalClassPaths;
+	Collection<String> additionalClassPaths;
+	LowLevelObjectsHandler lowLevelObjectsHandler;
 	
 	Capturer(
 		FileSystemHelper fileSystemHelper,
 		PathHelper pathHelper,
 		ByteCodeHunter byteCodeHunter,
-		ClassHelper classHelper
+		ClassHelper classHelper, LowLevelObjectsHandler lowLevelObjectsHandler
 	) {
 		this.fileSystemHelper = fileSystemHelper;
 		this.byteCodeHunter = byteCodeHunter;
 		this.pathHelper = pathHelper;
 		this.classHelper = classHelper;
-		additionalClassPaths = pathHelper.getPaths(PathHelper.MAIN_CLASS_PATHS_EXTENSION, ADDITIONAL_RESOURCES_PATH);
+		this.lowLevelObjectsHandler = lowLevelObjectsHandler;
+		this.additionalClassPaths = pathHelper.getPaths(PathHelper.MAIN_CLASS_PATHS_EXTENSION, ADDITIONAL_RESOURCES_PATH);
+		
 	}
 	
-	public static Capturer create(ComponentContainer componentSupplier) {
+	public static Capturer create(ComponentSupplier componentSupplier) {
 		return new Capturer(
 			componentSupplier.getFileSystemHelper(),
 			componentSupplier.getPathHelper(),
 			componentSupplier.getByteCodeHunter(),
-			componentSupplier.getClassHelper()
+			componentSupplier.getClassHelper(),
+			LowLevelObjectsHandler.create(componentSupplier)
 		);
 	}
 	
@@ -113,6 +119,7 @@ public class Capturer implements Component {
 				false,
 				fileSystemHelper,
 				classHelper,
+				lowLevelObjectsHandler,
 				baseClassPaths,
 				javaClassAdder,
 				fileSystemItem -> {

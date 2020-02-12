@@ -64,6 +64,7 @@ import org.burningwave.core.function.TriConsumer;
 import org.burningwave.core.io.FileScanConfig;
 import org.burningwave.core.io.FileSystemHelper;
 import org.burningwave.core.io.FileSystemHelper.Scan;
+import org.burningwave.tools.jvm.LowLevelObjectsHandler;
 import org.burningwave.core.io.FileSystemItem;
 import org.burningwave.core.io.PathHelper;
 
@@ -75,19 +76,21 @@ public class TwoPassCapturer extends Capturer {
 		PathHelper pathHelper,
 		ByteCodeHunter byteCodeHunter,
 		ClassPathHunter classPathHunter,
-		ClassHelper classHelper
+		ClassHelper classHelper,
+		LowLevelObjectsHandler lowLevelObjectsHandler
 	) {
-		super(fileSystemHelper, pathHelper, byteCodeHunter, classHelper);
+		super(fileSystemHelper, pathHelper, byteCodeHunter, classHelper, lowLevelObjectsHandler);
 		this.classPathHunter = classPathHunter;
 	}
 	
-	public static TwoPassCapturer create(ComponentContainer componentSupplier) {
+	public static TwoPassCapturer create(ComponentSupplier componentSupplier) {
 		return new TwoPassCapturer(
 			componentSupplier.getFileSystemHelper(),
 			componentSupplier.getPathHelper(),
 			componentSupplier.getByteCodeHunter(),
 			componentSupplier.getClassPathHunter(),
-			componentSupplier.getClassHelper()
+			componentSupplier.getClassHelper(),
+			LowLevelObjectsHandler.create(componentSupplier)
 		);
 	}
 	
@@ -127,6 +130,7 @@ public class TwoPassCapturer extends Capturer {
 					!recursiveFlagWrapper.get(),
 					fileSystemHelper,
 					classHelper,
+					lowLevelObjectsHandler,
 					baseClassPaths,
 					result.javaClassFilter,
 					result.resourceFilter,
@@ -153,7 +157,7 @@ public class TwoPassCapturer extends Capturer {
 									try {
 										for (JavaClass javaClass : resourceSniffer.consumeClasses(currentNotFoundClass)) {
 											logDebug("Searching for {}", currentNotFoundClass);
-											classHelper.loadOrUploadClass(javaClass, resourceSniffer.mainClassLoader);
+											classHelper.loadOrUploadClass(javaClass, resourceSniffer.threadContextClassLoader);
 										}
 									} catch (Throwable exc2) {
 										logError("Exception occurred", exc2);
@@ -243,7 +247,7 @@ public class TwoPassCapturer extends Capturer {
 		String javaExecutablePath = System.getProperty("java.home") + "/bin/java";
 		List<String> command = new LinkedList<String>();
         command.add(Strings.Paths.clean(javaExecutablePath));
-        if (Sniffer.retrieveBuiltinClassLoaderClass() != null) {
+        if (lowLevelObjectsHandler.retrieveBuiltinClassLoaderClass() != null) {
         	command.add("--add-exports");
         	command.add("java.base/jdk.internal.loader=ALL-UNNAMED");
         }

@@ -30,9 +30,6 @@ package org.burningwave.tools.dependencies;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -47,28 +44,27 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.burningwave.ManagedLogger;
-import org.burningwave.Throwables;
 import org.burningwave.core.Strings;
 import org.burningwave.core.classes.ClassHelper;
 import org.burningwave.core.classes.JavaClass;
 import org.burningwave.core.classes.MemoryClassLoader;
 import org.burningwave.core.function.TriConsumer;
-import org.burningwave.core.io.ByteBufferOutputStream;
 import org.burningwave.core.io.FileScanConfig;
 import org.burningwave.core.io.FileSystemHelper;
 import org.burningwave.core.io.FileSystemHelper.Scan;
+import org.burningwave.tools.jvm.LowLevelObjectsHandler;
 import org.burningwave.core.io.FileSystemItem;
-import org.burningwave.core.io.Streams;
-import org.burningwave.core.jvm.LowLevelObjectsHandler;
+
 
 public class Sniffer extends MemoryClassLoader {
+	private LowLevelObjectsHandler lowLevelObjectsHandler;
 	private Function<JavaClass, Boolean> javaClassFilterAndAdder;
 	private Function<FileSystemItem, Boolean> resourceFilterAndAdder;
 	private Map<String, FileSystemItem> resources;
 	private Map<String, JavaClass> javaClasses;
 	private TriConsumer<String, String, ByteBuffer> resourcesConsumer;
-	ClassLoader mainClassLoader;
+	ClassLoader threadContextClassLoader;
+	Function<Boolean, ClassLoader> masterClassLoaderRetriever;
 	
 	public Sniffer(ClassLoader parent) {
 		super(parent, null);
@@ -81,13 +77,15 @@ public class Sniffer extends MemoryClassLoader {
 	protected  Sniffer init(boolean useAsMasterClassLoader,
 		FileSystemHelper fileSystemHelper,
 		ClassHelper classHelper,
+		LowLevelObjectsHandler lowLevelObjectsHandler,
 		Collection<String> baseClassPaths,
 		Function<JavaClass, Boolean> javaClassAdder,
 		Function<FileSystemItem, Boolean> resourceAdder,
 		TriConsumer<String, String, ByteBuffer> resourcesConsumer
 	) {
 		this.classHelper = classHelper;
-		this.mainClassLoader = Thread.currentThread().getContextClassLoader();
+		this.lowLevelObjectsHandler = lowLevelObjectsHandler;
+		this.threadContextClassLoader = Thread.currentThread().getContextClassLoader();
 		this.javaClassFilterAndAdder = javaClassAdder;
 		this.resourceFilterAndAdder = resourceAdder;
 		this.resourcesConsumer = resourcesConsumer;
@@ -100,77 +98,12 @@ public class Sniffer extends MemoryClassLoader {
 			)
 		);
 		if (useAsMasterClassLoader) {			
-			setAsMasterClassLoader();
+			masterClassLoaderRetriever = this.lowLevelObjectsHandler.setAsMasterClassLoader(this);
 		} else {
 			Thread.currentThread().setContextClassLoader(this);
 		}
 		return this;
 	}
-
-	@SuppressWarnings("restriction")
-	protected void setAsMasterClassLoader() {
-		Class<?> builtinClassLoaderClass = retrieveBuiltinClassLoaderClass();
-		if (builtinClassLoaderClass != null) {
-			try (
-				InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("jdk/internal/loader/SnifferDelegate.class");
-				ByteBufferOutputStream bBOS = new ByteBufferOutputStream()
-			) {
-				Streams.copy(inputStream, bBOS);
-				Class<?> snifferDelegateClass = classHelper.loadOrUploadClass(bBOS.toByteBuffer(), ClassLoader.getSystemClassLoader());
-				Object snifferDelegate = LowLevelObjectsHandler.getUnsafe().allocateInstance(snifferDelegateClass);
-				snifferDelegateClass.getDeclaredMethod("init", this.getClass()).invoke(snifferDelegate, this);
-				Field parentClassLoaderField = getParentClassLoaderField(builtinClassLoaderClass);
-				Long offset = LowLevelObjectsHandler.getUnsafe().objectFieldOffset(parentClassLoaderField);
-				ClassLoader futureChild = getMasterClassLoader(Thread.currentThread().getContextClassLoader());
-				LowLevelObjectsHandler.getUnsafe().putObject(futureChild, offset, snifferDelegate);
-			} catch (Throwable exc) {
-				throw Throwables.toRuntimeException(exc);
-			}
-		} else {
-			try {
-				Field parentClassLoaderField = getParentClassLoaderField(ClassLoader.class);
-				Long offset = LowLevelObjectsHandler.getUnsafe().objectFieldOffset(parentClassLoaderField);
-				ClassLoader futureChild = getMasterClassLoader(Thread.currentThread().getContextClassLoader());
-				LowLevelObjectsHandler.getUnsafe().putObject(futureChild, offset, this);
-			} catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException exc) {
-				throw Throwables.toRuntimeException(exc);
-			}
-			
-		}
-	}
-
-	protected ClassLoader getMasterClassLoader(ClassLoader classLoader) {
-		ClassLoader child = classLoader;
-		while (child.getParent() != null) {
-			child = child.getParent();
-		}
-		return child;
-	}
-
-	protected Field getParentClassLoaderField(Class<?> classLoaderClass)
-			throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-		Method method = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
-		method.setAccessible(true);
-		Field[] fields = (Field[]) method.invoke(classLoaderClass, false);
-		Field parentClassLoaderField = null;
-		for (Field field : fields) {
-			if (field.getName().equals("parent")) {
-				parentClassLoaderField = field;
-				break;
-			}
-		}
-		return parentClassLoaderField;
-	}
-
-	protected static Class<?> retrieveBuiltinClassLoaderClass() {
-		Class<?> builtinClassLoaderClass = null;
-		try {
-			builtinClassLoaderClass = Class.forName("jdk.internal.loader.BuiltinClassLoader");
-		} catch (ClassNotFoundException e) {
-			ManagedLogger.Repository.getInstance().logDebug(Sniffer.class, "jdk.internal.loader.BuiltinClassLoader doesn't exist");
-		}
-		return builtinClassLoaderClass;
-	} 
 	
 	@Override
 	public synchronized void addCompiledClass(String className, ByteBuffer byteCode) {
@@ -280,9 +213,12 @@ public class Sniffer extends MemoryClassLoader {
     
     @Override
     public void close() {
-    	if (mainClassLoader != null) {
-    		Thread.currentThread().setContextClassLoader(mainClassLoader);
-    	}    	
+    	if (threadContextClassLoader != null) {
+    		Thread.currentThread().setContextClassLoader(threadContextClassLoader);
+    	}
+    	if (masterClassLoaderRetriever != null) {
+    		masterClassLoaderRetriever.apply(true);
+    	}
     	resources.clear();
     	//Nulling resources will cause crash
     	//resources = null;
@@ -291,7 +227,7 @@ public class Sniffer extends MemoryClassLoader {
     	//javaClasses = null;
     	javaClassFilterAndAdder = null;
     	resourceFilterAndAdder = null;
-    	mainClassLoader = null;
+    	threadContextClassLoader = null;
 		clear();
 		classHelper.unregister(this);
     }
