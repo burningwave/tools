@@ -37,7 +37,7 @@ import org.burningwave.Throwables;
 import org.burningwave.core.assembler.ComponentSupplier;
 import org.burningwave.core.classes.ClassFactory;
 import org.burningwave.core.classes.ClassHelper;
-import org.burningwave.core.classes.Classes;
+import org.burningwave.core.classes.FieldCriteria;
 import org.burningwave.core.classes.MemberFinder;
 import org.burningwave.core.io.ByteBufferOutputStream;
 import org.burningwave.core.io.StreamHelper;
@@ -76,9 +76,8 @@ public class LowLevelObjectsHandler extends org.burningwave.core.jvm.LowLevelObj
 	
 	@SuppressWarnings("restriction")
 	public Function<Boolean, ClassLoader> setAsParentClassLoader(ClassLoader classLoader, ClassLoader futureParent, boolean mantainHierarchy) {
-		Class<?> builtinClassLoaderClass = retrieveBuiltinClassLoaderClass();
-		Field parentClassLoaderField = null;
-		if (builtinClassLoaderClass != null && builtinClassLoaderClass.isAssignableFrom(classLoader.getClass())) {
+		Class<?> classLoaderBaseClass = retrieveBuiltinClassLoaderClass();
+		if (classLoaderBaseClass != null && classLoaderBaseClass.isAssignableFrom(classLoader.getClass())) {
 			try (
 				InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("jdk/internal/loader/ClassLoaderDelegate.class");
 				ByteBufferOutputStream bBOS = new ByteBufferOutputStream()
@@ -88,13 +87,15 @@ public class LowLevelObjectsHandler extends org.burningwave.core.jvm.LowLevelObj
 				Object classLoaderDelegate = LowLevelObjectsHandler.getUnsafe().allocateInstance(classLoaderDelegateClass);
 				classLoaderDelegateClass.getDeclaredMethod("init", ClassLoader.class).invoke(classLoaderDelegate, futureParent);
 				futureParent = (ClassLoader)classLoaderDelegate;
-				parentClassLoaderField = getParentClassLoaderField(builtinClassLoaderClass);
 			} catch (Throwable exc) {
 				throw Throwables.toRuntimeException(exc);
 			}
 		} else {
-			parentClassLoaderField = getParentClassLoaderField(ClassLoader.class);	
+			classLoaderBaseClass = ClassLoader.class;
 		}
+		Field parentClassLoaderField = memberFinder.findOne(
+			FieldCriteria.byScanUpTo(classLoaderBaseClass).name("parent"::equals), classLoaderBaseClass
+		);
 		Long offset = LowLevelObjectsHandler.getUnsafe().objectFieldOffset(parentClassLoaderField);
 		final ClassLoader exParent = (ClassLoader)LowLevelObjectsHandler.getUnsafe().getObject(classLoader, offset);
 		LowLevelObjectsHandler.getUnsafe().putObject(classLoader, offset, futureParent);
@@ -116,14 +117,4 @@ public class LowLevelObjectsHandler extends org.burningwave.core.jvm.LowLevelObj
 		}
 		return child;
 	}
-
-	protected Field getParentClassLoaderField(Class<?> classLoaderClass)  {
-		for (Field field : Classes.getDeclaredFields(classLoaderClass)) {
-			if (field.getName().equals("parent")) {
-				return field;
-			}
-		}
-		return null;
-	}
-
 }
