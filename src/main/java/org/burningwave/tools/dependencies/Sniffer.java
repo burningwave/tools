@@ -50,10 +50,10 @@ import org.burningwave.core.classes.JavaClass;
 import org.burningwave.core.classes.MemoryClassLoader;
 import org.burningwave.core.function.TriConsumer;
 import org.burningwave.core.io.FileScanConfig;
-import org.burningwave.core.io.FileSystemHelper;
-import org.burningwave.core.io.FileSystemHelper.Scan;
-import org.burningwave.tools.jvm.LowLevelObjectsHandler;
 import org.burningwave.core.io.FileSystemItem;
+import org.burningwave.core.io.FileSystemScanner;
+import org.burningwave.core.io.FileSystemScanner.Scan;
+import org.burningwave.tools.jvm.LowLevelObjectsHandler;
 
 
 public class Sniffer extends MemoryClassLoader {
@@ -75,7 +75,7 @@ public class Sniffer extends MemoryClassLoader {
     }
 	
 	protected  Sniffer init(boolean useAsMasterClassLoader,
-		FileSystemHelper fileSystemHelper,
+		FileSystemScanner fileSystemScanner,
 		ClassHelper classHelper,
 		LowLevelObjectsHandler lowLevelObjectsHandler,
 		Collection<String> baseClassPaths,
@@ -92,7 +92,7 @@ public class Sniffer extends MemoryClassLoader {
 		this.resources = new ConcurrentHashMap<>();
 		this.javaClasses = new ConcurrentHashMap<>();
 		logDebug("Scanning paths :\n{}",String.join("\n", baseClassPaths));
-		fileSystemHelper.scan(
+		fileSystemScanner.scan(
 			FileScanConfig.forPaths(baseClassPaths).toScanConfiguration(
 				getMapStorer()
 			)

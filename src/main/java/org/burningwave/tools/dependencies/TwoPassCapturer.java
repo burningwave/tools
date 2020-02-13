@@ -63,6 +63,7 @@ import org.burningwave.core.function.TriConsumer;
 import org.burningwave.core.io.FileScanConfig;
 import org.burningwave.core.io.FileSystemHelper;
 import org.burningwave.core.io.FileSystemItem;
+import org.burningwave.core.io.FileSystemScanner;
 import org.burningwave.core.io.PathHelper;
 import org.burningwave.tools.jvm.LowLevelObjectsHandler;
 
@@ -70,20 +71,20 @@ import org.burningwave.tools.jvm.LowLevelObjectsHandler;
 public class TwoPassCapturer extends Capturer {
 	ClassPathHunter classPathHunter;
 	private TwoPassCapturer(
-		FileSystemHelper fileSystemHelper,
+		FileSystemScanner fileSystemScanner,
 		PathHelper pathHelper,
 		ByteCodeHunter byteCodeHunter,
 		ClassPathHunter classPathHunter,
 		ClassHelper classHelper,
 		LowLevelObjectsHandler lowLevelObjectsHandler
 	) {
-		super(fileSystemHelper, pathHelper, byteCodeHunter, classHelper, lowLevelObjectsHandler);
+		super(fileSystemScanner, pathHelper, byteCodeHunter, classHelper, lowLevelObjectsHandler);
 		this.classPathHunter = classPathHunter;
 	}
 	
 	public static TwoPassCapturer create(ComponentSupplier componentSupplier) {
 		return new TwoPassCapturer(
-			componentSupplier.getFileSystemHelper(),
+			componentSupplier.getFileSystemScanner(),
 			componentSupplier.getPathHelper(),
 			componentSupplier.getByteCodeHunter(),
 			componentSupplier.getClassPathHunter(),
@@ -116,7 +117,7 @@ public class TwoPassCapturer extends Capturer {
 		boolean recursive
 	) {
 		final Result result = new Result(
-			this.fileSystemHelper,
+			this.fileSystemScanner,
 				javaClass -> true,
 				fileSystemItem -> true
 		);
@@ -126,7 +127,7 @@ public class TwoPassCapturer extends Capturer {
 		result.findingTask = CompletableFuture.runAsync(() -> {
 			try (Sniffer resourceSniffer = new Sniffer(null).init(
 					!recursiveFlagWrapper.get(),
-					fileSystemHelper,
+					fileSystemScanner,
 					classHelper,
 					lowLevelObjectsHandler,
 					baseClassPaths,
@@ -349,16 +350,16 @@ public class TwoPassCapturer extends Capturer {
 	}
 	
 	private static class Result extends Capturer.Result {
-		FileSystemHelper fileSystemHelper;
+		FileSystemScanner fileSystemScanner;
 		Function<JavaClass, Boolean> javaClassFilter;
 		Function<FileSystemItem, Boolean> resourceFilter;
 
 		Result(
-			FileSystemHelper fileSystemHelper,
+			FileSystemScanner fileSystemScanner,
 			Function<JavaClass, Boolean> javaClassFilter,
 			Function<FileSystemItem, Boolean> resourceFilter
 		) {
-			this.fileSystemHelper = fileSystemHelper;
+			this.fileSystemScanner = fileSystemScanner;
 			this.javaClassFilter = javaClassFilter;
 			this.resourceFilter = resourceFilter;
 			this.javaClasses = null;
@@ -412,7 +413,7 @@ public class TwoPassCapturer extends Capturer {
 		
 		private Collection<FileSystemItem> retrieveResources() {
 			Collection<FileSystemItem> resources = new CopyOnWriteArrayList<>();
-			fileSystemHelper.scan(
+			fileSystemScanner.scan(
 				FileScanConfig.forPaths(store.getAbsolutePath()).toScanConfiguration(
 					FileSystemItem.getResourceCollector(resources, resourceFilter)
 				)
