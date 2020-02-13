@@ -330,21 +330,6 @@ public class TwoPassCapturer extends Capturer {
 		
 		@Override
 		public Collection<JavaClass> getJavaClasses() {
-			if (this.findingTask.isDone()) {
-				if (this.javaClasses == null) {
-					synchronized (this.toString() + "_" + "javaClasses") {
-						if (this.javaClasses == null) {
-							return this.javaClasses = retrieveJavaClasses();
-						}
-					}
-				}
-				return this.javaClasses;
-			} else {
-				return retrieveJavaClasses();
-			}
-		}
-		
-		private Collection<JavaClass> retrieveJavaClasses() {
 			if (javaClasses != null) {
 				return javaClasses;
 			} else {
