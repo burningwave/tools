@@ -33,7 +33,6 @@ import java.lang.reflect.Field;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import org.burningwave.ManagedLogger;
 import org.burningwave.Throwables;
 import org.burningwave.core.assembler.ComponentSupplier;
 import org.burningwave.core.classes.ClassFactory;
@@ -45,7 +44,6 @@ import org.burningwave.core.io.StreamHelper;
 import org.burningwave.core.io.Streams;
 import org.burningwave.core.iterable.IterableObjectHelper;
 import org.burningwave.core.jvm.JVMChecker;
-import org.burningwave.tools.dependencies.Sniffer;
 
 public class LowLevelObjectsHandler extends org.burningwave.core.jvm.LowLevelObjectsHandler {
 	
@@ -128,14 +126,4 @@ public class LowLevelObjectsHandler extends org.burningwave.core.jvm.LowLevelObj
 		return null;
 	}
 
-	public Class<?> retrieveBuiltinClassLoaderClass() {
-		Class<?> builtinClassLoaderClass = null;
-		try {
-			builtinClassLoaderClass = Class.forName("jdk.internal.loader.BuiltinClassLoader");
-		} catch (ClassNotFoundException e) {
-			ManagedLogger.Repository.getInstance().logDebug(Sniffer.class, "jdk.internal.loader.BuiltinClassLoader doesn't exist");
-		}
-		return builtinClassLoaderClass;
-	} 
-	
 }

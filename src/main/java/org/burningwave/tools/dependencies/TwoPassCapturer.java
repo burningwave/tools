@@ -44,7 +44,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -63,10 +62,9 @@ import org.burningwave.core.classes.hunter.SearchConfig;
 import org.burningwave.core.function.TriConsumer;
 import org.burningwave.core.io.FileScanConfig;
 import org.burningwave.core.io.FileSystemHelper;
-import org.burningwave.core.io.FileSystemHelper.Scan;
-import org.burningwave.tools.jvm.LowLevelObjectsHandler;
 import org.burningwave.core.io.FileSystemItem;
 import org.burningwave.core.io.PathHelper;
+import org.burningwave.tools.jvm.LowLevelObjectsHandler;
 
 
 public class TwoPassCapturer extends Capturer {
@@ -367,15 +365,6 @@ public class TwoPassCapturer extends Capturer {
 			this.resources = null;
 		}
 		
-		Consumer<Scan.ItemContext> getResourceRetriever(Collection<FileSystemItem> resources) {
-			return (scannedItemContext) -> {
-				FileSystemItem fileSystemItem = FileSystemItem.ofPath(scannedItemContext.getScannedItem().getAbsolutePath());
-				if (resourceFilter.apply(fileSystemItem)) {
-					resources.add(fileSystemItem);
-				}
-			};
-		}
-		
 		@Override
 		public Collection<JavaClass> getJavaClasses() {
 			if (this.findingTask.isDone()) {
@@ -398,8 +387,10 @@ public class TwoPassCapturer extends Capturer {
 				resource.getExtension().equals("class")
 			).map(javaClassResource -> 
 				JavaClass.create(javaClassResource.toByteBuffer())
-			).filter(javaClass -> 
-				javaClassFilter.apply(javaClass)
+			).filter(javaClass -> {
+				logDebug(javaClass.getName());
+				return javaClassFilter.apply(javaClass);
+			}
 			).collect(Collectors.toCollection(ConcurrentHashMap::newKeySet));
 		}
 		
@@ -423,7 +414,7 @@ public class TwoPassCapturer extends Capturer {
 			Collection<FileSystemItem> resources = new CopyOnWriteArrayList<>();
 			fileSystemHelper.scan(
 				FileScanConfig.forPaths(store.getAbsolutePath()).toScanConfiguration(
-					getResourceRetriever(resources)
+					FileSystemItem.getResourceCollector(resources, resourceFilter)
 				)
 			);
 			return resources;
