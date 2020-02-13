@@ -369,7 +369,15 @@ public class TwoPassCapturer extends Capturer {
 			Map.Entry<Collection<FileSystemItem>, Collection<JavaClass>> itemsFound = new 
 				AbstractMap.SimpleEntry<>(resources, javaClasses);
 			fileSystemScanner.scan(
-				FileScanConfig.forPaths(store.getAbsolutePath()).toScanConfiguration(
+				FileScanConfig.forPaths(
+					store.getChildren().stream().filter(fileSystemItem ->
+						fileSystemItem.isFolder()
+					).map(fileSystemItem ->
+						fileSystemItem.getAbsolutePath()
+					).collect(
+						Collectors.toSet()
+					)
+				).toScanConfiguration(
 					FileSystemItem.getFilteredConsumerForFileSystemScanner(
 						(fileSystemItem) -> resourceFilter.apply(fileSystemItem),
 						(fileSystemItem) -> {
