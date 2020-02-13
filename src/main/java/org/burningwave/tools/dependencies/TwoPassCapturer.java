@@ -32,18 +32,18 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -54,11 +54,11 @@ import org.burningwave.core.assembler.ComponentContainer;
 import org.burningwave.core.assembler.ComponentSupplier;
 import org.burningwave.core.classes.ClassCriteria;
 import org.burningwave.core.classes.ClassHelper;
-import org.burningwave.core.classes.Classes;
 import org.burningwave.core.classes.JavaClass;
 import org.burningwave.core.classes.hunter.ByteCodeHunter;
 import org.burningwave.core.classes.hunter.ClassPathHunter;
 import org.burningwave.core.classes.hunter.SearchConfig;
+import org.burningwave.core.function.ThrowingSupplier;
 import org.burningwave.core.function.TriConsumer;
 import org.burningwave.core.io.FileScanConfig;
 import org.burningwave.core.io.FileSystemHelper;
@@ -123,10 +123,9 @@ public class TwoPassCapturer extends Capturer {
 		);
 		Collection<String> baseClassPaths = new LinkedHashSet<>(_baseClassPaths);
 		baseClassPaths.addAll(additionalClassPaths);
-		final AtomicBoolean recursiveFlagWrapper = new AtomicBoolean(recursive);
 		result.findingTask = CompletableFuture.runAsync(() -> {
 			try (Sniffer resourceSniffer = new Sniffer(null).init(
-					!recursiveFlagWrapper.get(),
+					!recursive,
 					fileSystemScanner,
 					classHelper,
 					lowLevelObjectsHandler,
@@ -136,57 +135,20 @@ public class TwoPassCapturer extends Capturer {
 					resourceConsumer
 				)
 			) {	
-				if (!recursiveFlagWrapper.get()) {
-					Throwable resourceNotFoundException = null;
-					do {
-						try {
-							mainClass.getMethod("main", String[].class).invoke(null, (Object)new String[]{});
-							resourceNotFoundException = null;
-							if (continueToCaptureAfterSimulatorClassEndExecutionFor != null && continueToCaptureAfterSimulatorClassEndExecutionFor > 0) {
-								Thread.sleep(continueToCaptureAfterSimulatorClassEndExecutionFor);
-							}
-						} catch (Throwable exc) {
-							Collection<String> penultimateNotFoundClasses = resourceNotFoundException != null?
-								Classes.retrieveNames(resourceNotFoundException) : 
-								new LinkedHashSet<>();
-							resourceNotFoundException = exc;
-							Collection<String> currentNotFoundClass = Classes.retrieveNames(resourceNotFoundException);
-							if (!currentNotFoundClass.isEmpty()) {
-								if (!currentNotFoundClass.containsAll(penultimateNotFoundClasses)) {
-									try {
-										for (JavaClass javaClass : resourceSniffer.consumeClasses(currentNotFoundClass)) {
-											logDebug("Searching for {}", currentNotFoundClass);
-											classHelper.loadOrUploadClass(javaClass, resourceSniffer.threadContextClassLoader);
-										}
-									} catch (Throwable exc2) {
-										logError("Exception occurred", exc2);
-										throw Throwables.toRuntimeException(exc2);				
-									}
-								} else {
-									recursiveFlagWrapper.set(true);
-									resourceNotFoundException = null;
-								}
-							} else {
-								logError("Exception occurred", exc);
-								throw Throwables.toRuntimeException(exc);
-							}	
-						}
-					} while (resourceNotFoundException != null);
-					
-				} else {
-					try {
-						Class<?> cls = classHelper.loadOrUploadClass(mainClass, resourceSniffer);
-						cls.getMethod("main", String[].class).invoke(null, (Object)new String[]{});
-						if (continueToCaptureAfterSimulatorClassEndExecutionFor != null && continueToCaptureAfterSimulatorClassEndExecutionFor > 0) {
-							Thread.sleep(continueToCaptureAfterSimulatorClassEndExecutionFor);
-						}
-					} catch (Throwable exc) {
-						logError("Exception occurred", exc);
-						throw Throwables.toRuntimeException(exc);				
+				ThrowingSupplier<Class<?>> mainClassSupplier = recursive ?
+					() -> classHelper.loadOrUploadClass(mainClass, resourceSniffer):
+					() -> mainClass;
+				try {
+					mainClassSupplier.get().getMethod("main", String[].class).invoke(null, (Object)new String[]{});
+					if (continueToCaptureAfterSimulatorClassEndExecutionFor != null && continueToCaptureAfterSimulatorClassEndExecutionFor > 0) {
+						Thread.sleep(continueToCaptureAfterSimulatorClassEndExecutionFor);
 					}
+				} catch (Throwable exc) {
+					logError("Exception occurred", exc);
+					throw Throwables.toRuntimeException(exc);				
 				}
 			}
-			if (recursiveFlagWrapper.get()) {
+			if (recursive) {
 				try {
 					launchExternalCapturer(
 						mainClass, result.getStore().getAbsolutePath(), baseClassPaths, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor
@@ -383,42 +345,58 @@ public class TwoPassCapturer extends Capturer {
 		}
 		
 		private Collection<JavaClass> retrieveJavaClasses() {
-			Collection<FileSystemItem> resources = getResources();
-			return resources.stream().filter(resource -> 
-				resource.getExtension().equals("class")
-			).map(javaClassResource -> 
-				JavaClass.create(javaClassResource.toByteBuffer())
-			).filter(javaClass -> {
-				logDebug(javaClass.getName());
-				return javaClassFilter.apply(javaClass);
+			if (javaClasses != null) {
+				return javaClasses;
+			} else {
+				return loadResourcesAndJavaClasses().getValue();
 			}
-			).collect(Collectors.toCollection(ConcurrentHashMap::newKeySet));
 		}
 		
 		@Override
 		public Collection<FileSystemItem> getResources() {
+			if (resources != null) {
+				return resources;
+			} else {
+				return loadResourcesAndJavaClasses().getKey();
+			}
+		}
+		
+		public Map.Entry<Collection<FileSystemItem>, Collection<JavaClass>> loadResourcesAndJavaClasses() {
+			Map.Entry<Collection<FileSystemItem>, Collection<JavaClass>> itemsFound = null;
 			if (this.findingTask.isDone()) {
 				if (this.resources == null) {
 					synchronized (this.toString() + "_" + "resources") {
 						if (this.resources == null) {
-							return this.resources = retrieveResources();
+							itemsFound = retrieveResources();
+							this.resources = itemsFound.getKey();
+							this.javaClasses = itemsFound.getValue();
+							return itemsFound;
 						}
 					}
 				}
-				return this.resources;
-			} else {
-				return retrieveResources();
-			}			
+			}
+			return retrieveResources();	
 		}
 		
-		private Collection<FileSystemItem> retrieveResources() {
-			Collection<FileSystemItem> resources = new CopyOnWriteArrayList<>();
+		private Map.Entry<Collection<FileSystemItem>, Collection<JavaClass>> retrieveResources() {
+			Collection<FileSystemItem> resources = ConcurrentHashMap.newKeySet();
+			Collection<JavaClass> javaClasses = ConcurrentHashMap.newKeySet();
+			Map.Entry<Collection<FileSystemItem>, Collection<JavaClass>> itemsFound = new 
+				AbstractMap.SimpleEntry<>(resources, javaClasses);
 			fileSystemScanner.scan(
 				FileScanConfig.forPaths(store.getAbsolutePath()).toScanConfiguration(
-					FileSystemItem.getResourceCollector(resources, resourceFilter)
+					FileSystemItem.getFilteredConsumerForFileSystemScanner(
+						(fileSystemItem) -> resourceFilter.apply(fileSystemItem),
+						(fileSystemItem) -> {
+							resources.add(fileSystemItem);
+							if (fileSystemItem.getExtension().equals("class")) {
+								javaClasses.add(JavaClass.create(fileSystemItem.toByteBuffer()));
+							}
+						}
+					)
 				)
 			);
-			return resources;
+			return itemsFound;
 		}
 	}
 	
