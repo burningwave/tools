@@ -57,7 +57,6 @@ import org.burningwave.core.jvm.LowLevelObjectsHandler;
 
 
 public class Sniffer extends MemoryClassLoader {
-	private LowLevelObjectsHandler lowLevelObjectsHandler;
 	private Function<JavaClass, Boolean> javaClassFilterAndAdder;
 	private Function<FileSystemItem, Boolean> resourceFilterAndAdder;
 	private Map<String, FileSystemItem> resources;
@@ -77,14 +76,12 @@ public class Sniffer extends MemoryClassLoader {
 	protected  Sniffer init(boolean useAsMasterClassLoader,
 		FileSystemScanner fileSystemScanner,
 		ClassHelper classHelper,
-		LowLevelObjectsHandler lowLevelObjectsHandler,
 		Collection<String> baseClassPaths,
 		Function<JavaClass, Boolean> javaClassAdder,
 		Function<FileSystemItem, Boolean> resourceAdder,
 		TriConsumer<String, String, ByteBuffer> resourcesConsumer
 	) {
 		this.classHelper = classHelper;
-		this.lowLevelObjectsHandler = lowLevelObjectsHandler;
 		this.threadContextClassLoader = Thread.currentThread().getContextClassLoader();
 		this.javaClassFilterAndAdder = javaClassAdder;
 		this.resourceFilterAndAdder = resourceAdder;
@@ -107,7 +104,7 @@ public class Sniffer extends MemoryClassLoader {
 	
 	public Function<Boolean, ClassLoader> setAsMasterClassLoader(ClassLoader classLoader) {
 		ClassLoader masterClassLoader = getMasterClassLoader(Thread.currentThread().getContextClassLoader());
-		return lowLevelObjectsHandler.setAsParentClassLoader(masterClassLoader, classLoader, false);
+		return LowLevelObjectsHandler.setParent(masterClassLoader, classLoader, false);
 	}
 	
 	public ClassLoader getMasterClassLoader(ClassLoader classLoader) {

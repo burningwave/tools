@@ -65,13 +65,12 @@ public class Capturer implements Component {
 		FileSystemScanner fileSystemScanner,
 		PathHelper pathHelper,
 		ByteCodeHunter byteCodeHunter,
-		ClassHelper classHelper, LowLevelObjectsHandler lowLevelObjectsHandler
+		ClassHelper classHelper
 	) {
 		this.fileSystemScanner = fileSystemScanner;
 		this.byteCodeHunter = byteCodeHunter;
 		this.pathHelper = pathHelper;
 		this.classHelper = classHelper;
-		this.lowLevelObjectsHandler = lowLevelObjectsHandler;
 		this.additionalClassPaths = pathHelper.getPaths(PathHelper.MAIN_CLASS_PATHS_EXTENSION, ADDITIONAL_RESOURCES_PATH);
 		
 	}
@@ -81,8 +80,7 @@ public class Capturer implements Component {
 			componentSupplier.getFileSystemScanner(),
 			componentSupplier.getPathHelper(),
 			componentSupplier.getByteCodeHunter(),
-			componentSupplier.getClassHelper(),
-			componentSupplier.getLowLevelObjectsHandler()
+			componentSupplier.getClassHelper()
 		);
 	}
 	
@@ -119,7 +117,6 @@ public class Capturer implements Component {
 				false,
 				fileSystemScanner,
 				classHelper,
-				lowLevelObjectsHandler,
 				baseClassPaths,
 				javaClassAdder,
 				fileSystemItem -> {
