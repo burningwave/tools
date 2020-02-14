@@ -53,7 +53,7 @@ import org.burningwave.core.io.FileScanConfig;
 import org.burningwave.core.io.FileSystemItem;
 import org.burningwave.core.io.FileSystemScanner;
 import org.burningwave.core.io.FileSystemScanner.Scan;
-import org.burningwave.tools.jvm.LowLevelObjectsHandler;
+import org.burningwave.core.jvm.LowLevelObjectsHandler;
 
 
 public class Sniffer extends MemoryClassLoader {
@@ -64,7 +64,7 @@ public class Sniffer extends MemoryClassLoader {
 	private Map<String, JavaClass> javaClasses;
 	private TriConsumer<String, String, ByteBuffer> resourcesConsumer;
 	ClassLoader threadContextClassLoader;
-	Function<Boolean, ClassLoader> masterClassLoaderRetriever;
+	Function<Boolean, ClassLoader> masterClassLoaderRetrieverAndResetter;
 	
 	public Sniffer(ClassLoader parent) {
 		super(parent, null);
@@ -98,11 +98,24 @@ public class Sniffer extends MemoryClassLoader {
 			)
 		);
 		if (useAsMasterClassLoader) {			
-			masterClassLoaderRetriever = this.lowLevelObjectsHandler.setAsMasterClassLoader(this);
+			masterClassLoaderRetrieverAndResetter = setAsMasterClassLoader(this);
 		} else {
 			Thread.currentThread().setContextClassLoader(this);
 		}
 		return this;
+	}
+	
+	public Function<Boolean, ClassLoader> setAsMasterClassLoader(ClassLoader classLoader) {
+		ClassLoader masterClassLoader = getMasterClassLoader(Thread.currentThread().getContextClassLoader());
+		return lowLevelObjectsHandler.setAsParentClassLoader(masterClassLoader, classLoader, false);
+	}
+	
+	public ClassLoader getMasterClassLoader(ClassLoader classLoader) {
+		ClassLoader child = classLoader;
+		while (child.getParent() != null) {
+			child = child.getParent();
+		}
+		return child;
 	}
 	
 	@Override
@@ -216,8 +229,8 @@ public class Sniffer extends MemoryClassLoader {
     	if (threadContextClassLoader != null) {
     		Thread.currentThread().setContextClassLoader(threadContextClassLoader);
     	}
-    	if (masterClassLoaderRetriever != null) {
-    		masterClassLoaderRetriever.apply(true);
+    	if (masterClassLoaderRetrieverAndResetter != null) {
+    		masterClassLoaderRetrieverAndResetter.apply(true);
     	}
     	resources.clear();
     	//Nulling resources will cause crash

@@ -65,7 +65,7 @@ import org.burningwave.core.io.FileSystemHelper;
 import org.burningwave.core.io.FileSystemItem;
 import org.burningwave.core.io.FileSystemScanner;
 import org.burningwave.core.io.PathHelper;
-import org.burningwave.tools.jvm.LowLevelObjectsHandler;
+import org.burningwave.core.jvm.LowLevelObjectsHandler;
 
 
 public class TwoPassCapturer extends Capturer {
@@ -89,7 +89,7 @@ public class TwoPassCapturer extends Capturer {
 			componentSupplier.getByteCodeHunter(),
 			componentSupplier.getClassPathHunter(),
 			componentSupplier.getClassHelper(),
-			LowLevelObjectsHandler.create(componentSupplier)
+			componentSupplier.getLowLevelObjectsHandler()
 		);
 	}
 	
@@ -208,10 +208,10 @@ public class TwoPassCapturer extends Capturer {
 		String javaExecutablePath = System.getProperty("java.home") + "/bin/java";
 		List<String> command = new LinkedList<String>();
         command.add(Strings.Paths.clean(javaExecutablePath));
-        if (lowLevelObjectsHandler.retrieveBuiltinClassLoaderClass() != null) {
-        	command.add("--add-exports");
-        	command.add("java.base/jdk.internal.loader=ALL-UNNAMED");
-        }
+//        if (LowLevelObjectsHandler.retrieveBuiltinClassLoaderClass() != null) {
+//        	command.add("--add-exports");
+//        	command.add("java.base/jdk.internal.loader=ALL-UNNAMED");
+//        }
         command.add("-classpath");
         StringBuffer generatedClassPath = new StringBuffer("\"");
         Collection<String> classPathsToBeScanned = new LinkedHashSet<>(baseClassPaths);

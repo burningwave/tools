@@ -49,7 +49,7 @@ import org.burningwave.core.io.FileSystemItem;
 import org.burningwave.core.io.FileSystemScanner;
 import org.burningwave.core.io.PathHelper;
 import org.burningwave.core.io.Streams;
-import org.burningwave.tools.jvm.LowLevelObjectsHandler;
+import org.burningwave.core.jvm.LowLevelObjectsHandler;
 
 
 public class Capturer implements Component {
@@ -82,7 +82,7 @@ public class Capturer implements Component {
 			componentSupplier.getPathHelper(),
 			componentSupplier.getByteCodeHunter(),
 			componentSupplier.getClassHelper(),
-			LowLevelObjectsHandler.create(componentSupplier)
+			componentSupplier.getLowLevelObjectsHandler()
 		);
 	}
 	
