@@ -12,7 +12,7 @@ public class CapturerTest extends BaseTest {
 		testNotEmpty(() -> {
 			Result dependencies = Capturer.getInstance().captureAndStore(
 				CapturerTest.class, 
-				System.getProperty("user.home") + "/Desktop/bw-tests",
+				System.getProperty("user.home") + "/Desktop/bw-tests/dependencies",
 				false, 0L
 			);
 			dependencies.waitForTaskEnding();

@@ -12,7 +12,7 @@ public class TwoPassCapturerTest extends BaseTest {
 		testNotEmpty(() -> {
 			Result result = TwoPassCapturer.getInstance().captureAndStore(
 				TwoPassCapturerTest.class, 
-				System.getProperty("user.home") + "/Desktop/bw-tests",
+				System.getProperty("user.home") + "/Desktop/bw-tests/dependencies",
 				false, 0L
 			);
 			result.waitForTaskEnding();
