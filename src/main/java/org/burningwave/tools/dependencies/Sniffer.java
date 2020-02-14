@@ -239,6 +239,6 @@ public class Sniffer extends MemoryClassLoader {
     	resourceFilterAndAdder = null;
     	threadContextClassLoader = null;
 		clear();
-		classHelper.unregister(this);
+		unregister();
     }
 }
