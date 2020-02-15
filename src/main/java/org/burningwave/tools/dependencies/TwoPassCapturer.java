@@ -269,7 +269,8 @@ public class TwoPassCapturer extends Capturer {
 		} catch (Throwable exc) {
 			ManagedLogger.Repository.getInstance().logError(TwoPassCapturer.class, "Exception occurred", exc);
 		} finally {
-			logReceivedParameters(args, 0);	
+			logReceivedParameters(args, 0);
+			createExecutor(args[2], args[1]);
 		}
 	}
 	
@@ -290,11 +291,6 @@ public class TwoPassCapturer extends Capturer {
 			
 			Files.write(Paths.get(args[2] + "\\params-" + UUID.randomUUID().toString() + ".txt"), logs.getBytes());
 			ManagedLogger.Repository.getInstance().logDebug(TwoPassCapturer.class, "\n\n" + logs + "\n\n");
-			String externalExecutor = FileSystemItem.ofPath(System.getProperty("java.home")).getAbsolutePath() + "/bin/java -classpath \"" +
-				String.join(";",	
-					FileSystemItem.ofPath(args[2]).getChildren().stream().map(fileSystemItem -> fileSystemItem.getAbsolutePath()).collect(Collectors.toList())
-				) + "\" " + args[1];
-			Files.write(Paths.get(args[2] + "\\executor-" + UUID.randomUUID().toString() + ".cmd"), externalExecutor.getBytes());
 			if (wait > 0) {
 				Thread.sleep(wait);
 			}

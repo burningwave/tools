@@ -29,8 +29,11 @@
 package org.burningwave.tools.dependencies;
 
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
@@ -133,6 +136,8 @@ public class Capturer implements Component {
 					}
 				} catch (Throwable exc) {
 					throw Throwables.toRuntimeException(exc);				
+				} finally {
+					createExecutor(result.getStore().getAbsolutePath(), mainClass.getName());
 				}
 			}
 		});
@@ -194,7 +199,19 @@ public class Capturer implements Component {
 		temp = temp.substring(0, temp.lastIndexOf("["));
 		return path.substring(temp.lastIndexOf("["));
 	}
-		
+	
+	static void createExecutor(String destinationPath, String mainClassName) {
+		try {
+			String externalExecutor = FileSystemItem.ofPath(System.getProperty("java.home")).getAbsolutePath() + "/bin/java -classpath \"" +
+				String.join(";",	
+					FileSystemItem.ofPath(destinationPath).getChildren().stream().map(fileSystemItem -> fileSystemItem.getAbsolutePath()).collect(Collectors.toList())
+				) + "\" " + mainClassName;
+			Files.write(Paths.get(destinationPath + "\\executor-" + UUID.randomUUID().toString() + ".cmd"), externalExecutor.getBytes());
+		} catch (Throwable e) {
+			e.printStackTrace();
+		}
+	}
+	
 	public static class Result implements Component {
 		CompletableFuture<Void> findingTask;
 		Collection<FileSystemItem> resources;
