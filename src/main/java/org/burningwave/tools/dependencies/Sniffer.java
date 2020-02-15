@@ -46,6 +46,7 @@ import java.util.stream.Collectors;
 
 import org.burningwave.core.Strings;
 import org.burningwave.core.classes.ClassHelper;
+import org.burningwave.core.classes.Classes;
 import org.burningwave.core.classes.JavaClass;
 import org.burningwave.core.classes.MemoryClassLoader;
 import org.burningwave.core.function.TriConsumer;
@@ -53,7 +54,6 @@ import org.burningwave.core.io.FileScanConfig;
 import org.burningwave.core.io.FileSystemItem;
 import org.burningwave.core.io.FileSystemScanner;
 import org.burningwave.core.io.FileSystemScanner.Scan;
-import org.burningwave.core.jvm.LowLevelObjectsHandler;
 
 
 public class Sniffer extends MemoryClassLoader {
@@ -104,7 +104,7 @@ public class Sniffer extends MemoryClassLoader {
 	
 	public Function<Boolean, ClassLoader> setAsMasterClassLoader(ClassLoader classLoader) {
 		ClassLoader masterClassLoader = getMasterClassLoader(Thread.currentThread().getContextClassLoader());
-		return LowLevelObjectsHandler.setParent(masterClassLoader, classLoader, false);
+		return Classes.setAsParent(masterClassLoader, classLoader, false);
 	}
 	
 	public ClassLoader getMasterClassLoader(ClassLoader classLoader) {
