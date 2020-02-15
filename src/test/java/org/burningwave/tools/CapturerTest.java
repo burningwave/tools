@@ -11,7 +11,7 @@ public class CapturerTest extends BaseTest {
 	public void storeDependenciesTestOne() {
 		testNotEmpty(() -> {
 			Result dependencies = Capturer.getInstance().captureAndStore(
-				CapturerTest.class, 
+				"org.burningwave.tools.CapturerTest", 
 				System.getProperty("user.home") + "/Desktop/bw-tests/dependencies",
 				false, 0L
 			);

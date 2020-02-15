@@ -11,7 +11,7 @@ public class TwoPassCapturerTest extends BaseTest {
 	public void storeDependenciesTestOne() {
 		testNotEmpty(() -> {
 			Result result = TwoPassCapturer.getInstance().captureAndStore(
-				TwoPassCapturerTest.class, 
+				"org.burningwave.tools.TwoPassCapturerTest", 
 				System.getProperty("user.home") + "/Desktop/bw-tests/dependencies",
 				false, 0L
 			);
