@@ -93,7 +93,7 @@ public class Capturer implements Component {
 	
 	@SuppressWarnings("resource")
 	public Result capture(
-		Class<?> mainClass,
+		String mainClassName,
 		Collection<String> _baseClassPaths,
 		TriConsumer<String, String, ByteBuffer> resourceConsumer,
 		boolean includeMainClass,
@@ -108,7 +108,7 @@ public class Capturer implements Component {
 				return true;
 			}
 			:(javaClass) -> {
-				if (!javaClass.getName().equals(mainClass.getName())) {
+				if (!javaClass.getName().equals(mainClassName)) {
 					result.put(javaClass);
 					return true;
 				}
@@ -129,7 +129,7 @@ public class Capturer implements Component {
 				resourceConsumer)
 			) {
 				try {
-					cls = classHelper.loadOrUploadClass(mainClass, resourceSniffer);
+					cls = Class.forName(mainClassName, false, resourceSniffer);
 					cls.getMethod("main", String[].class).invoke(null, (Object)new String[]{});
 					if (continueToCaptureAfterSimulatorClassEndExecutionFor != null && continueToCaptureAfterSimulatorClassEndExecutionFor > 0) {
 						Thread.sleep(continueToCaptureAfterSimulatorClassEndExecutionFor);
@@ -137,7 +137,7 @@ public class Capturer implements Component {
 				} catch (Throwable exc) {
 					throw Throwables.toRuntimeException(exc);				
 				} finally {
-					createExecutor(result.getStore().getAbsolutePath(), mainClass.getName());
+					createExecutor(result.getStore().getAbsolutePath(), mainClassName);
 				}
 			}
 		});
@@ -145,23 +145,23 @@ public class Capturer implements Component {
 	}
 	
 	public Result captureAndStore(
-		Class<?> mainClass,
+		String mainClassName,
 		String destinationPath,
 		boolean includeMainClass,
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) {
-		return captureAndStore(mainClass, pathHelper.getMainClassPaths(), destinationPath, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor);
+		return captureAndStore(mainClassName, pathHelper.getMainClassPaths(), destinationPath, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor);
 	}
 	
 	public Result captureAndStore(
-		Class<?> mainClass,
+		String mainClassName,
 		Collection<String> baseClassPaths,
 		String destinationPath,
 		boolean includeMainClass,
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) {
 		Result dependencies = capture(
-			mainClass,
+			mainClassName,
 			baseClassPaths, 
 			getStoreFunction(destinationPath),
 			includeMainClass,

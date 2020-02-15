@@ -96,17 +96,17 @@ public class TwoPassCapturer extends Capturer {
 	
 	@Override
 	public Result capture(
-		Class<?> mainClass,
+		String mainClassName,
 		Collection<String> baseClassPaths,
 		TriConsumer<String, String, ByteBuffer> resourceConsumer,
 		boolean includeMainClass,
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) {
-		return capture(mainClass, baseClassPaths, resourceConsumer, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor, true);
+		return capture(mainClassName, baseClassPaths, resourceConsumer, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor, true);
 	}
 	
 	public Result capture(
-		Class<?> mainClass,
+		String mainClassName,
 		Collection<String> _baseClassPaths,
 		TriConsumer<String, String, ByteBuffer> resourceConsumer,
 		boolean includeMainClass,
@@ -132,8 +132,8 @@ public class TwoPassCapturer extends Capturer {
 				)
 			) {	
 				ThrowingSupplier<Class<?>> mainClassSupplier = recursive ?
-					() -> classHelper.loadOrUploadClass(mainClass, resourceSniffer):
-					() -> mainClass;
+					() -> Class.forName(mainClassName, false, resourceSniffer):
+					() -> Class.forName(mainClassName);
 				try {
 					mainClassSupplier.get().getMethod("main", String[].class).invoke(null, (Object)new String[]{});
 					if (continueToCaptureAfterSimulatorClassEndExecutionFor != null && continueToCaptureAfterSimulatorClassEndExecutionFor > 0) {
@@ -147,14 +147,14 @@ public class TwoPassCapturer extends Capturer {
 			if (recursive) {
 				try {
 					launchExternalCapturer(
-						mainClass, result.getStore().getAbsolutePath(), baseClassPaths, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor
+						mainClassName, result.getStore().getAbsolutePath(), baseClassPaths, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor
 					);
 				} catch (IOException | InterruptedException exc) {
 					throw Throwables.toRuntimeException(exc);
 				}
 			}
 			if (recursive && !includeMainClass) {	
-				JavaClass mainJavaClass = result.getJavaClass(javaClass -> javaClass.getName().equals(mainClass.getName()));
+				JavaClass mainJavaClass = result.getJavaClass(javaClass -> javaClass.getName().equals(mainClassName));
 				Collection<FileSystemItem> mainJavaClassesFiles =
 					result.getResources(fileSystemItem -> 
 						fileSystemItem.getAbsolutePath().endsWith(mainJavaClass.getPath())
@@ -178,7 +178,7 @@ public class TwoPassCapturer extends Capturer {
 	}
 	
 	private Result captureAndStore(
-		Class<?> mainClass,
+		String mainClassName,
 		Collection<String> baseClassPaths,
 		String destinationPath,
 		boolean includeMainClass,
@@ -186,7 +186,7 @@ public class TwoPassCapturer extends Capturer {
 		boolean recursive
 	) {
 		Result dependencies = capture(
-			mainClass,
+			mainClassName,
 			baseClassPaths,
 			getStoreFunction(destinationPath),
 			includeMainClass,
@@ -198,7 +198,7 @@ public class TwoPassCapturer extends Capturer {
 	}
 	
 	private void launchExternalCapturer(
-		Class<?> mainClass, String destinationPath, Collection<String> baseClassPaths, boolean includeMainClass,
+		String mainClassName, String destinationPath, Collection<String> baseClassPaths, boolean includeMainClass,
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) throws IOException, InterruptedException {
 		String javaExecutablePath = System.getProperty("java.home") + "/bin/java";
@@ -244,7 +244,7 @@ public class TwoPassCapturer extends Capturer {
         }
         classPathsToBeScannedParam += "\"";
         command.add(classPathsToBeScannedParam);
-        command.add(mainClass.getName());
+        command.add(mainClassName);
         command.add("\"" + destinationPath + "\"");
         command.add(Boolean.valueOf(includeMainClass).toString());
         command.add(continueToCaptureAfterSimulatorClassEndExecutionFor.toString());
@@ -262,9 +262,8 @@ public class TwoPassCapturer extends Capturer {
 			String destinationPath = args[2];
 			boolean includeMainClass = Boolean.valueOf(args[3]);
 			long continueToCaptureAfterSimulatorClassEndExecutionFor = Long.valueOf(args[4]);
-			Class<?> mainClass = Class.forName(mainClassName);
 			TwoPassCapturer.getInstance().captureAndStore(
-				mainClass, paths, destinationPath, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor, false
+				mainClassName, paths, destinationPath, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor, false
 			).waitForTaskEnding();
 		} catch (Throwable exc) {
 			ManagedLogger.Repository.getInstance().logError(TwoPassCapturer.class, "Exception occurred", exc);
