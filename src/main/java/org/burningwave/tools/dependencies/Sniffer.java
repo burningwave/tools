@@ -66,7 +66,7 @@ public class Sniffer extends MemoryClassLoader {
 	Function<Boolean, ClassLoader> masterClassLoaderRetrieverAndResetter;
 	
 	public Sniffer(ClassLoader parent) {
-		super(parent, null);
+		super(parent, Classes.getInstance(), null);
 	}
 	
 	static {
@@ -104,7 +104,7 @@ public class Sniffer extends MemoryClassLoader {
 	
 	public Function<Boolean, ClassLoader> setAsMasterClassLoader(ClassLoader classLoader) {
 		ClassLoader masterClassLoader = getMasterClassLoader(Thread.currentThread().getContextClassLoader());
-		return Classes.setAsParent(masterClassLoader, classLoader, false);
+		return classes.setAsParent(masterClassLoader, classLoader, false);
 	}
 	
 	public ClassLoader getMasterClassLoader(ClassLoader classLoader) {
