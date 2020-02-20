@@ -135,7 +135,7 @@ public class TwoPassCapturer extends Capturer {
 					resourceConsumer
 				)
 			) {	
-				ThrowingSupplier<Class<?>> mainClassSupplier = recursive ?
+				ThrowingSupplier<Class<?>, ClassNotFoundException> mainClassSupplier = recursive ?
 					() -> Class.forName(mainClassName, false, resourceSniffer):
 					() -> Class.forName(mainClassName);
 				try {
