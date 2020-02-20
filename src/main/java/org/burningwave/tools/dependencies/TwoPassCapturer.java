@@ -236,7 +236,7 @@ public class TwoPassCapturer extends Capturer {
 	        	generatedClassPath.append(
 	        		classPath.getAbsolutePath()
 	        	);
-	        	classPathsToBeScanned.remove(classPath.getAbsolutePath());
+	        	//classPathsToBeScanned.remove(classPath.getAbsolutePath());
         	}
         }
         generatedClassPath.append("\"");
