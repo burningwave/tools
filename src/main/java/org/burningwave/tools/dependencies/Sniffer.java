@@ -99,13 +99,17 @@ public class Sniffer extends MemoryClassLoader {
 		if (useAsMasterClassLoader) {			
 			masterClassLoaderRetrieverAndResetter = setAsMasterClassLoader(this);
 			final ClassLoader previousClassLoader = masterClassLoaderRetrieverAndResetter.apply(false);
-			classLoadingFunction = (className, resolve) -> {
-				if (className.startsWith("org.burningwave")) {
-		    		return previousClassLoader.loadClass(className);
-		    	} else {	
-		    		return super.loadClass(className, resolve);
-		    	}
-			};
+			if (previousClassLoader != null) {
+				classLoadingFunction = (className, resolve) -> {
+					if (className.startsWith("org.burningwave")) {
+			    		return previousClassLoader.loadClass(className);
+			    	} else {	
+			    		return super.loadClass(className, resolve);
+			    	}
+				};
+			} else {
+				classLoadingFunction = super::loadClass;
+			}
 		} else {
 			Thread.currentThread().setContextClassLoader(this);
 			classLoadingFunction = super::loadClass;
