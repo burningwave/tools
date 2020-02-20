@@ -213,7 +213,7 @@
 		<url>https://github.com/burningwave/tools</url>
 		<connection>scm:git:git://github.com/burningwave/tools.git</connection>
 		<developerConnection>scm:git:git@github.com:burningwave/tools.git</developerConnection>
-		<tag>tools-0.0.3</tag>
+		<tag>HEAD</tag>
 	</scm>
 
 	<profiles>
