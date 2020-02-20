@@ -162,7 +162,8 @@ public class Capturer implements Component {
 		//Exclude the runtime jdk library
 		final String javaHome = Strings.Paths.clean(System.getProperty("java.home")) + "/";
 		BiPredicate<String, FileSystemItem> storePredicate = (resourceAbsolutePath, fileSystemItem) -> 
-			!resourceAbsolutePath.startsWith(javaHome) && !fileSystemItem.exists();
+			!resourceAbsolutePath.startsWith(javaHome) && 
+			!fileSystemItem.exists();
 		return (resourceAbsolutePath, resourceRelativePath, resourceContent) -> {
 			String finalPath = getStoreEntryBasePath(destinationPath, resourceAbsolutePath, resourceRelativePath);
 			FileSystemItem fileSystemItem = FileSystemItem.ofPath(finalPath + "/" + resourceRelativePath);

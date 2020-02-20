@@ -177,13 +177,23 @@ public class Sniffer extends MemoryClassLoader {
 	
 	@Override
     protected Class<?> loadClass(String className, boolean resolve) throws ClassNotFoundException {
-		Class<?> cls = super.loadClass(className, resolve);
+		Class<?> cls = null;
+    	if (className.startsWith("org.burningwave") && masterClassLoaderRetrieverAndResetter != null) {
+    		cls = masterClassLoaderRetrieverAndResetter.apply(false).loadClass(className);
+    	} else {	
+    		cls = super.loadClass(className, resolve);
+    	}
     	consumeClass(className);
     	return cls;
     }
 	
     public Class<?> _loadClass(String className, boolean resolve) throws ClassNotFoundException {
-		Class<?> cls = super.loadClass(className, resolve);
+    	Class<?> cls = null;
+    	if (className.startsWith("org.burningwave") && masterClassLoaderRetrieverAndResetter != null) {
+    		cls = masterClassLoaderRetrieverAndResetter.apply(false).loadClass(className);
+    	} else {	
+    		cls = super.loadClass(className, resolve);
+    	}
     	consumeClass(className);
     	return cls;
     }
