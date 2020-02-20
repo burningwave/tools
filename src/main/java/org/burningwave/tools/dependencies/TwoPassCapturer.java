@@ -65,6 +65,7 @@ import org.burningwave.core.io.FileSystemHelper;
 import org.burningwave.core.io.FileSystemItem;
 import org.burningwave.core.io.FileSystemScanner;
 import org.burningwave.core.io.PathHelper;
+import org.burningwave.core.jvm.LowLevelObjectsHandler;
 
 
 public class TwoPassCapturer extends Capturer {
@@ -75,9 +76,10 @@ public class TwoPassCapturer extends Capturer {
 		PathHelper pathHelper,
 		ByteCodeHunter byteCodeHunter,
 		ClassPathHunter classPathHunter,
-		ClassHelper classHelper
+		ClassHelper classHelper,
+		LowLevelObjectsHandler lowLevelObjectsHandler
 	) {
-		super(fileSystemScanner, byteCodeHunter, classHelper);
+		super(fileSystemScanner, byteCodeHunter, classHelper, lowLevelObjectsHandler);
 		this.pathHelper = pathHelper;
 		this.classPathHunter = classPathHunter;
 	}
@@ -88,7 +90,8 @@ public class TwoPassCapturer extends Capturer {
 			componentSupplier.getPathHelper(),
 			componentSupplier.getByteCodeHunter(),
 			componentSupplier.getClassPathHunter(),
-			componentSupplier.getClassHelper()
+			componentSupplier.getClassHelper(),
+			componentSupplier.getLowLevelObjectsHandler()
 		);
 	}
 	
@@ -115,6 +118,7 @@ public class TwoPassCapturer extends Capturer {
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor,
 		boolean recursive
 	) {
+		lowLevelObjectsHandler.disableIllegalAccessLogger();
 		final Result result = new Result(
 			this.fileSystemScanner,
 				javaClass -> true,
@@ -173,6 +177,7 @@ public class TwoPassCapturer extends Capturer {
 					}
 				}
 			}
+			lowLevelObjectsHandler.enableIllegalAccessLogger();
 		});
 		return result;
 	}

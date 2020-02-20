@@ -63,18 +63,21 @@ public class Capturer implements Component {
 	Capturer(
 		FileSystemScanner fileSystemScanner,
 		ByteCodeHunter byteCodeHunter,
-		ClassHelper classHelper
+		ClassHelper classHelper,
+		LowLevelObjectsHandler lowLevelObjectsHandler
 	) {
 		this.fileSystemScanner = fileSystemScanner;
 		this.byteCodeHunter = byteCodeHunter;
 		this.classHelper = classHelper;
+		this.lowLevelObjectsHandler = lowLevelObjectsHandler;
 	}
 	
 	public static Capturer create(ComponentSupplier componentSupplier) {
 		return new Capturer(
 			componentSupplier.getFileSystemScanner(),
 			componentSupplier.getByteCodeHunter(),
-			componentSupplier.getClassHelper()
+			componentSupplier.getClassHelper(),
+			componentSupplier.getLowLevelObjectsHandler()
 		);
 	}
 	
@@ -90,6 +93,7 @@ public class Capturer implements Component {
 		boolean includeMainClass,
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) {	
+		lowLevelObjectsHandler.disableIllegalAccessLogger();
 		final Result result = new Result();
 		Function<JavaClass, Boolean> javaClassAdder = includeMainClass ? 
 			(javaClass) -> {
@@ -129,6 +133,7 @@ public class Capturer implements Component {
 					createExecutor(result.getStore().getAbsolutePath(), mainClassName);
 				}
 			}
+			lowLevelObjectsHandler.enableIllegalAccessLogger();
 		});
 		return result;
 	}
