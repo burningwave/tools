@@ -49,6 +49,7 @@ import org.burningwave.core.classes.ClassHelper;
 import org.burningwave.core.classes.Classes;
 import org.burningwave.core.classes.JavaClass;
 import org.burningwave.core.classes.MemoryClassLoader;
+import org.burningwave.core.function.ThrowingBiFunction;
 import org.burningwave.core.function.TriConsumer;
 import org.burningwave.core.io.FileScanConfig;
 import org.burningwave.core.io.FileSystemItem;
@@ -64,6 +65,7 @@ public class Sniffer extends MemoryClassLoader {
 	private TriConsumer<String, String, ByteBuffer> resourcesConsumer;
 	ClassLoader threadContextClassLoader;
 	Function<Boolean, ClassLoader> masterClassLoaderRetrieverAndResetter;
+	ThrowingBiFunction<String, Boolean, Class<?>, ClassNotFoundException> classLoadingFunction;
 	
 	public Sniffer(ClassLoader parent) {
 		super(parent, Classes.getInstance(), null);
@@ -96,8 +98,17 @@ public class Sniffer extends MemoryClassLoader {
 		);
 		if (useAsMasterClassLoader) {			
 			masterClassLoaderRetrieverAndResetter = setAsMasterClassLoader(this);
+			final ClassLoader previousClassLoader = masterClassLoaderRetrieverAndResetter.apply(false);
+			classLoadingFunction = (className, resolve) -> {
+				if (className.startsWith("org.burningwave")) {
+		    		return previousClassLoader.loadClass(className);
+		    	} else {	
+		    		return super.loadClass(className, resolve);
+		    	}
+			};
 		} else {
 			Thread.currentThread().setContextClassLoader(this);
+			classLoadingFunction = super::loadClass;
 		}
 		return this;
 	}
@@ -177,23 +188,13 @@ public class Sniffer extends MemoryClassLoader {
 	
 	@Override
     protected Class<?> loadClass(String className, boolean resolve) throws ClassNotFoundException {
-		Class<?> cls = null;
-    	if (className.startsWith("org.burningwave") && masterClassLoaderRetrieverAndResetter != null) {
-    		cls = masterClassLoaderRetrieverAndResetter.apply(false).loadClass(className);
-    	} else {	
-    		cls = super.loadClass(className, resolve);
-    	}
+		Class<?> cls = classLoadingFunction.apply(className, resolve);
     	consumeClass(className);
     	return cls;
     }
 	
     public Class<?> _loadClass(String className, boolean resolve) throws ClassNotFoundException {
-    	Class<?> cls = null;
-    	if (className.startsWith("org.burningwave") && masterClassLoaderRetrieverAndResetter != null) {
-    		cls = masterClassLoaderRetrieverAndResetter.apply(false).loadClass(className);
-    	} else {	
-    		cls = super.loadClass(className, resolve);
-    	}
+    	Class<?> cls = classLoadingFunction.apply(className, resolve);
     	consumeClass(className);
     	return cls;
     }
@@ -248,6 +249,7 @@ public class Sniffer extends MemoryClassLoader {
     	javaClassFilterAndAdder = null;
     	resourceFilterAndAdder = null;
     	threadContextClassLoader = null;
+    	classLoadingFunction = null;
 		clear();
 		unregister();
     }
