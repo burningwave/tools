@@ -53,7 +53,7 @@ import org.burningwave.core.Strings;
 import org.burningwave.core.assembler.ComponentContainer;
 import org.burningwave.core.assembler.ComponentSupplier;
 import org.burningwave.core.classes.ClassCriteria;
-import org.burningwave.core.classes.ClassHelper;
+import org.burningwave.core.classes.Classes;
 import org.burningwave.core.classes.JavaClass;
 import org.burningwave.core.classes.hunter.ByteCodeHunter;
 import org.burningwave.core.classes.hunter.ClassPathHunter;
@@ -76,10 +76,10 @@ public class TwoPassCapturer extends Capturer {
 		PathHelper pathHelper,
 		ByteCodeHunter byteCodeHunter,
 		ClassPathHunter classPathHunter,
-		ClassHelper classHelper,
+		Classes.Loaders classesLoaders,
 		LowLevelObjectsHandler lowLevelObjectsHandler
 	) {
-		super(fileSystemScanner, byteCodeHunter, classHelper, lowLevelObjectsHandler);
+		super(fileSystemScanner, byteCodeHunter, classesLoaders, lowLevelObjectsHandler);
 		this.pathHelper = pathHelper;
 		this.classPathHunter = classPathHunter;
 	}
@@ -90,7 +90,7 @@ public class TwoPassCapturer extends Capturer {
 			componentSupplier.getPathHelper(),
 			componentSupplier.getByteCodeHunter(),
 			componentSupplier.getClassPathHunter(),
-			componentSupplier.getClassHelper(),
+			componentSupplier.getClassesLoaders(),
 			componentSupplier.getLowLevelObjectsHandler()
 		);
 	}
@@ -128,7 +128,7 @@ public class TwoPassCapturer extends Capturer {
 			try (Sniffer resourceSniffer = new Sniffer(null).init(
 					!recursive,
 					fileSystemScanner,
-					classHelper,
+					classesLoaders,
 					baseClassPaths,
 					result.javaClassFilter,
 					result.resourceFilter,

@@ -45,7 +45,7 @@ import org.burningwave.core.Component;
 import org.burningwave.core.Strings;
 import org.burningwave.core.assembler.ComponentContainer;
 import org.burningwave.core.assembler.ComponentSupplier;
-import org.burningwave.core.classes.ClassHelper;
+import org.burningwave.core.classes.Classes;
 import org.burningwave.core.classes.JavaClass;
 import org.burningwave.core.classes.hunter.ByteCodeHunter;
 import org.burningwave.core.function.TriConsumer;
@@ -58,19 +58,19 @@ import org.burningwave.core.jvm.LowLevelObjectsHandler;
 public class Capturer implements Component {
 	protected static final String ADDITIONAL_RESOURCES_PATH = "dependencies-capturer.additional-resources-path";
 	ByteCodeHunter byteCodeHunter;
-	ClassHelper classHelper;
+	Classes.Loaders classesLoaders;
 	FileSystemScanner fileSystemScanner;
 	LowLevelObjectsHandler lowLevelObjectsHandler;
 	
 	Capturer(
 		FileSystemScanner fileSystemScanner,
 		ByteCodeHunter byteCodeHunter,
-		ClassHelper classHelper,
+		Classes.Loaders sourceCodeHandler,
 		LowLevelObjectsHandler lowLevelObjectsHandler
 	) {
 		this.fileSystemScanner = fileSystemScanner;
 		this.byteCodeHunter = byteCodeHunter;
-		this.classHelper = classHelper;
+		this.classesLoaders = sourceCodeHandler;
 		this.lowLevelObjectsHandler = lowLevelObjectsHandler;
 	}
 	
@@ -78,7 +78,7 @@ public class Capturer implements Component {
 		return new Capturer(
 			componentSupplier.getFileSystemScanner(),
 			componentSupplier.getByteCodeHunter(),
-			componentSupplier.getClassHelper(),
+			componentSupplier.getClassesLoaders(),
 			componentSupplier.getLowLevelObjectsHandler()
 		);
 	}
@@ -114,7 +114,7 @@ public class Capturer implements Component {
 			try (Sniffer resourceSniffer = new Sniffer(null).init(
 				false,
 				fileSystemScanner,
-				classHelper,
+				classesLoaders,
 				baseClassPaths,
 				javaClassAdder,
 				fileSystemItem -> {

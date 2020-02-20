@@ -45,7 +45,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.burningwave.core.Strings;
-import org.burningwave.core.classes.ClassHelper;
 import org.burningwave.core.classes.Classes;
 import org.burningwave.core.classes.JavaClass;
 import org.burningwave.core.classes.MemoryClassLoader;
@@ -77,13 +76,13 @@ public class Sniffer extends MemoryClassLoader {
 	
 	protected  Sniffer init(boolean useAsMasterClassLoader,
 		FileSystemScanner fileSystemScanner,
-		ClassHelper classHelper,
+		Classes.Loaders classesLoaders,
 		Collection<String> baseClassPaths,
 		Function<JavaClass, Boolean> javaClassAdder,
 		Function<FileSystemItem, Boolean> resourceAdder,
 		TriConsumer<String, String, ByteBuffer> resourcesConsumer
 	) {
-		this.classHelper = classHelper;
+		this.classesLoaders = classesLoaders;
 		this.threadContextClassLoader = Thread.currentThread().getContextClassLoader();
 		this.javaClassFilterAndAdder = javaClassAdder;
 		this.resourceFilterAndAdder = resourceAdder;
@@ -119,7 +118,7 @@ public class Sniffer extends MemoryClassLoader {
 	
 	public Function<Boolean, ClassLoader> setAsMasterClassLoader(ClassLoader classLoader) {
 		ClassLoader masterClassLoader = getMasterClassLoader(Thread.currentThread().getContextClassLoader());
-		return classes.setAsParent(masterClassLoader, classLoader, false);
+		return classesLoaders.setAsParent(masterClassLoader, classLoader, false);
 	}
 	
 	public ClassLoader getMasterClassLoader(ClassLoader classLoader) {
