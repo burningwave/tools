@@ -17,7 +17,10 @@ public class TwoPassCapturerTest extends BaseTest {
 		testNotEmpty(() -> {
 			ComponentSupplier componentSupplier = ComponentContainer.getInstance();
 			PathHelper pathHelper = componentSupplier.getPathHelper();
-			Collection<String> paths = pathHelper.getPaths("dependencies-capturer.additional-resources-path");
+			Collection<String> paths = pathHelper.getPaths(PathHelper.MAIN_CLASS_PATHS, PathHelper.MAIN_CLASS_PATHS_EXTENSION);
+			if (componentSupplier.getJVMInfo().getVersion() > 8) {
+				paths.addAll(pathHelper.getPaths("dependencies-capturer.additional-resources-path"));
+			}
 			paths.addAll(pathHelper.getMainClassPaths());
 			Result result = TwoPassCapturer.getInstance().captureAndStore(
 				"org.burningwave.tools.TwoPassCapturerTest",
