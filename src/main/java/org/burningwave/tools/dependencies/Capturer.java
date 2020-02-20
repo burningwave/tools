@@ -130,7 +130,7 @@ public class Capturer implements Component {
 				} catch (Throwable exc) {
 					throw Throwables.toRuntimeException(exc);				
 				} finally {
-					createExecutor(result.getStore().getAbsolutePath(), mainClassName);
+					createExecutor(result.getStore().getAbsolutePath(), mainClassName, UUID.randomUUID().toString());
 				}
 			}
 			lowLevelObjectsHandler.enableIllegalAccessLogger();
@@ -185,13 +185,14 @@ public class Capturer implements Component {
 		return path.substring(temp.lastIndexOf("["));
 	}
 	
-	static void createExecutor(String destinationPath, String mainClassName) {
+	static void createExecutor(String destinationPath, String mainClassName, String executorSuffix) {
 		try {
 			String externalExecutor = FileSystemItem.ofPath(System.getProperty("java.home")).getAbsolutePath() + "/bin/java -classpath \"" +
 				String.join(";",	
 					FileSystemItem.ofPath(destinationPath).getChildren().stream().map(fileSystemItem -> fileSystemItem.getAbsolutePath()).collect(Collectors.toList())
 				) + "\" " + mainClassName;
-			Files.write(Paths.get(destinationPath + "\\executor-" + UUID.randomUUID().toString() + ".cmd"), externalExecutor.getBytes());
+			Files.write(Paths.get(destinationPath + "\\executor-" + executorSuffix + ".cmd"), externalExecutor.getBytes());
+			Files.write(Paths.get(destinationPath + "\\executor-" + executorSuffix + ".sh"), externalExecutor.getBytes());
 		} catch (Throwable e) {
 			e.printStackTrace();
 		}
