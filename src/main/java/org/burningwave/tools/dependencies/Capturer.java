@@ -35,12 +35,14 @@ import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.burningwave.Throwables;
 import org.burningwave.core.Component;
+import org.burningwave.core.Strings;
 import org.burningwave.core.assembler.ComponentContainer;
 import org.burningwave.core.assembler.ComponentSupplier;
 import org.burningwave.core.classes.ClassHelper;
@@ -157,10 +159,14 @@ public class Capturer implements Component {
 	}
 	
 	TriConsumer<String, String, ByteBuffer> getStoreFunction(String destinationPath) {
+		//Exclude the runtime jdk library
+		final String javaHome = Strings.Paths.clean(System.getProperty("java.home")) + "/";
+		BiPredicate<String, FileSystemItem> storePredicate = (resourceAbsolutePath, fileSystemItem) -> 
+			!resourceAbsolutePath.startsWith(javaHome) && !fileSystemItem.exists();
 		return (resourceAbsolutePath, resourceRelativePath, resourceContent) -> {
 			String finalPath = getStoreEntryBasePath(destinationPath, resourceAbsolutePath, resourceRelativePath);
 			FileSystemItem fileSystemItem = FileSystemItem.ofPath(finalPath + "/" + resourceRelativePath);
-			if (!fileSystemItem.exists()) {
+			if (storePredicate.test(resourceAbsolutePath, fileSystemItem)) {
 				Streams.store(fileSystemItem.getAbsolutePath(), resourceContent);
 				logDebug("Resource {} has been stored to CLASSPATH {}", resourceRelativePath, fileSystemItem.getAbsolutePath());
 			}
