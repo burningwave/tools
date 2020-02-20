@@ -1,6 +1,9 @@
 package org.burningwave.tools;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 import org.burningwave.core.assembler.ComponentContainer;
 import org.burningwave.core.assembler.ComponentSupplier;
@@ -21,9 +24,11 @@ public class CapturerTest extends BaseTest {
 			if (componentSupplier.getJVMInfo().getVersion() > 8) {
 				paths.addAll(pathHelper.getPaths("dependencies-capturer.additional-resources-path"));
 			}
+			List<String> _paths = new ArrayList<>(paths);
+			Collections.sort(_paths);
 			Result dependencies = Capturer.getInstance().captureAndStore(
 				"org.burningwave.tools.CapturerTest",
-				paths,
+				_paths,
 				System.getProperty("user.home") + "/Desktop/bw-tests/dependencies",
 				false, 0L
 			);

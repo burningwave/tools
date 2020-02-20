@@ -1,6 +1,9 @@
 package org.burningwave.tools;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 import org.burningwave.core.assembler.ComponentContainer;
 import org.burningwave.core.assembler.ComponentSupplier;
@@ -21,10 +24,11 @@ public class TwoPassCapturerTest extends BaseTest {
 			if (componentSupplier.getJVMInfo().getVersion() > 8) {
 				paths.addAll(pathHelper.getPaths("dependencies-capturer.additional-resources-path"));
 			}
-			paths.addAll(pathHelper.getMainClassPaths());
+			List<String> _paths = new ArrayList<>(paths);
+			Collections.sort(_paths);
 			Result result = TwoPassCapturer.getInstance().captureAndStore(
 				"org.burningwave.tools.TwoPassCapturerTest",
-				paths,
+				_paths,
 				System.getProperty("user.home") + "/Desktop/bw-tests/dependencies",
 				false, 0L
 			);
