@@ -204,10 +204,7 @@ public class TwoPassCapturer extends Capturer {
 		String javaExecutablePath = System.getProperty("java.home") + "/bin/java";
 		List<String> command = new LinkedList<String>();
         command.add(Strings.Paths.clean(javaExecutablePath));
-        command.add("-classpath");
         StringBuffer generatedClassPath = new StringBuffer("\"");
-        Collection<String> classPathsToBeScanned = new LinkedHashSet<>(baseClassPaths);
-        classPathsToBeScanned.remove(destinationPath);
         Set<String> classPaths = FileSystemItem.ofPath(destinationPath).getChildren().stream().map(
         	child -> child.getAbsolutePath()
         ).collect(Collectors.toSet());
@@ -222,6 +219,8 @@ public class TwoPassCapturer extends Capturer {
 				)
 			)
     	);
+        Collection<String> classPathsToBeScanned = new LinkedHashSet<>(baseClassPaths);
+        classPathsToBeScanned.remove(destinationPath);
         Iterator<FileSystemItem> classPathIterator = searchResult.getClassPaths().iterator();
         while (classPathIterator.hasNext()) {
         	FileSystemItem classPath = classPathIterator.next();
@@ -236,6 +235,7 @@ public class TwoPassCapturer extends Capturer {
         	}
         }
         generatedClassPath.append("\"");
+        command.add("-classpath");
         command.add(generatedClassPath.toString());
         command.add(this.getClass().getName());
         String classPathsToBeScannedParam = "\"" + String.join(System.getProperty("path.separator"), classPathsToBeScanned);
