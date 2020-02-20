@@ -69,6 +69,7 @@ import org.burningwave.core.io.PathHelper;
 
 public class TwoPassCapturer extends Capturer {
 	ClassPathHunter classPathHunter;
+	PathHelper pathHelper;
 	private TwoPassCapturer(
 		FileSystemScanner fileSystemScanner,
 		PathHelper pathHelper,
@@ -76,7 +77,8 @@ public class TwoPassCapturer extends Capturer {
 		ClassPathHunter classPathHunter,
 		ClassHelper classHelper
 	) {
-		super(fileSystemScanner, pathHelper, byteCodeHunter, classHelper);
+		super(fileSystemScanner, byteCodeHunter, classHelper);
+		this.pathHelper = pathHelper;
 		this.classPathHunter = classPathHunter;
 	}
 	
@@ -107,7 +109,7 @@ public class TwoPassCapturer extends Capturer {
 	
 	public Result capture(
 		String mainClassName,
-		Collection<String> _baseClassPaths,
+		Collection<String> baseClassPaths,
 		TriConsumer<String, String, ByteBuffer> resourceConsumer,
 		boolean includeMainClass,
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor,
@@ -118,8 +120,6 @@ public class TwoPassCapturer extends Capturer {
 				javaClass -> true,
 				fileSystemItem -> true
 		);
-		Collection<String> baseClassPaths = new LinkedHashSet<>(_baseClassPaths);
-		baseClassPaths.addAll(additionalClassPaths);
 		result.findingTask = CompletableFuture.runAsync(() -> {
 			try (Sniffer resourceSniffer = new Sniffer(null).init(
 					!recursive,
@@ -239,9 +239,6 @@ public class TwoPassCapturer extends Capturer {
         command.add(generatedClassPath.toString());
         command.add(this.getClass().getName());
         String classPathsToBeScannedParam = "\"" + String.join(System.getProperty("path.separator"), classPathsToBeScanned);
-        if (additionalClassPaths != null && !additionalClassPaths.isEmpty()) {
-        	classPathsToBeScannedParam += System.getProperty("path.separator") + String.join(System.getProperty("path.separator"), additionalClassPaths);
-        }
         classPathsToBeScannedParam += "\"";
         command.add(classPathsToBeScannedParam);
         command.add(mainClassName);

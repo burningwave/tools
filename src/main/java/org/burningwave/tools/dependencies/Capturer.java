@@ -32,7 +32,6 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -50,7 +49,6 @@ import org.burningwave.core.classes.hunter.ByteCodeHunter;
 import org.burningwave.core.function.TriConsumer;
 import org.burningwave.core.io.FileSystemItem;
 import org.burningwave.core.io.FileSystemScanner;
-import org.burningwave.core.io.PathHelper;
 import org.burningwave.core.io.Streams;
 import org.burningwave.core.jvm.LowLevelObjectsHandler;
 
@@ -58,30 +56,23 @@ import org.burningwave.core.jvm.LowLevelObjectsHandler;
 public class Capturer implements Component {
 	protected static final String ADDITIONAL_RESOURCES_PATH = "dependencies-capturer.additional-resources-path";
 	ByteCodeHunter byteCodeHunter;
-	PathHelper pathHelper;
 	ClassHelper classHelper;
 	FileSystemScanner fileSystemScanner;
-	Collection<String> additionalClassPaths;
 	LowLevelObjectsHandler lowLevelObjectsHandler;
 	
 	Capturer(
 		FileSystemScanner fileSystemScanner,
-		PathHelper pathHelper,
 		ByteCodeHunter byteCodeHunter,
 		ClassHelper classHelper
 	) {
 		this.fileSystemScanner = fileSystemScanner;
 		this.byteCodeHunter = byteCodeHunter;
-		this.pathHelper = pathHelper;
 		this.classHelper = classHelper;
-		this.additionalClassPaths = pathHelper.getPaths(PathHelper.MAIN_CLASS_PATHS_EXTENSION, ADDITIONAL_RESOURCES_PATH);
-		
 	}
 	
 	public static Capturer create(ComponentSupplier componentSupplier) {
 		return new Capturer(
 			componentSupplier.getFileSystemScanner(),
-			componentSupplier.getPathHelper(),
 			componentSupplier.getByteCodeHunter(),
 			componentSupplier.getClassHelper()
 		);
@@ -94,13 +85,11 @@ public class Capturer implements Component {
 	@SuppressWarnings("resource")
 	public Result capture(
 		String mainClassName,
-		Collection<String> _baseClassPaths,
+		Collection<String> baseClassPaths,
 		TriConsumer<String, String, ByteBuffer> resourceConsumer,
 		boolean includeMainClass,
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) {	
-		Collection<String> baseClassPaths = new LinkedHashSet<>(_baseClassPaths);
-		baseClassPaths.addAll(additionalClassPaths);
 		final Result result = new Result();
 		Function<JavaClass, Boolean> javaClassAdder = includeMainClass ? 
 			(javaClass) -> {
@@ -142,15 +131,6 @@ public class Capturer implements Component {
 			}
 		});
 		return result;
-	}
-	
-	public Result captureAndStore(
-		String mainClassName,
-		String destinationPath,
-		boolean includeMainClass,
-		Long continueToCaptureAfterSimulatorClassEndExecutionFor
-	) {
-		return captureAndStore(mainClassName, pathHelper.getMainClassPaths(), destinationPath, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor);
 	}
 	
 	public Result captureAndStore(
