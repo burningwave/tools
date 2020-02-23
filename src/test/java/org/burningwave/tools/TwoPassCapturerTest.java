@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import org.burningwave.ManagedLogger;
 import org.burningwave.core.assembler.ComponentContainer;
 import org.burningwave.core.assembler.ComponentSupplier;
 import org.burningwave.core.io.FileSystemItem;
@@ -30,7 +31,7 @@ public class TwoPassCapturerTest extends BaseTest {
 				"org.burningwave.tools.TwoPassCapturerTest",
 				_paths,
 				System.getProperty("user.home") + "/Desktop/bw-tests/dependencies",
-				false, 0L
+				true, 0L
 			);
 			result.waitForTaskEnding();
 			return result.getJavaClasses();
@@ -39,6 +40,10 @@ public class TwoPassCapturerTest extends BaseTest {
 
 	
 	public static void main(String[] args) {
-		FileSystemItem.ofPath(System.getProperty("user.home")).getChildren();
+		for (FileSystemItem fileSystemItem : FileSystemItem.ofPath(System.getProperty("user.home")).getChildren()) {
+			ManagedLogger.Repository.getInstance().logDebug(
+				TwoPassCapturerTest.class, fileSystemItem.getAbsolutePath()
+			);
+		}
 	}
 }

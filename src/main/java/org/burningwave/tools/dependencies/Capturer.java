@@ -196,7 +196,7 @@ public class Capturer implements Component {
 		try {
 			String externalExecutor = FileSystemItem.ofPath(System.getProperty("java.home")).getAbsolutePath() + "/bin/java -classpath \"" +
 				String.join(";",	
-					FileSystemItem.ofPath(destinationPath).getChildren().stream().map(fileSystemItem -> fileSystemItem.getAbsolutePath()).collect(Collectors.toList())
+					FileSystemItem.ofPath(destinationPath).getChildren(fileSystemItem -> fileSystemItem.isFolder()).stream().map(fileSystemItem -> fileSystemItem.getAbsolutePath()).collect(Collectors.toList())
 				) + "\" " + mainClassName;
 			Files.write(Paths.get(destinationPath + "\\executor-" + executorSuffix + ".cmd"), externalExecutor.getBytes());
 			Files.write(Paths.get(destinationPath + "\\executor-" + executorSuffix + ".sh"), externalExecutor.getBytes());
