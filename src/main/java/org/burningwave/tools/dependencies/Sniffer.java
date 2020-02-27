@@ -28,6 +28,8 @@
  */
 package org.burningwave.tools.dependencies;
 
+import static org.burningwave.core.assembler.StaticComponentsContainer.Strings;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -44,7 +46,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.burningwave.core.Strings;
 import org.burningwave.core.classes.Classes;
 import org.burningwave.core.classes.JavaClass;
 import org.burningwave.core.classes.MemoryClassLoader;
@@ -67,7 +68,7 @@ public class Sniffer extends MemoryClassLoader {
 	ThrowingBiFunction<String, Boolean, Class<?>, ClassNotFoundException> classLoadingFunction;
 	
 	public Sniffer(ClassLoader parent) {
-		super(parent, Classes.getInstance(), null);
+		super(parent, null);
 	}
 	
 	static {

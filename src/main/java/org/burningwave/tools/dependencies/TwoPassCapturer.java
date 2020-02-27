@@ -28,10 +28,14 @@
  */
 package org.burningwave.tools.dependencies;
 
+import static org.burningwave.core.assembler.StaticComponentsContainer.LowLevelObjectsHandler;
+import static org.burningwave.core.assembler.StaticComponentsContainer.ManagedLoggersRepository;
+import static org.burningwave.core.assembler.StaticComponentsContainer.Paths;
+import static org.burningwave.core.assembler.StaticComponentsContainer.Throwables;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Collection;
@@ -47,9 +51,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.burningwave.ManagedLogger;
-import org.burningwave.Throwables;
-import org.burningwave.core.Strings;
 import org.burningwave.core.assembler.ComponentContainer;
 import org.burningwave.core.assembler.ComponentSupplier;
 import org.burningwave.core.classes.ClassCriteria;
@@ -65,7 +66,6 @@ import org.burningwave.core.io.FileSystemHelper;
 import org.burningwave.core.io.FileSystemItem;
 import org.burningwave.core.io.FileSystemScanner;
 import org.burningwave.core.io.PathHelper;
-import org.burningwave.core.jvm.LowLevelObjectsHandler;
 
 
 public class TwoPassCapturer extends Capturer {
@@ -76,10 +76,9 @@ public class TwoPassCapturer extends Capturer {
 		PathHelper pathHelper,
 		ByteCodeHunter byteCodeHunter,
 		ClassPathHunter classPathHunter,
-		Classes.Loaders classesLoaders,
-		LowLevelObjectsHandler lowLevelObjectsHandler
+		Classes.Loaders classesLoaders
 	) {
-		super(fileSystemScanner, byteCodeHunter, classesLoaders, lowLevelObjectsHandler);
+		super(fileSystemScanner, byteCodeHunter, classesLoaders);
 		this.pathHelper = pathHelper;
 		this.classPathHunter = classPathHunter;
 	}
@@ -90,8 +89,7 @@ public class TwoPassCapturer extends Capturer {
 			componentSupplier.getPathHelper(),
 			componentSupplier.getByteCodeHunter(),
 			componentSupplier.getClassPathHunter(),
-			componentSupplier.getClassesLoaders(),
-			componentSupplier.getLowLevelObjectsHandler()
+			componentSupplier.getClassesLoaders()
 		);
 	}
 	
@@ -118,7 +116,7 @@ public class TwoPassCapturer extends Capturer {
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor,
 		boolean recursive
 	) {
-		lowLevelObjectsHandler.disableIllegalAccessLogger();
+		LowLevelObjectsHandler.disableIllegalAccessLogger();
 		final Result result = new Result(
 			this.fileSystemScanner,
 				javaClass -> true,
@@ -177,7 +175,7 @@ public class TwoPassCapturer extends Capturer {
 					}
 				}
 			}
-			lowLevelObjectsHandler.enableIllegalAccessLogger();
+			LowLevelObjectsHandler.enableIllegalAccessLogger();
 		});
 		return result;
 	}
@@ -208,7 +206,7 @@ public class TwoPassCapturer extends Capturer {
 	) throws IOException, InterruptedException {
 		String javaExecutablePath = System.getProperty("java.home") + "/bin/java";
 		List<String> command = new LinkedList<String>();
-        command.add(Strings.Paths.clean(javaExecutablePath));
+        command.add(Paths.clean(javaExecutablePath));
         StringBuffer generatedClassPath = new StringBuffer("\"");
         Set<String> classPaths = FileSystemItem.ofPath(destinationPath).getChildren().stream().map(
         	child -> child.getAbsolutePath()
@@ -268,7 +266,7 @@ public class TwoPassCapturer extends Capturer {
 				mainClassName, paths, destinationPath, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor, false
 			).waitForTaskEnding();
 		} catch (Throwable exc) {
-			ManagedLogger.Repository.getInstance().logError(TwoPassCapturer.class, "Exception occurred", exc);
+			ManagedLoggersRepository.logError(TwoPassCapturer.class, "Exception occurred", exc);
 		} finally {
 			String suffix = UUID.randomUUID().toString();
 			logReceivedParameters(args, 0, suffix);
@@ -291,8 +289,8 @@ public class TwoPassCapturer extends Capturer {
 					"includeMainClass: " + args[3] + "\n" +
 					"continueToCaptureAfterSimulatorClassEndExecutionFor: " + args[4];
 			
-			Files.write(Paths.get(args[2] + "\\params-" + fileSuffix + ".txt"), logs.getBytes());
-			ManagedLogger.Repository.getInstance().logDebug(TwoPassCapturer.class, "\n\n" + logs + "\n\n");
+			Files.write(java.nio.file.Paths.get(args[2] + "\\params-" + fileSuffix + ".txt"), logs.getBytes());
+			ManagedLoggersRepository.logDebug(TwoPassCapturer.class, "\n\n" + logs + "\n\n");
 			if (wait > 0) {
 				Thread.sleep(wait);
 			}

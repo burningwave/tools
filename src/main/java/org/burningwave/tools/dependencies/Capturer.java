@@ -28,9 +28,13 @@
  */
 package org.burningwave.tools.dependencies;
 
+import static org.burningwave.core.assembler.StaticComponentsContainer.LowLevelObjectsHandler;
+import static org.burningwave.core.assembler.StaticComponentsContainer.Paths;
+import static org.burningwave.core.assembler.StaticComponentsContainer.Streams;
+import static org.burningwave.core.assembler.StaticComponentsContainer.Throwables;
+
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -40,9 +44,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import org.burningwave.Throwables;
 import org.burningwave.core.Component;
-import org.burningwave.core.Strings;
 import org.burningwave.core.assembler.ComponentContainer;
 import org.burningwave.core.assembler.ComponentSupplier;
 import org.burningwave.core.classes.Classes;
@@ -51,8 +53,6 @@ import org.burningwave.core.classes.hunter.ByteCodeHunter;
 import org.burningwave.core.function.TriConsumer;
 import org.burningwave.core.io.FileSystemItem;
 import org.burningwave.core.io.FileSystemScanner;
-import org.burningwave.core.io.Streams;
-import org.burningwave.core.jvm.LowLevelObjectsHandler;
 
 
 public class Capturer implements Component {
@@ -60,26 +60,22 @@ public class Capturer implements Component {
 	ByteCodeHunter byteCodeHunter;
 	Classes.Loaders classesLoaders;
 	FileSystemScanner fileSystemScanner;
-	LowLevelObjectsHandler lowLevelObjectsHandler;
 	
 	Capturer(
 		FileSystemScanner fileSystemScanner,
 		ByteCodeHunter byteCodeHunter,
-		Classes.Loaders sourceCodeHandler,
-		LowLevelObjectsHandler lowLevelObjectsHandler
+		Classes.Loaders sourceCodeHandler
 	) {
 		this.fileSystemScanner = fileSystemScanner;
 		this.byteCodeHunter = byteCodeHunter;
 		this.classesLoaders = sourceCodeHandler;
-		this.lowLevelObjectsHandler = lowLevelObjectsHandler;
 	}
 	
 	public static Capturer create(ComponentSupplier componentSupplier) {
 		return new Capturer(
 			componentSupplier.getFileSystemScanner(),
 			componentSupplier.getByteCodeHunter(),
-			componentSupplier.getClassesLoaders(),
-			componentSupplier.getLowLevelObjectsHandler()
+			componentSupplier.getClassesLoaders()
 		);
 	}
 	
@@ -95,7 +91,7 @@ public class Capturer implements Component {
 		boolean includeMainClass,
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) {	
-		lowLevelObjectsHandler.disableIllegalAccessLogger();
+		LowLevelObjectsHandler.disableIllegalAccessLogger();
 		final Result result = new Result();
 		Function<JavaClass, Boolean> javaClassAdder = includeMainClass ? 
 			(javaClass) -> {
@@ -135,7 +131,7 @@ public class Capturer implements Component {
 					createExecutor(result.getStore().getAbsolutePath(), mainClassName, UUID.randomUUID().toString());
 				}
 			}
-			lowLevelObjectsHandler.enableIllegalAccessLogger();
+			LowLevelObjectsHandler.enableIllegalAccessLogger();
 		});
 		return result;
 	}
@@ -160,7 +156,7 @@ public class Capturer implements Component {
 	
 	TriConsumer<String, String, ByteBuffer> getStoreFunction(String destinationPath) {
 		//Exclude the runtime jdk library
-		final String javaHome = Strings.Paths.clean(System.getProperty("java.home")) + "/";
+		final String javaHome = Paths.clean(System.getProperty("java.home")) + "/";
 		BiPredicate<String, FileSystemItem> storePredicate = (resourceAbsolutePath, fileSystemItem) -> 
 			!resourceAbsolutePath.startsWith(javaHome) && 
 			!fileSystemItem.exists();
@@ -198,8 +194,8 @@ public class Capturer implements Component {
 				String.join(";",	
 					FileSystemItem.ofPath(destinationPath).getChildren(fileSystemItem -> fileSystemItem.isFolder()).stream().map(fileSystemItem -> fileSystemItem.getAbsolutePath()).collect(Collectors.toList())
 				) + "\" " + mainClassName;
-			Files.write(Paths.get(destinationPath + "\\executor-" + executorSuffix + ".cmd"), externalExecutor.getBytes());
-			Files.write(Paths.get(destinationPath + "\\executor-" + executorSuffix + ".sh"), externalExecutor.getBytes());
+			Files.write(java.nio.file.Paths.get(destinationPath + "\\executor-" + executorSuffix + ".cmd"), externalExecutor.getBytes());
+			Files.write(java.nio.file.Paths.get(destinationPath + "\\executor-" + executorSuffix + ".sh"), externalExecutor.getBytes());
 		} catch (Throwable e) {
 			e.printStackTrace();
 		}

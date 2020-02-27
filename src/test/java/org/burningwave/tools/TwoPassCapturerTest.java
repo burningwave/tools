@@ -1,11 +1,13 @@
 package org.burningwave.tools;
 
+import static org.burningwave.core.assembler.StaticComponentsContainer.JVMInfo;
+import static org.burningwave.core.assembler.StaticComponentsContainer.ManagedLoggersRepository;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import org.burningwave.ManagedLogger;
 import org.burningwave.core.assembler.ComponentContainer;
 import org.burningwave.core.assembler.ComponentSupplier;
 import org.burningwave.core.io.FileSystemItem;
@@ -22,7 +24,7 @@ public class TwoPassCapturerTest extends BaseTest {
 			ComponentSupplier componentSupplier = ComponentContainer.getInstance();
 			PathHelper pathHelper = componentSupplier.getPathHelper();
 			Collection<String> paths = pathHelper.getPaths(PathHelper.MAIN_CLASS_PATHS, PathHelper.MAIN_CLASS_PATHS_EXTENSION);
-			if (componentSupplier.getJVMInfo().getVersion() > 8) {
+			if (JVMInfo.getVersion() > 8) {
 				paths.addAll(pathHelper.getPaths("dependencies-capturer.additional-resources-path"));
 			}
 			List<String> _paths = new ArrayList<>(paths);
@@ -41,7 +43,7 @@ public class TwoPassCapturerTest extends BaseTest {
 	
 	public static void main(String[] args) {
 		for (FileSystemItem fileSystemItem : FileSystemItem.ofPath(System.getProperty("user.home")).getChildren()) {
-			ManagedLogger.Repository.getInstance().logDebug(
+			ManagedLoggersRepository.logDebug(
 				TwoPassCapturerTest.class, fileSystemItem.getAbsolutePath()
 			);
 		}
