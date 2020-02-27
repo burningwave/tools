@@ -63,7 +63,9 @@ public class Sniffer extends MemoryClassLoader {
 	private Function<JavaClass, Boolean> javaClassFilterAndAdder;
 	private Function<FileSystemItem, Boolean> resourceFilterAndAdder;
 	private Map<String, FileSystemItem> resources;
+	//In this map the key is the absolute path
 	private Map<String, JavaClass> javaClasses;
+	//In this map the key is the class name
 	private Map<String, JavaClass> bwJavaClasses;
 	private TriConsumer<String, String, ByteBuffer> resourcesConsumer;
 	ClassLoader threadContextClassLoader;
@@ -101,6 +103,7 @@ public class Sniffer extends MemoryClassLoader {
 			)
 		);
 		if (useAsMasterClassLoader) {
+			//Load in cache defineClass and definePackage methods for threadContextClassLoader
 			classesLoaders.getDefineClassMethod(threadContextClassLoader);
 			classesLoaders.getDefinePackageMethod(threadContextClassLoader);
 			masterClassLoaderRetrieverAndResetter = setAsMasterClassLoader(this);
