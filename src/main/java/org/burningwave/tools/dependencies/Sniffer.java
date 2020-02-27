@@ -29,9 +29,11 @@
 package org.burningwave.tools.dependencies;
 
 import static org.burningwave.core.assembler.StaticComponentsContainer.Strings;
+import static org.burningwave.core.assembler.StaticComponentsContainer.Classes;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -62,6 +64,7 @@ public class Sniffer extends MemoryClassLoader {
 	private Function<FileSystemItem, Boolean> resourceFilterAndAdder;
 	private Map<String, FileSystemItem> resources;
 	private Map<String, JavaClass> javaClasses;
+	private Map<String, JavaClass> bwJavaClasses;
 	private TriConsumer<String, String, ByteBuffer> resourcesConsumer;
 	ClassLoader threadContextClassLoader;
 	Function<Boolean, ClassLoader> masterClassLoaderRetrieverAndResetter;
@@ -90,23 +93,25 @@ public class Sniffer extends MemoryClassLoader {
 		this.resourcesConsumer = resourcesConsumer;
 		this.resources = new ConcurrentHashMap<>();
 		this.javaClasses = new ConcurrentHashMap<>();
+		this.bwJavaClasses = new ConcurrentHashMap<>();
 		logDebug("Scanning paths :\n{}",String.join("\n", baseClassPaths));
 		fileSystemScanner.scan(
 			FileScanConfig.forPaths(baseClassPaths).toScanConfiguration(
 				getMapStorer()
 			)
 		);
-		if (useAsMasterClassLoader) {			
+		if (useAsMasterClassLoader) {
+			classesLoaders.getDefineClassMethod(threadContextClassLoader);
+			classesLoaders.getDefinePackageMethod(threadContextClassLoader);
 			masterClassLoaderRetrieverAndResetter = setAsMasterClassLoader(this);
 			classLoadingFunction = (className, resolve) -> {
 				if (!className.startsWith("org.burningwave.")) {
 					return super.loadClass(className, resolve);
 		    	} else {	
-		    		Class<?> burninwaveClass = classesLoaders.retrieveLoadedClass(threadContextClassLoader, className);
-					if (burninwaveClass != null) {
-						return burninwaveClass;
-					} else {
-						return super.loadClass(className, resolve);
+		    		try {
+						return classesLoaders.defineClass(threadContextClassLoader, bwJavaClasses.get(className));
+					} catch (InvocationTargetException | NoClassDefFoundError exc) {
+						throw new ClassNotFoundException(Classes.retrieveName(exc));
 					}
 		    	}
 			};
@@ -143,6 +148,9 @@ public class Sniffer extends MemoryClassLoader {
 				JavaClass javaClass = JavaClass.create(scannedItemContext.getScannedItem().toByteBuffer());
 				addCompiledClass(javaClass.getName(), javaClass.getByteCode());
 				javaClasses.put(absolutePath, javaClass);
+				if (javaClass.getName().startsWith("org.burningwave.")) {
+					bwJavaClasses.put(javaClass.getName(), javaClass);
+				}
 			}
 		};
 	}    	

@@ -208,11 +208,14 @@ public class TwoPassCapturer extends Capturer {
 		List<String> command = new LinkedList<String>();
         command.add(Paths.clean(javaExecutablePath));
         StringBuffer generatedClassPath = new StringBuffer("\"");
-        Set<String> classPaths = FileSystemItem.ofPath(destinationPath).getChildren().stream().map(
-        	child -> child.getAbsolutePath()
+        //Excluding Burningwave from next process classpath
+        Set<String> classPaths = FileSystemItem.ofPath(destinationPath).getChildren(fileSystemItem -> 
+        	!fileSystemItem.getAbsolutePath().endsWith(BURNINGWAVE_CLASSES_RELATIVE_DESTINATION_PATH)
+        ).stream().map(child ->
+        	child.getAbsolutePath()
         ).collect(Collectors.toSet());
         generatedClassPath.append(String.join(System.getProperty("path.separator"), classPaths));
-        //Adding Burningwave to classpath
+        //Adding Burningwave to next process scanning path
         ClassPathHunter.SearchResult searchResult = classPathHunter.findBy(
 			SearchConfig.forPaths(
 				pathHelper.getMainClassPaths()

@@ -57,6 +57,7 @@ import org.burningwave.core.io.FileSystemScanner;
 
 public class Capturer implements Component {
 	protected static final String ADDITIONAL_RESOURCES_PATH = "dependencies-capturer.additional-resources-path";
+	protected static final String BURNINGWAVE_CLASSES_RELATIVE_DESTINATION_PATH = "[org.burningwave]";
 	ByteCodeHunter byteCodeHunter;
 	Classes.Loaders classesLoaders;
 	FileSystemScanner fileSystemScanner;
@@ -161,7 +162,12 @@ public class Capturer implements Component {
 			!resourceAbsolutePath.startsWith(javaHome) && 
 			!fileSystemItem.exists();
 		return (resourceAbsolutePath, resourceRelativePath, resourceContent) -> {
-			String finalPath = getStoreEntryBasePath(destinationPath, resourceAbsolutePath, resourceRelativePath);
+			String finalPath;
+			if (!resourceRelativePath.startsWith("org/burningwave")) {
+				finalPath = getStoreEntryBasePath(destinationPath, resourceAbsolutePath, resourceRelativePath);
+			} else {
+				finalPath = destinationPath + "/" + BURNINGWAVE_CLASSES_RELATIVE_DESTINATION_PATH;
+			}
 			FileSystemItem fileSystemItem = FileSystemItem.ofPath(finalPath + "/" + resourceRelativePath);
 			if (storePredicate.test(resourceAbsolutePath, fileSystemItem)) {
 				Streams.store(fileSystemItem.getAbsolutePath(), resourceContent);
