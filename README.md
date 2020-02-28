@@ -56,7 +56,7 @@ public class DependenciesExtractor {
 }
 ```
 ## Adapter mode
-In this mode you can adapt a Java old version application to Java 9 and later. To use this mode, simply load by, using PathHelper, the jdk libraries by which the target application was developed and **run the main of the application adapter with a jdk 9 or later**. In the example below we adapt a Java 8 application to Java 9 or later.
+In this mode you can adapt a Java old version application to Java 9 and later. To use this mode, simply load, by using PathHelper, the jdk libraries by which the target application was developed and **run the main of the application adapter with a jdk 9 or later**. In the example below we adapt a Java 8 application to Java 9 or later.
 ```java
 package myextractions;
 
