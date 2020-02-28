@@ -5,7 +5,7 @@
 # Dependencies extractors
 By this functionality only the classes and resources strictly used by an application will extracted and stored in a specified path. At the end of the execution of the task, a script will be created in the destination path to run the application using the extracted classes. **The dependency extractors can also be used to adapt applications written with Java 8 to Java 9 and later**.
 
-The classes that deal the dependencies extraction
+The classes that deal the dependencies extraction are:
 1. **org.burningwave.tools.dependencies.Capturer**
 2. **org.burningwave.tools.dependencies.TwoPassCapturer**
 
@@ -31,8 +31,7 @@ import org.burningwave.tools.dependencies.Capturer.Result;
 import org.burningwave.tools.dependencies.TwoPassCapturer;
 
 public class DependenciesExtractor implements Component {
-	
-	
+		
 	public static void main(String[] args) throws Exception {
 		long initialTime = System.currentTimeMillis();
 		ComponentSupplier componentSupplier = ComponentContainer.getInstance();
