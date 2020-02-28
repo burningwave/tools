@@ -22,14 +22,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import org.burningwave.core.Component;
 import org.burningwave.core.assembler.ComponentContainer;
 import org.burningwave.core.assembler.ComponentSupplier;
 import org.burningwave.core.io.PathHelper;
 import org.burningwave.tools.dependencies.Capturer.Result;
 import org.burningwave.tools.dependencies.TwoPassCapturer;
 
-public class DependenciesExtractor implements Component {
+public class DependenciesExtractor {
 		
 	public static void main(String[] args) throws Exception {
 		long initialTime = System.currentTimeMillis();
