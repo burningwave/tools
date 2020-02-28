@@ -1,6 +1,6 @@
 [![logo](Burningwave-logo.jpg "Burningwave")](https://www.burningwave.org/)
 
-**Burningwave Tools** is a set of components based on Burningwave Core library that have high-level functionality such as a dependencies extractor and a Java old versions to Java 13 application converter
+**Burningwave Tools** is a set of components based on Burningwave Core library that have high-level functionality such as a dependencies extractor and a Java old versions to Java 9 or later application converter
 
 # Dependencies extractors
 By this functionality only the classes and resources strictly used by an application will extracted and stored in a specified path. At the end of the execution of the task, a script will be created in the destination path to run the application using the extracted classes. **The dependency extractors can also be used to adapt applications written with Java 8 to Java 9 and later**.
