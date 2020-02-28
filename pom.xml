@@ -22,7 +22,7 @@
 	</organization>
 
 	<description>
-		A set of components based on Burningwave Core library that have high-level functionality such as a dependencies extractor and a Java old versions to Java 13 application converter
+		A set of components based on Burningwave Core library that have high-level functionality such as a dependencies extractor and a Java old versions to Java 9 or later application converter
 	</description>
 	<developers>
 		<developer>
