@@ -53,12 +53,12 @@ import java.util.stream.Collectors;
 
 import org.burningwave.core.assembler.ComponentContainer;
 import org.burningwave.core.assembler.ComponentSupplier;
+import org.burningwave.core.classes.ByteCodeHunter;
 import org.burningwave.core.classes.ClassCriteria;
+import org.burningwave.core.classes.ClassPathHunter;
 import org.burningwave.core.classes.Classes;
 import org.burningwave.core.classes.JavaClass;
-import org.burningwave.core.classes.hunter.ByteCodeHunter;
-import org.burningwave.core.classes.hunter.ClassPathHunter;
-import org.burningwave.core.classes.hunter.SearchConfig;
+import org.burningwave.core.classes.SearchConfig;
 import org.burningwave.core.function.ThrowingSupplier;
 import org.burningwave.core.function.TriConsumer;
 import org.burningwave.core.io.FileScanConfig;
