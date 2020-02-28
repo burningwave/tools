@@ -52,7 +52,7 @@
 		<dependency>
 			<groupId>org.burningwave</groupId>
 			<artifactId>core</artifactId>
-			<version>[4.14.4,)</version>
+			<version>[5.0.0,)</version>
 		</dependency>
 
 		<dependency>
