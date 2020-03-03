@@ -1,5 +1,5 @@
 /*
- * This file is part of Burningwave Core.
+ * This file is part of Burningwave Tools.
  *
  * Author: Roberto Gentili
  *
