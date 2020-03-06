@@ -15,7 +15,7 @@ To use dependencies shrinker in your project add this to your pom
 <dependency>
 	<groupId>org.burningwave</groupId>
 	<artifactId>tools</artifactId>
-	<version>0.9.9</version>
+	<version>0.9.10</version>
 </dependency>	
 ```
 ## Extractor mode
