@@ -96,7 +96,7 @@ public class Sniffer extends MemoryClassLoader {
 		this.resources = new ConcurrentHashMap<>();
 		this.javaClasses = new ConcurrentHashMap<>();
 		this.bwJavaClasses = new ConcurrentHashMap<>();
-		logDebug("Scanning paths :\n{}",String.join("\n", baseClassPaths));
+		logInfo("Scanning paths :\n{}",String.join("\n", baseClassPaths));
 		fileSystemScanner.scan(
 			FileScanConfig.forPaths(baseClassPaths).toScanConfiguration(
 				getMapStorer()
