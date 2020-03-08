@@ -101,7 +101,8 @@ public class ApplicationAdapter {
         paths.addAll(
             pathHelper.loadPaths(
                 "dependencies-capturer.additional-resources-path", 
-                "//" + jdk8Home + "/jre/lib//children:.*\\.jar;//" + jdk8Home + "/jre/lib/ext//children:.*\\.jar;"
+                "//" + jdk8Home + "/jre/lib//children:.*\\.jar;" + 
+                "//" + jdk8Home + "/jre/lib/ext//children:.*\\.jar;"
             )
         );
         Result result = TwoPassCapturer.getInstance().captureAndStore(
