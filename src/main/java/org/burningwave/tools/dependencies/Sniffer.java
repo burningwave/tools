@@ -147,7 +147,10 @@ public class Sniffer extends MemoryClassLoader {
 		return (scannedItemContext) -> {
 			String absolutePath = scannedItemContext.getScannedItem().getAbsolutePath();
 			resources.put(absolutePath, FileSystemItem.ofPath(absolutePath));
-			if (absolutePath.endsWith(".class")) {
+			if (absolutePath.endsWith(".class") && 
+				!absolutePath.endsWith("module-info.class") &&
+				!absolutePath.endsWith("package-info.class")
+			) {
 				JavaClass javaClass = JavaClass.create(scannedItemContext.getScannedItem().toByteBuffer());
 				addCompiledClass(javaClass.getName(), javaClass.getByteCode());
 				javaClasses.put(absolutePath, javaClass);

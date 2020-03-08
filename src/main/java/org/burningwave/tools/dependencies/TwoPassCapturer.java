@@ -207,14 +207,14 @@ public class TwoPassCapturer extends Capturer {
 		String javaExecutablePath = System.getProperty("java.home") + "/bin/java";
 		List<String> command = new LinkedList<String>();
         command.add(Paths.clean(javaExecutablePath));
-        StringBuffer generatedClassPath = new StringBuffer("\"");
+        
         //Excluding Burningwave from next process classpath
         Set<String> classPaths = FileSystemItem.ofPath(destinationPath).getChildren(fileSystemItem -> 
         	!fileSystemItem.getAbsolutePath().endsWith(BURNINGWAVE_CLASSES_RELATIVE_DESTINATION_PATH)
         ).stream().map(child ->
         	child.getAbsolutePath()
         ).collect(Collectors.toSet());
-        generatedClassPath.append(String.join(System.getProperty("path.separator"), classPaths));
+      
         //Adding Burningwave to next process scanning path
         ClassPathHunter.SearchResult searchResult = classPathHunter.findBy(
 			SearchConfig.forPaths(
@@ -230,16 +230,15 @@ public class TwoPassCapturer extends Capturer {
         Iterator<FileSystemItem> classPathIterator = searchResult.getClassPaths().iterator();
         while (classPathIterator.hasNext()) {
         	FileSystemItem classPath = classPathIterator.next();
-        	if (!generatedClassPath.toString().contains(classPath.getAbsolutePath())) {	
-	        	generatedClassPath.append(
-	        		System.getProperty("path.separator")
-	            );
-	        	generatedClassPath.append(
-	        		classPath.getAbsolutePath()
-	        	);
+        	if (!classPaths.contains(classPath.getAbsolutePath())) {
+        		classPaths.add(classPath.getAbsolutePath());
 	        	//classPathsToBeScanned.remove(classPath.getAbsolutePath());
         	}
         }
+        StringBuffer generatedClassPath = new StringBuffer("\"");
+        if (!classPaths.isEmpty()) {
+        	generatedClassPath.append(String.join(System.getProperty("path.separator"), classPaths));
+        } 
         generatedClassPath.append("\"");
         command.add("-classpath");
         command.add(generatedClassPath.toString());
