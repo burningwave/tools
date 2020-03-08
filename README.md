@@ -65,7 +65,8 @@ public class DependenciesExtractor {
     
     private static String getFormattedDifferenceOfMillis(long value1, long value2) {
         String valueFormatted = String.format("%04d", (value1 - value2));
-        return valueFormatted.substring(0, valueFormatted.length() - 3) + "," + valueFormatted.substring(valueFormatted.length() -3);
+        return valueFormatted.substring(0, valueFormatted.length() - 3) + "," +
+        valueFormatted.substring(valueFormatted.length() -3);
     }
 
 }
@@ -124,7 +125,8 @@ public class ApplicationAdapter {
     
     private static String getFormattedDifferenceOfMillis(long value1, long value2) {
         String valueFormatted = String.format("%04d", (value1 - value2));
-        return valueFormatted.substring(0, valueFormatted.length() - 3) + "," + valueFormatted.substring(valueFormatted.length() -3);
+        return valueFormatted.substring(0, valueFormatted.length() - 3) + "," +
+        valueFormatted.substring(valueFormatted.length() -3);
     }
 
 }
