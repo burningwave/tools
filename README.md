@@ -24,7 +24,8 @@ To use dependencies shrinker in your project add this to your pom
 ```java
 package org.burningwave.tools.examples.twopasscapturer;
 
-import static org.burningwave.core.assembler.StaticComponentsContainer.ManagedLoggersRepository;
+import static
+    org.burningwave.core.assembler.StaticComponentsContainer.ManagedLoggersRepository;
 
 import java.util.Collection;
 
@@ -48,18 +49,22 @@ public class DependenciesExtractor {
             //Here you indicate the main class of your application            
             "my.class.that.contains.a.MainMethod",
             paths,
-            //Here you indicate the destination path where extracted classes and resources will be stored    
+            //Here you indicate the destination path where extracted
+            //classes and resources will be stored    
             System.getProperty("user.home") + "/Desktop/dependencies",
             true,
-            //Here you indicate the waiting time after the main of your application has been executed.
-            //This is useful, for example, for spring boot applications to make it possible, once started,
+            //Here you indicate the waiting time after the main of your
+            //application has been executed. This is useful, for example, 
+            //for spring boot applications to make it possible, once started,
             //to run rest methods to continue extracting the dependencies
             0L
         );
         result.waitForTaskEnding();
         ManagedLoggersRepository.logInfo(
             DependenciesExtractor.class, 
-            "Elapsed time: " + getFormattedDifferenceOfMillis(System.currentTimeMillis(), initialTime)
+            "Elapsed time: " + getFormattedDifferenceOfMillis(
+                System.currentTimeMillis(), initialTime
+            )
         );
     }
     
@@ -76,7 +81,8 @@ In this mode you can adapt a Java old version application to Java 9 or later. To
 ```java
 package org.burningwave.tools.examples.twopasscapturer;
 
-import static org.burningwave.core.assembler.StaticComponentsContainer.ManagedLoggersRepository;
+import static
+    org.burningwave.core.assembler.StaticComponentsContainer.ManagedLoggersRepository;
 
 import java.util.Collection;
 
@@ -101,7 +107,7 @@ public class ApplicationAdapter {
         paths.addAll(
             pathHelper.loadPaths(
                 "dependencies-capturer.additional-resources-path", 
-                "//" + jdk8Home + "/jre/lib//children:.*\\.jar;" + 
+                "//" + jdk8Home + "/jre/lib//children:.*\\.jar;" +
                 "//" + jdk8Home + "/jre/lib/ext//children:.*\\.jar;"
             )
         );
@@ -109,18 +115,23 @@ public class ApplicationAdapter {
             //Here you indicate the main class of your application            
             "my.class.that.contains.a.MainMethod",
             paths,
-            //Here you indicate the destination path where extracted classes and resources will be stored    
+            //Here you indicate the destination path where extracted
+            //classes and resources will be stored    
             System.getProperty("user.home") + "/Desktop/dependencies",
             true,
-            //Here you indicate the waiting time after the main of your application has been executed.
-            //This is useful, for example, for spring boot applications to make it possible, once started,
+            //Here you indicate the waiting time after the main of your
+            //application has been executed. This is useful, for example, 
+            //for spring boot applications to make it possible, once started,
             //to run rest methods to continue extracting the dependencies
             0L
         );
         result.waitForTaskEnding();
         ManagedLoggersRepository.logInfo(
             DependenciesExtractor.class, 
-            "Elapsed time: " + getFormattedDifferenceOfMillis(System.currentTimeMillis(), initialTime)
+            "Elapsed time: " + getFormattedDifferenceOfMillis(
+                System.currentTimeMillis(),
+                initialTime
+            )
         );
     }
     
