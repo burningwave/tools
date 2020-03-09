@@ -20,6 +20,7 @@ To use dependencies shrinker in your project add this to your pom
 </dependency>	
 ```
 <br>
+
 ## Extractor mode
 
 ```java
