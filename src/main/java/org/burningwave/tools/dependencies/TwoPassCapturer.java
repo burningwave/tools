@@ -28,6 +28,7 @@
  */
 package org.burningwave.tools.dependencies;
 
+import static org.burningwave.core.assembler.StaticComponentContainer.FileSystemHelper;
 import static org.burningwave.core.assembler.StaticComponentContainer.LowLevelObjectsHandler;
 import static org.burningwave.core.assembler.StaticComponentContainer.ManagedLoggersRepository;
 import static org.burningwave.core.assembler.StaticComponentContainer.Paths;
@@ -62,7 +63,6 @@ import org.burningwave.core.classes.SearchConfig;
 import org.burningwave.core.function.ThrowingSupplier;
 import org.burningwave.core.function.TriConsumer;
 import org.burningwave.core.io.FileScanConfig;
-import org.burningwave.core.io.FileSystemHelper;
 import org.burningwave.core.io.FileSystemItem;
 import org.burningwave.core.io.FileSystemScanner;
 import org.burningwave.core.io.PathHelper;
