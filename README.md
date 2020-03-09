@@ -19,7 +19,7 @@ To use dependencies shrinker in your project add this to your pom
     <version>0.9.12</version>
 </dependency>	
 ```
-<br>
+<br/>
 
 ## Extractor mode
 
@@ -78,6 +78,8 @@ public class DependenciesExtractor {
 
 }
 ```
+<br/>
+
 ## Adapter mode
 In this mode you can adapt a Java old version application to Java 9 or later. To use this mode simply load, by using PathHelper, the jdk libraries by which the target application was developed and **run the main of the application adapter with a jdk 9 or later**. In the example below we adapt a Java 8 application to Java 9 or later.
 ```java
