@@ -19,6 +19,7 @@ To use dependencies shrinker in your project add this to your pom
     <version>0.9.12</version>
 </dependency>	
 ```
+<br/>
 ## Extractor mode
 
 ```java
