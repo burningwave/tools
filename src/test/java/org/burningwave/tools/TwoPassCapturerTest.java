@@ -1,7 +1,7 @@
 package org.burningwave.tools;
 
-import static org.burningwave.core.assembler.StaticComponentsContainer.JVMInfo;
-import static org.burningwave.core.assembler.StaticComponentsContainer.ManagedLoggersRepository;
+import static org.burningwave.core.assembler.StaticComponentContainer.JVMInfo;
+import static org.burningwave.core.assembler.StaticComponentContainer.ManagedLoggersRepository;
 
 import java.util.ArrayList;
 import java.util.Collection;

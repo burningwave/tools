@@ -28,10 +28,10 @@
  */
 package org.burningwave.tools.dependencies;
 
-import static org.burningwave.core.assembler.StaticComponentsContainer.LowLevelObjectsHandler;
-import static org.burningwave.core.assembler.StaticComponentsContainer.ManagedLoggersRepository;
-import static org.burningwave.core.assembler.StaticComponentsContainer.Paths;
-import static org.burningwave.core.assembler.StaticComponentsContainer.Throwables;
+import static org.burningwave.core.assembler.StaticComponentContainer.LowLevelObjectsHandler;
+import static org.burningwave.core.assembler.StaticComponentContainer.ManagedLoggersRepository;
+import static org.burningwave.core.assembler.StaticComponentContainer.Paths;
+import static org.burningwave.core.assembler.StaticComponentContainer.Throwables;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

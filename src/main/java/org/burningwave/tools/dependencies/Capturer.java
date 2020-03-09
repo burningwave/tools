@@ -28,10 +28,10 @@
  */
 package org.burningwave.tools.dependencies;
 
-import static org.burningwave.core.assembler.StaticComponentsContainer.LowLevelObjectsHandler;
-import static org.burningwave.core.assembler.StaticComponentsContainer.Paths;
-import static org.burningwave.core.assembler.StaticComponentsContainer.Streams;
-import static org.burningwave.core.assembler.StaticComponentsContainer.Throwables;
+import static org.burningwave.core.assembler.StaticComponentContainer.LowLevelObjectsHandler;
+import static org.burningwave.core.assembler.StaticComponentContainer.Paths;
+import static org.burningwave.core.assembler.StaticComponentContainer.Streams;
+import static org.burningwave.core.assembler.StaticComponentContainer.Throwables;
 
 import java.nio.ByteBuffer;
 import java.nio.file.Files;

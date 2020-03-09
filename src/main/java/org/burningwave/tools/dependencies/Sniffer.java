@@ -28,8 +28,8 @@
  */
 package org.burningwave.tools.dependencies;
 
-import static org.burningwave.core.assembler.StaticComponentsContainer.Strings;
-import static org.burningwave.core.assembler.StaticComponentsContainer.Classes;
+import static org.burningwave.core.assembler.StaticComponentContainer.Strings;
+import static org.burningwave.core.assembler.StaticComponentContainer.Classes;
 
 import java.io.IOException;
 import java.io.InputStream;
