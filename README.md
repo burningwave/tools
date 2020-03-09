@@ -11,7 +11,7 @@ The classes that deal the dependencies extraction are:
 
 It can be used indiscriminately or one or the other class: the first performs a normal scan, the second a deep scan.
 
-To use dependencies shrinker in your project add this to your pom
+To use dependencies shrinker in your project add this to your pom:
 ```xml
 <dependency>
     <groupId>org.burningwave</groupId>
