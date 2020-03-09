@@ -2,4 +2,4 @@
 
 **Burningwave Tools** is a set of components based on Burningwave Core library that have high-level functionality
 
-## [Get started](https://github.com/burningwave/tools/wiki)
+## [Click here to get started](https://github.com/burningwave/tools/wiki)
