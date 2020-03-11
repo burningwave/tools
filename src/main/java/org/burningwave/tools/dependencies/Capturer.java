@@ -198,7 +198,14 @@ public class Capturer implements Component {
 		try {
 			String externalExecutor = FileSystemItem.ofPath(System.getProperty("java.home")).getAbsolutePath() + "/bin/java -classpath \"" +
 				String.join(";",	
-					FileSystemItem.ofPath(destinationPath).getChildren(fileSystemItem -> fileSystemItem.isFolder()).stream().map(fileSystemItem -> fileSystemItem.getAbsolutePath()).collect(Collectors.toList())
+					FileSystemItem.ofPath(destinationPath).getChildren(fileSystemItem -> 
+						fileSystemItem.isFolder()).stream().map(fileSystemItem -> {
+							String finalPath = fileSystemItem.getAbsolutePath();
+							if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+								finalPath = finalPath.replace(destinationPath + "/", "%~dp0");
+							}
+							return finalPath;						
+						}).collect(Collectors.toList())
 				) + "\" " + mainClassName;
 			Files.write(java.nio.file.Paths.get(destinationPath + "\\executor-" + executorSuffix + ".cmd"), externalExecutor.getBytes());
 			Files.write(java.nio.file.Paths.get(destinationPath + "\\executor-" + executorSuffix + ".sh"), externalExecutor.getBytes());
