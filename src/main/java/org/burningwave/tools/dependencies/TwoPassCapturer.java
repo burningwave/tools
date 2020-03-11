@@ -235,19 +235,34 @@ public class TwoPassCapturer extends Capturer {
 	        	//classPathsToBeScanned.remove(classPath.getAbsolutePath());
         	}
         }
-        StringBuffer generatedClassPath = new StringBuffer("\"");
+        command.add("-classpath");
+        StringBuffer generatedClassPath = new StringBuffer();
+        if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+        	generatedClassPath.append("\"");
+        }
         if (!classPaths.isEmpty()) {
         	generatedClassPath.append(String.join(System.getProperty("path.separator"), classPaths));
-        } 
-        generatedClassPath.append("\"");
-        command.add("-classpath");
+        }
+        if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+        	generatedClassPath.append("\"");
+        }
         command.add(generatedClassPath.toString());
         command.add(this.getClass().getName());
-        String classPathsToBeScannedParam = "\"" + String.join(System.getProperty("path.separator"), classPathsToBeScanned);
-        classPathsToBeScannedParam += "\"";
+        String classPathsToBeScannedParam = "";
+        if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+        	classPathsToBeScannedParam += "\"";
+        }
+        classPathsToBeScannedParam += String.join(System.getProperty("path.separator"), classPathsToBeScanned);
+        if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+        	classPathsToBeScannedParam += "\"";
+        }
         command.add(classPathsToBeScannedParam);
         command.add(mainClassName);
-        command.add("\"" + destinationPath + "\"");
+        if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+        	command.add("\"" + destinationPath + "\"");
+        } else {
+        	command.add(destinationPath);
+        }
         command.add(Boolean.valueOf(includeMainClass).toString());
         command.add(continueToCaptureAfterSimulatorClassEndExecutionFor.toString());
         ProcessBuilder processBuilder = new ProcessBuilder(command);
@@ -291,7 +306,7 @@ public class TwoPassCapturer extends Capturer {
 					"includeMainClass: " + args[3] + "\n" +
 					"continueToCaptureAfterSimulatorClassEndExecutionFor: " + args[4];
 			
-			Files.write(java.nio.file.Paths.get(args[2] + "\\params-" + fileSuffix + ".txt"), logs.getBytes());
+			Files.write(java.nio.file.Paths.get(args[2] + "/params-" + fileSuffix + ".txt"), logs.getBytes());
 			ManagedLoggersRepository.logDebug(TwoPassCapturer.class, "\n\n" + logs + "\n\n");
 			if (wait > 0) {
 				Thread.sleep(wait);

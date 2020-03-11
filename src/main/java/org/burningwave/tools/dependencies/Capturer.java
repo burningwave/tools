@@ -36,6 +36,7 @@ import static org.burningwave.core.assembler.StaticComponentContainer.Throwables
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.util.Collection;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -163,6 +164,9 @@ public class Capturer implements Component {
 			!fileSystemItem.exists();
 		return (resourceAbsolutePath, resourceRelativePath, resourceContent) -> {
 			String finalPath;
+			if (resourceRelativePath.contains("tools")) {
+				logDebug("Entered");
+			}
 			if (!resourceRelativePath.startsWith("org/burningwave")) {
 				finalPath = getStoreEntryBasePath(destinationPath, resourceAbsolutePath, resourceRelativePath);
 			} else {
@@ -196,19 +200,19 @@ public class Capturer implements Component {
 	
 	static void createExecutor(String destinationPath, String mainClassName, String executorSuffix) {
 		try {
-			String externalExecutor = FileSystemItem.ofPath(System.getProperty("java.home")).getAbsolutePath() + "/bin/java -classpath \"" +
-				String.join(";",	
-					FileSystemItem.ofPath(destinationPath).getChildren(fileSystemItem -> 
-						fileSystemItem.isFolder()).stream().map(fileSystemItem -> {
-							String finalPath = fileSystemItem.getAbsolutePath();
-							if (System.getProperty("os.name").toLowerCase().contains("windows")) {
-								finalPath = finalPath.replace(destinationPath + "/", "%~dp0");
-							}
-							return finalPath;						
-						}).collect(Collectors.toList())
-				) + "\" " + mainClassName;
-			Files.write(java.nio.file.Paths.get(destinationPath + "\\executor-" + executorSuffix + ".cmd"), externalExecutor.getBytes());
-			Files.write(java.nio.file.Paths.get(destinationPath + "\\executor-" + executorSuffix + ".sh"), externalExecutor.getBytes());
+			Set<String> classPathSet = FileSystemItem.ofPath(destinationPath).getChildren(fileSystemItem -> 
+				fileSystemItem.isFolder()
+			).stream().map(fileSystemItem -> {
+				String finalPath = fileSystemItem.getAbsolutePath();
+				if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+					finalPath = finalPath.replace(destinationPath + "/", "%~dp0");
+				}
+				return finalPath;						
+			}).collect(Collectors.toSet());
+			String externalExecutorForWindows = FileSystemItem.ofPath(System.getProperty("java.home")).getAbsolutePath() + "/bin/java -classpath \"" + String.join(";",	classPathSet) + "\" " + mainClassName;
+			String externalExecutorForUnix = FileSystemItem.ofPath(System.getProperty("java.home")).getAbsolutePath() + "/bin/java -classpath " + String.join(":",	classPathSet) + " " + mainClassName;
+			Files.write(java.nio.file.Paths.get(destinationPath + "/executor-" + executorSuffix + ".cmd"), externalExecutorForWindows.getBytes());
+			Files.write(java.nio.file.Paths.get(destinationPath + "/executor-" + executorSuffix + ".sh"), externalExecutorForUnix.getBytes());
 		} catch (Throwable e) {
 			e.printStackTrace();
 		}
