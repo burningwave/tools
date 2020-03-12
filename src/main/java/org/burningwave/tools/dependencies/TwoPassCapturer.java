@@ -333,7 +333,7 @@ public class TwoPassCapturer extends Capturer {
 			String logs =
 					"classpath: " + System.getProperty("java.class.path") + "\n" +
 					"path to be scanned: " + 
-						String.join(";",
+						String.join(System.getProperty("path.separator"),
 							Arrays.asList(
 								args[0].split(System.getProperty("path.separator"))
 							)

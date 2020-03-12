@@ -215,7 +215,9 @@ public class Capturer implements Component {
 			);
 			String externalExecutorForWindows = FileSystemItem.ofPath(
 				System.getProperty("java.home")
-			).getAbsolutePath() + "/bin/java -classpath \"" + String.join(";",	classPathSet) + "\" " + mainClassName;
+			).getAbsolutePath() + "/bin/java -classpath \"" + 
+			String.join(System.getProperty("path.separator"), classPathSet) + 
+			"\" " + mainClassName;
 			Files.write(java.nio.file.Paths.get(destinationPath + "/executor-" + executorSuffix + ".cmd"), externalExecutorForWindows.getBytes());
 		} catch (Throwable exc) {
 			logError("Exception occurred", exc);
@@ -227,7 +229,11 @@ public class Capturer implements Component {
 			Set<String> classPathSet = FileSystemItem.ofPath(destinationPath).getChildren(fileSystemItem -> 
 				fileSystemItem.isFolder()
 			).stream().map(fileSystemItem -> fileSystemItem.getAbsolutePath()).collect(Collectors.toSet());
-			String externalExecutorForUnix = FileSystemItem.ofPath(System.getProperty("java.home")).getAbsolutePath() + "/bin/java -classpath " + String.join(":",	classPathSet) + " " + mainClassName;
+			String externalExecutorForUnix = FileSystemItem.ofPath(
+				System.getProperty("java.home")
+			).getAbsolutePath() + 
+			"/bin/java -classpath " + 
+			String.join(System.getProperty("path.separator"), classPathSet) + " " + mainClassName;
 			Files.write(java.nio.file.Paths.get(destinationPath + "/executor-" + executorSuffix + ".sh"), externalExecutorForUnix.getBytes());
 		} catch (Throwable exc) {
 			logError("Exception occurred", exc);
