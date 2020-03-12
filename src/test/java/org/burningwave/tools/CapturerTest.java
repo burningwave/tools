@@ -1,6 +1,7 @@
 package org.burningwave.tools;
 
 import static org.burningwave.core.assembler.StaticComponentContainer.JVMInfo;
+import static org.burningwave.core.assembler.StaticComponentContainer.ManagedLoggersRepository;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,7 +33,7 @@ public class CapturerTest extends BaseTest {
 				"org.burningwave.tools.CapturerTest",
 				_paths,
 				System.getProperty("user.home") + "/Desktop/bw-tests/dependencies",
-				false, 0L
+				true, 0L
 			);
 			dependencies.waitForTaskEnding();
 			return dependencies.getStore().getAllChildren();
@@ -41,6 +42,10 @@ public class CapturerTest extends BaseTest {
 
 	
 	public static void main(String[] args) {
-		FileSystemItem.ofPath(System.getProperty("user.home")).getChildren();
+		for (FileSystemItem fileSystemItem : FileSystemItem.ofPath(System.getProperty("user.home")).getChildren()) {
+			ManagedLoggersRepository.logDebug(
+				TwoPassCapturerTest.class, fileSystemItem.getAbsolutePath()
+			);
+		}
 	}
 }
