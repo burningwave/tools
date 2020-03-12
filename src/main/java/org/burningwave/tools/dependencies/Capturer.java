@@ -198,23 +198,39 @@ public class Capturer implements Component {
 		return path.substring(temp.lastIndexOf("["));
 	}
 	
-	static void createExecutor(String destinationPath, String mainClassName, String executorSuffix) {
+	void createExecutor(String destinationPath, String mainClassName, String executorSuffix) {
+		if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+			createWindowsExecutor(destinationPath, mainClassName, executorSuffix);
+		} else {
+			createUnixExecutor(destinationPath, mainClassName, executorSuffix);
+		}
+	}
+	
+	void createWindowsExecutor(String destinationPath, String mainClassName, String executorSuffix) {
 		try {
 			Set<String> classPathSet = FileSystemItem.ofPath(destinationPath).getChildren(fileSystemItem -> 
 				fileSystemItem.isFolder()
-			).stream().map(fileSystemItem -> {
-				String finalPath = fileSystemItem.getAbsolutePath();
-				if (System.getProperty("os.name").toLowerCase().contains("windows")) {
-					finalPath = finalPath.replace(destinationPath + "/", "%~dp0");
-				}
-				return finalPath;						
-			}).collect(Collectors.toSet());
-			String externalExecutorForWindows = FileSystemItem.ofPath(System.getProperty("java.home")).getAbsolutePath() + "/bin/java -classpath \"" + String.join(";",	classPathSet) + "\" " + mainClassName;
-			String externalExecutorForUnix = FileSystemItem.ofPath(System.getProperty("java.home")).getAbsolutePath() + "/bin/java -classpath " + String.join(":",	classPathSet) + " " + mainClassName;
+			).stream().map(fileSystemItem -> 
+				fileSystemItem.getAbsolutePath().replace(destinationPath + "/", "%~dp0")).collect(Collectors.toSet()
+			);
+			String externalExecutorForWindows = FileSystemItem.ofPath(
+				System.getProperty("java.home")
+			).getAbsolutePath() + "/bin/java -classpath \"" + String.join(";",	classPathSet) + "\" " + mainClassName;
 			Files.write(java.nio.file.Paths.get(destinationPath + "/executor-" + executorSuffix + ".cmd"), externalExecutorForWindows.getBytes());
+		} catch (Throwable exc) {
+			logError("Exception occurred", exc);
+		}
+	}
+	
+	void createUnixExecutor(String destinationPath, String mainClassName, String executorSuffix) {
+		try {
+			Set<String> classPathSet = FileSystemItem.ofPath(destinationPath).getChildren(fileSystemItem -> 
+				fileSystemItem.isFolder()
+			).stream().map(fileSystemItem -> fileSystemItem.getAbsolutePath()).collect(Collectors.toSet());
+			String externalExecutorForUnix = FileSystemItem.ofPath(System.getProperty("java.home")).getAbsolutePath() + "/bin/java -classpath " + String.join(":",	classPathSet) + " " + mainClassName;
 			Files.write(java.nio.file.Paths.get(destinationPath + "/executor-" + executorSuffix + ".sh"), externalExecutorForUnix.getBytes());
-		} catch (Throwable e) {
-			e.printStackTrace();
+		} catch (Throwable exc) {
+			logError("Exception occurred", exc);
 		}
 	}
 	

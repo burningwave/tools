@@ -309,25 +309,26 @@ public class TwoPassCapturer extends Capturer {
 	}
 	
 	public static void main(String[] args) throws ClassNotFoundException {
+		TwoPassCapturer capturer = TwoPassCapturer.getInstance();
 		try {
 			Collection<String> paths = Arrays.asList(args[0].split(System.getProperty("path.separator")));
 			String mainClassName = args[1];		
 			String destinationPath = args[2];
 			boolean includeMainClass = Boolean.valueOf(args[3]);
 			long continueToCaptureAfterSimulatorClassEndExecutionFor = Long.valueOf(args[4]);
-			TwoPassCapturer.getInstance().captureAndStore(
+			capturer.captureAndStore(
 				mainClassName, paths, destinationPath, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor, false
 			).waitForTaskEnding();
 		} catch (Throwable exc) {
 			ManagedLoggersRepository.logError(TwoPassCapturer.class, "Exception occurred", exc);
 		} finally {
 			String suffix = UUID.randomUUID().toString();
-			logReceivedParameters(args, 0, suffix);
-			createExecutor(args[2], args[1], suffix);
+			capturer.logReceivedParameters(args, 0, suffix);
+			capturer.createExecutor(args[2], args[1], suffix);
 		}
 	}
 	
-	private static void logReceivedParameters(String[] args, long wait, String fileSuffix) {
+	private void logReceivedParameters(String[] args, long wait, String fileSuffix) {
 		try {
 			String logs =
 					"classpath: " + System.getProperty("java.class.path") + "\n" +
