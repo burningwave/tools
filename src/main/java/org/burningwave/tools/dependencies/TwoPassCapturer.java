@@ -201,13 +201,12 @@ public class TwoPassCapturer extends Capturer {
 	}
 	
 	private void launchExternalCapturer(
-		String mainClassName, String destinationPath, Collection<String> baseClassPaths, boolean includeMainClass,
+		String mainClassName,
+		String destinationPath,
+		Collection<String> baseClassPaths,
+		boolean includeMainClass,
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
-	) throws IOException, InterruptedException {
-		String javaExecutablePath = System.getProperty("java.home") + "/bin/java";
-		List<String> command = new LinkedList<String>();
-        command.add(Paths.clean(javaExecutablePath));
-        
+	) throws IOException, InterruptedException {        
         //Excluding Burningwave from next process classpath
         Set<String> classPaths = FileSystemItem.ofPath(destinationPath).getChildren(fileSystemItem -> 
         	!fileSystemItem.getAbsolutePath().endsWith(BURNINGWAVE_CLASSES_RELATIVE_DESTINATION_PATH)
@@ -235,41 +234,78 @@ public class TwoPassCapturer extends Capturer {
 	        	//classPathsToBeScanned.remove(classPath.getAbsolutePath());
         	}
         }
+        ProcessBuilder processBuilder =
+        	System.getProperty("os.name").toLowerCase().contains("windows")?
+        		getProcessBuilderForWindows(
+        			classPaths, classPathsToBeScanned, 
+        			mainClassName, destinationPath, includeMainClass, 
+        			continueToCaptureAfterSimulatorClassEndExecutionFor
+        		) : 
+    			getProcessBuilderForUnix(
+            		classPaths, classPathsToBeScanned, 
+            		mainClassName, destinationPath, includeMainClass, 
+            		continueToCaptureAfterSimulatorClassEndExecutionFor
+            	);
+        Process process = processBuilder.start();
+        process.waitFor();
+	}
+	
+	private ProcessBuilder getProcessBuilderForWindows(
+		Collection<String> classPaths, 
+		Collection<String> classPathsToBeScanned,
+		String mainClassName,
+		String destinationPath,
+		boolean includeMainClass,
+		Long continueToCaptureAfterSimulatorClassEndExecutionFor
+	) throws IOException {
+		 String javaExecutablePath = System.getProperty("java.home") + "/bin/java";
+		List<String> command = new LinkedList<String>();
+        command.add(Paths.clean(javaExecutablePath));
         command.add("-classpath");
         StringBuffer generatedClassPath = new StringBuffer();
-        if (System.getProperty("os.name").toLowerCase().contains("windows")) {
-        	generatedClassPath.append("\"");
-        }
+        generatedClassPath.append("\"");
         if (!classPaths.isEmpty()) {
         	generatedClassPath.append(String.join(System.getProperty("path.separator"), classPaths));
         }
-        if (System.getProperty("os.name").toLowerCase().contains("windows")) {
-        	generatedClassPath.append("\"");
-        }
+        generatedClassPath.append("\"");
         command.add(generatedClassPath.toString());
         command.add(this.getClass().getName());
-        String classPathsToBeScannedParam = "";
-        if (System.getProperty("os.name").toLowerCase().contains("windows")) {
-        	classPathsToBeScannedParam += "\"";
-        }
-        classPathsToBeScannedParam += String.join(System.getProperty("path.separator"), classPathsToBeScanned);
-        if (System.getProperty("os.name").toLowerCase().contains("windows")) {
-        	classPathsToBeScannedParam += "\"";
-        }
-        command.add(classPathsToBeScannedParam);
+        command.add("\"" + String.join(System.getProperty("path.separator"), classPathsToBeScanned) + "\"");
         command.add(mainClassName);
-        if (System.getProperty("os.name").toLowerCase().contains("windows")) {
-        	command.add("\"" + destinationPath + "\"");
-        } else {
-        	command.add(destinationPath);
-        }
+        command.add("\"" + destinationPath + "\"");
         command.add(Boolean.valueOf(includeMainClass).toString());
         command.add(continueToCaptureAfterSimulatorClassEndExecutionFor.toString());
         ProcessBuilder processBuilder = new ProcessBuilder(command);
 
-        Process process = processBuilder.inheritIO().start();
-        
-        process.waitFor();
+        return processBuilder.inheritIO();
+	}
+	
+	private ProcessBuilder getProcessBuilderForUnix(
+		Collection<String> classPaths, 
+		Collection<String> classPathsToBeScanned,
+		String mainClassName,
+		String destinationPath,
+		boolean includeMainClass,
+		Long continueToCaptureAfterSimulatorClassEndExecutionFor
+	) throws IOException {
+		 String javaExecutablePath = System.getProperty("java.home") + "/bin/java";
+		List<String> command = new LinkedList<String>();
+        command.add(Paths.clean(javaExecutablePath));
+        command.add("-classpath");
+        StringBuffer generatedClassPath = new StringBuffer();
+        if (!classPaths.isEmpty()) {
+        	generatedClassPath.append(String.join(System.getProperty("path.separator"), classPaths));
+        }
+        command.add(generatedClassPath.toString());
+        command.add(this.getClass().getName());
+        command.add(String.join(System.getProperty("path.separator"), classPathsToBeScanned));
+        command.add(mainClassName);
+        command.add(destinationPath);
+        command.add(Boolean.valueOf(includeMainClass).toString());
+        command.add(continueToCaptureAfterSimulatorClassEndExecutionFor.toString());
+        ProcessBuilder processBuilder = new ProcessBuilder(command);
+
+        return processBuilder.inheritIO();
 	}
 	
 	public static void main(String[] args) throws ClassNotFoundException {
