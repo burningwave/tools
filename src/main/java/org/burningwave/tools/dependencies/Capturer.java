@@ -49,7 +49,6 @@ import org.burningwave.core.Component;
 import org.burningwave.core.assembler.ComponentContainer;
 import org.burningwave.core.assembler.ComponentSupplier;
 import org.burningwave.core.classes.ByteCodeHunter;
-import org.burningwave.core.classes.Classes;
 import org.burningwave.core.classes.JavaClass;
 import org.burningwave.core.function.TriConsumer;
 import org.burningwave.core.io.FileSystemItem;
@@ -60,24 +59,20 @@ public class Capturer implements Component {
 	protected static final String ADDITIONAL_RESOURCES_PATH = "dependencies-capturer.additional-resources-path";
 	protected static final String BURNINGWAVE_CLASSES_RELATIVE_DESTINATION_PATH = "[org.burningwave]";
 	ByteCodeHunter byteCodeHunter;
-	Classes.Loaders classesLoaders;
 	FileSystemScanner fileSystemScanner;
 	
 	Capturer(
 		FileSystemScanner fileSystemScanner,
-		ByteCodeHunter byteCodeHunter,
-		Classes.Loaders sourceCodeHandler
+		ByteCodeHunter byteCodeHunter
 	) {
 		this.fileSystemScanner = fileSystemScanner;
 		this.byteCodeHunter = byteCodeHunter;
-		this.classesLoaders = sourceCodeHandler;
 	}
 	
 	public static Capturer create(ComponentSupplier componentSupplier) {
 		return new Capturer(
 			componentSupplier.getFileSystemScanner(),
-			componentSupplier.getByteCodeHunter(),
-			componentSupplier.getClassesLoaders()
+			componentSupplier.getByteCodeHunter()
 		);
 	}
 	
@@ -112,7 +107,6 @@ public class Capturer implements Component {
 			try (Sniffer resourceSniffer = new Sniffer(null).init(
 				false,
 				fileSystemScanner,
-				classesLoaders,
 				baseClassPaths,
 				javaClassAdder,
 				fileSystemItem -> {
