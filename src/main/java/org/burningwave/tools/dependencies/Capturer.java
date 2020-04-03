@@ -230,9 +230,9 @@ public class Capturer implements Component {
 			).stream().map(fileSystemItem -> 
 				fileSystemItem.getAbsolutePath().replace(destinationPath + "/", "%~dp0")).collect(Collectors.toSet()
 			);
-			String externalExecutorForWindows = FileSystemItem.ofPath(
+			String externalExecutorForWindows = "\"" + FileSystemItem.ofPath(
 				System.getProperty("java.home")
-			).getAbsolutePath() + "/bin/java -classpath \"" + 
+			).getAbsolutePath() + "\"" + "/bin/java -classpath \"" + 
 			String.join(System.getProperty("path.separator"), classPathSet) + 
 			"\" " + mainClassName +
 			(mainMethodAruments.length > 0 ? 
