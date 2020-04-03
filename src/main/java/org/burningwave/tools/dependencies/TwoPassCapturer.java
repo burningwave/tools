@@ -97,16 +97,18 @@ public class TwoPassCapturer extends Capturer {
 	@Override
 	public Result capture(
 		String mainClassName,
+		String[] mainMethodAruments,
 		Collection<String> baseClassPaths,
 		TriConsumer<String, String, ByteBuffer> resourceConsumer,
 		boolean includeMainClass,
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) {
-		return capture(mainClassName, baseClassPaths, resourceConsumer, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor, true);
+		return capture(mainClassName, mainMethodAruments, baseClassPaths, resourceConsumer, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor, true);
 	}
 	
 	public Result capture(
 		String mainClassName,
+		String[] mainMethodAruments,
 		Collection<String> baseClassPaths,
 		TriConsumer<String, String, ByteBuffer> resourceConsumer,
 		boolean includeMainClass,
@@ -133,7 +135,7 @@ public class TwoPassCapturer extends Capturer {
 					() -> Class.forName(mainClassName, false, resourceSniffer):
 					() -> Class.forName(mainClassName);
 				try {
-					mainClassSupplier.get().getMethod("main", String[].class).invoke(null, (Object)new String[]{});
+					mainClassSupplier.get().getMethod("main", String[].class).invoke(null, (Object)mainMethodAruments);
 					if (continueToCaptureAfterSimulatorClassEndExecutionFor != null && continueToCaptureAfterSimulatorClassEndExecutionFor > 0) {
 						Thread.sleep(continueToCaptureAfterSimulatorClassEndExecutionFor);
 					}
@@ -145,7 +147,7 @@ public class TwoPassCapturer extends Capturer {
 			if (recursive) {
 				try {
 					launchExternalCapturer(
-						mainClassName, result.getStore().getAbsolutePath(), baseClassPaths, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor
+						mainClassName, mainMethodAruments, result.getStore().getAbsolutePath(), baseClassPaths, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor
 					);
 				} catch (IOException | InterruptedException exc) {
 					throw Throwables.toRuntimeException(exc);
@@ -178,6 +180,7 @@ public class TwoPassCapturer extends Capturer {
 	
 	private Result captureAndStore(
 		String mainClassName,
+		String[] mainMethodAruments,
 		Collection<String> baseClassPaths,
 		String destinationPath,
 		boolean includeMainClass,
@@ -186,6 +189,7 @@ public class TwoPassCapturer extends Capturer {
 	) {
 		Result dependencies = capture(
 			mainClassName,
+			mainMethodAruments,
 			baseClassPaths,
 			getStoreFunction(destinationPath),
 			includeMainClass,
@@ -198,6 +202,7 @@ public class TwoPassCapturer extends Capturer {
 	
 	private void launchExternalCapturer(
 		String mainClassName,
+		String[] mainMethodAruments,
 		String destinationPath,
 		Collection<String> baseClassPaths,
 		boolean includeMainClass,
@@ -233,13 +238,13 @@ public class TwoPassCapturer extends Capturer {
         ProcessBuilder processBuilder =
         	System.getProperty("os.name").toLowerCase().contains("windows")?
         		getProcessBuilderForWindows(
-        			classPaths, classPathsToBeScanned, 
-        			mainClassName, destinationPath, includeMainClass, 
+        			classPaths, classPathsToBeScanned, mainClassName, 
+        			mainMethodAruments, destinationPath, includeMainClass, 
         			continueToCaptureAfterSimulatorClassEndExecutionFor
         		) : 
     			getProcessBuilderForUnix(
-            		classPaths, classPathsToBeScanned, 
-            		mainClassName, destinationPath, includeMainClass, 
+            		classPaths, classPathsToBeScanned, mainClassName, 
+            		mainMethodAruments, destinationPath, includeMainClass, 
             		continueToCaptureAfterSimulatorClassEndExecutionFor
             	);
         Process process = processBuilder.start();
@@ -250,6 +255,7 @@ public class TwoPassCapturer extends Capturer {
 		Collection<String> classPaths, 
 		Collection<String> classPathsToBeScanned,
 		String mainClassName,
+		String[] mainMethodAruments,
 		String destinationPath,
 		boolean includeMainClass,
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
@@ -271,6 +277,7 @@ public class TwoPassCapturer extends Capturer {
         command.add("\"" + destinationPath + "\"");
         command.add(Boolean.valueOf(includeMainClass).toString());
         command.add(continueToCaptureAfterSimulatorClassEndExecutionFor.toString());
+        command.addAll(Arrays.asList(mainMethodAruments));
         ProcessBuilder processBuilder = new ProcessBuilder(command);
 
         return processBuilder.inheritIO();
@@ -280,13 +287,14 @@ public class TwoPassCapturer extends Capturer {
 		Collection<String> classPaths, 
 		Collection<String> classPathsToBeScanned,
 		String mainClassName,
+		String[] mainMethodAruments,
 		String destinationPath,
 		boolean includeMainClass,
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) throws IOException {
-		 String javaExecutablePath = System.getProperty("java.home") + "/bin/java";
 		List<String> command = new LinkedList<String>();
-        command.add(Paths.clean(javaExecutablePath));
+		String javaExecutablePath = Paths.clean(System.getProperty("java.home") + "/bin/java");
+        command.add("\"" + javaExecutablePath + "\"");
         command.add("-classpath");
         StringBuffer generatedClassPath = new StringBuffer();
         if (!classPaths.isEmpty()) {
@@ -299,12 +307,16 @@ public class TwoPassCapturer extends Capturer {
         command.add(destinationPath);
         command.add(Boolean.valueOf(includeMainClass).toString());
         command.add(continueToCaptureAfterSimulatorClassEndExecutionFor.toString());
+        command.addAll(Arrays.asList(mainMethodAruments));
         ProcessBuilder processBuilder = new ProcessBuilder(command);
 
         return processBuilder.inheritIO();
 	}
 	
 	public static void main(String[] args) throws ClassNotFoundException {
+		String[] mainMethodArguments = args.length > 5 ?
+			Arrays.copyOfRange(args, 5, args.length): 
+			new String[0];
 		TwoPassCapturer capturer = TwoPassCapturer.getInstance();
 		try {
 			Collection<String> paths = Arrays.asList(args[0].split(System.getProperty("path.separator")));
@@ -313,31 +325,33 @@ public class TwoPassCapturer extends Capturer {
 			boolean includeMainClass = Boolean.valueOf(args[3]);
 			long continueToCaptureAfterSimulatorClassEndExecutionFor = Long.valueOf(args[4]);
 			capturer.captureAndStore(
-				mainClassName, paths, destinationPath, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor, false
+				mainClassName, mainMethodArguments, paths, destinationPath, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor, false
 			).waitForTaskEnding();
 		} catch (Throwable exc) {
 			ManagedLoggersRepository.logError(TwoPassCapturer.class, "Exception occurred", exc);
 		} finally {
 			String suffix = UUID.randomUUID().toString();
 			capturer.logReceivedParameters(args, 0, suffix);
-			capturer.createExecutor(args[2], args[1], suffix);
+			capturer.createExecutor(args[2], args[1], mainMethodArguments, suffix);
 		}
 	}
 	
 	private void logReceivedParameters(String[] args, long wait, String fileSuffix) {
 		try {
-			String logs =
-					"classpath: " + System.getProperty("java.class.path") + "\n" +
-					"path to be scanned: " + 
-						String.join(System.getProperty("path.separator"),
-							Arrays.asList(
-								args[0].split(System.getProperty("path.separator"))
-							)
-						) + "\n" +
-					"mainClassName: " + args[1] + "\n" +
-					"destinationPath: " + args[2] + "\n" +
-					"includeMainClass: " + args[3] + "\n" +
-					"continueToCaptureAfterSimulatorClassEndExecutionFor: " + args[4];
+			
+			String logs =String.join("\n",
+				"classpath: " + System.getProperty("java.class.path"),
+				"path to be scanned: " + String.join(System.getProperty("path.separator"),
+					args[0].split(System.getProperty("path.separator"))
+				),
+				"mainClassName: " + args[1],
+				"destinationPath: " + args[2],
+				"includeMainClass: " + args[3],
+				"continueToCaptureAfterSimulatorClassEndExecutionFor: " + args[4],
+				(args.length > 5 ? "arguments: " + String.join(", ",
+					Arrays.copyOfRange(args, 5, args.length)
+				) : "")
+			);
 			
 			Files.write(java.nio.file.Paths.get(args[2] + "/params-" + fileSuffix + ".txt"), logs.getBytes());
 			ManagedLoggersRepository.logDebug(TwoPassCapturer.class, "\n\n" + logs + "\n\n");

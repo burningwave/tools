@@ -31,8 +31,32 @@ public class TwoPassCapturerTest extends BaseTest {
 			Collections.sort(_paths);
 			Result result = TwoPassCapturer.getInstance().captureAndStore(
 				"org.burningwave.tools.TwoPassCapturerTest",
+				new String[]{"\"" + System.getProperty("user.home") + "\""},
 				_paths,
-				System.getProperty("user.home") + "/Desktop/bw-tests/dependencies",
+				System.getProperty("user.home") + "/Desktop/bw-tests/TwoPassCapturer/testOne",
+				true, 0L
+			);
+			result.waitForTaskEnding();
+			return result.getJavaClasses();
+		});
+	}
+	
+	@Test
+	public void storeDependenciesTestTwo() {
+		testNotEmpty(() -> {
+			ComponentSupplier componentSupplier = ComponentContainer.getInstance();
+			PathHelper pathHelper = componentSupplier.getPathHelper();
+			Collection<String> paths = pathHelper.getPaths(PathHelper.MAIN_CLASS_PATHS, PathHelper.MAIN_CLASS_PATHS_EXTENSION);
+			if (JVMInfo.getVersion() > 8) {
+				paths.addAll(pathHelper.getPaths("dependencies-capturer.additional-resources-path"));
+			}
+			List<String> _paths = new ArrayList<>(paths);
+			Collections.sort(_paths);
+			Result result = TwoPassCapturer.getInstance().captureAndStore(
+				"org.burningwave.tools.TwoPassCapturerTest",
+				new String[]{"\"" + "C:\\Program Files (x86)" + "\""},
+				_paths,
+				System.getProperty("user.home") + "/Desktop/bw-tests/TwoPassCapturer/testTwo",
 				true, 0L
 			);
 			result.waitForTaskEnding();
@@ -40,9 +64,15 @@ public class TwoPassCapturerTest extends BaseTest {
 		});
 	}	
 
-	
 	public static void main(String[] args) {
-		for (FileSystemItem fileSystemItem : FileSystemItem.ofPath(System.getProperty("user.home")).getChildren()) {
+		String folderName = args[0];
+		if (folderName.startsWith("\"")) {
+			folderName = args[0].substring(1);
+		}
+		if (folderName.endsWith("\"")) {
+			folderName = folderName.substring(0, folderName.length() -1);
+		}
+		for (FileSystemItem fileSystemItem : FileSystemItem.ofPath(folderName).getChildren()) {
 			ManagedLoggersRepository.logDebug(
 				TwoPassCapturerTest.class, fileSystemItem.getAbsolutePath()
 			);

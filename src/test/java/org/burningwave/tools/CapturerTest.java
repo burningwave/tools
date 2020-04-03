@@ -32,7 +32,7 @@ public class CapturerTest extends BaseTest {
 			Result dependencies = Capturer.getInstance().captureAndStore(
 				"org.burningwave.tools.CapturerTest",
 				_paths,
-				System.getProperty("user.home") + "/Desktop/bw-tests/dependencies",
+				System.getProperty("user.home") + "/Desktop/bw-tests/Capturer/testOne",
 				true, 0L
 			);
 			dependencies.waitForTaskEnding();

@@ -80,9 +80,20 @@ public class Capturer implements Component {
 		return LazyHolder.getCapturerInstance();
 	}
 	
+	public Result capture(
+		String mainClassName,
+		Collection<String> baseClassPaths,
+		TriConsumer<String, String, ByteBuffer> resourceConsumer,
+		boolean includeMainClass,
+		Long continueToCaptureAfterSimulatorClassEndExecutionFor
+	) {
+		return capture(mainClassName, new String[0], baseClassPaths, resourceConsumer, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor);
+	}
+	
 	@SuppressWarnings("resource")
 	public Result capture(
 		String mainClassName,
+		String[] mainMethodAruments,
 		Collection<String> baseClassPaths,
 		TriConsumer<String, String, ByteBuffer> resourceConsumer,
 		boolean includeMainClass,
@@ -117,14 +128,14 @@ public class Capturer implements Component {
 			) {
 				try {
 					cls = Class.forName(mainClassName, false, resourceSniffer);
-					cls.getMethod("main", String[].class).invoke(null, (Object)new String[]{});
+					cls.getMethod("main", String[].class).invoke(null, (Object)mainMethodAruments);
 					if (continueToCaptureAfterSimulatorClassEndExecutionFor != null && continueToCaptureAfterSimulatorClassEndExecutionFor > 0) {
 						Thread.sleep(continueToCaptureAfterSimulatorClassEndExecutionFor);
 					}
 				} catch (Throwable exc) {
 					throw Throwables.toRuntimeException(exc);				
 				} finally {
-					createExecutor(result.getStore().getAbsolutePath(), mainClassName, UUID.randomUUID().toString());
+					createExecutor(result.getStore().getAbsolutePath(), mainClassName, mainMethodAruments, UUID.randomUUID().toString());
 				}
 			}
 			LowLevelObjectsHandler.enableIllegalAccessLogger();
@@ -139,8 +150,23 @@ public class Capturer implements Component {
 		boolean includeMainClass,
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) {
+		return captureAndStore(
+			mainClassName, new String[0], baseClassPaths, destinationPath,
+			includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor
+		);
+	}
+	
+	public Result captureAndStore(
+		String mainClassName,
+		String[] mainMethodAruments,
+		Collection<String> baseClassPaths,
+		String destinationPath,
+		boolean includeMainClass,
+		Long continueToCaptureAfterSimulatorClassEndExecutionFor
+	) {
 		Result dependencies = capture(
 			mainClassName,
+			mainMethodAruments,
 			baseClassPaths, 
 			getStoreFunction(destinationPath),
 			includeMainClass,
@@ -158,9 +184,6 @@ public class Capturer implements Component {
 			!fileSystemItem.exists();
 		return (resourceAbsolutePath, resourceRelativePath, resourceContent) -> {
 			String finalPath;
-			if (resourceRelativePath.contains("tools")) {
-				logDebug("Entered");
-			}
 			if (!resourceRelativePath.startsWith("org/burningwave")) {
 				finalPath = getStoreEntryBasePath(destinationPath, resourceAbsolutePath, resourceRelativePath);
 			} else {
@@ -192,15 +215,15 @@ public class Capturer implements Component {
 		return path.substring(temp.lastIndexOf("["));
 	}
 	
-	void createExecutor(String destinationPath, String mainClassName, String executorSuffix) {
+	void createExecutor(String destinationPath, String mainClassName, String[] mainMethodAruments, String executorSuffix) {
 		if (System.getProperty("os.name").toLowerCase().contains("windows")) {
-			createWindowsExecutor(destinationPath, mainClassName, executorSuffix);
+			createWindowsExecutor(destinationPath, mainClassName, mainMethodAruments, executorSuffix);
 		} else {
-			createUnixExecutor(destinationPath, mainClassName, executorSuffix);
+			createUnixExecutor(destinationPath, mainClassName, mainMethodAruments, executorSuffix);
 		}
 	}
 	
-	void createWindowsExecutor(String destinationPath, String mainClassName, String executorSuffix) {
+	void createWindowsExecutor(String destinationPath, String mainClassName, String[] mainMethodAruments, String executorSuffix) {
 		try {
 			Set<String> classPathSet = FileSystemItem.ofPath(destinationPath).getChildren(fileSystemItem -> 
 				fileSystemItem.isFolder()
@@ -211,14 +234,18 @@ public class Capturer implements Component {
 				System.getProperty("java.home")
 			).getAbsolutePath() + "/bin/java -classpath \"" + 
 			String.join(System.getProperty("path.separator"), classPathSet) + 
-			"\" " + mainClassName;
+			"\" " + mainClassName +
+			(mainMethodAruments.length > 0 ? 
+				" " + String.join(" ", toDoubleQuotedStringsForStringsThatContainEmptySpace(mainMethodAruments)) : 
+				""
+			);
 			Files.write(java.nio.file.Paths.get(destinationPath + "/executor-" + executorSuffix + ".cmd"), externalExecutorForWindows.getBytes());
 		} catch (Throwable exc) {
 			logError("Exception occurred", exc);
 		}
 	}
 	
-	void createUnixExecutor(String destinationPath, String mainClassName, String executorSuffix) {
+	void createUnixExecutor(String destinationPath, String mainClassName, String[] mainMethodAruments, String executorSuffix) {
 		try {
 			Set<String> classPathSet = FileSystemItem.ofPath(destinationPath).getChildren(fileSystemItem -> 
 				fileSystemItem.isFolder()
@@ -227,11 +254,23 @@ public class Capturer implements Component {
 				System.getProperty("java.home")
 			).getAbsolutePath() + 
 			"/bin/java -classpath " + 
-			String.join(System.getProperty("path.separator"), classPathSet) + " " + mainClassName;
+			String.join(System.getProperty("path.separator"), classPathSet) + " " + mainClassName + 
+			(mainMethodAruments.length > 0 ? 
+				" " + String.join(" ", toDoubleQuotedStringsForStringsThatContainEmptySpace(mainMethodAruments)) : 
+				""
+			);
 			Files.write(java.nio.file.Paths.get(destinationPath + "/executor-" + executorSuffix + ".sh"), externalExecutorForUnix.getBytes());
 		} catch (Throwable exc) {
 			logError("Exception occurred", exc);
 		}
+	}
+	
+	String[] toDoubleQuotedStringsForStringsThatContainEmptySpace(String[] values) {
+		String[] newValues = new String[values.length];
+		for (int i = 0; i < values.length; i++) {
+			newValues [i] = values[i].contains(" ")? "\"" + values[i] + "\"" : values[i];
+		}
+		return newValues;
 	}
 	
 	public static class Result implements Component {
