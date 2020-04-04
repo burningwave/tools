@@ -294,7 +294,7 @@ public class TwoPassCapturer extends Capturer {
 	) throws IOException {
 		List<String> command = new LinkedList<String>();
 		String javaExecutablePath = Paths.clean(System.getProperty("java.home") + "/bin/java");
-        command.add("\"" + javaExecutablePath + "\"");
+        command.add(javaExecutablePath);
         command.add("-classpath");
         StringBuffer generatedClassPath = new StringBuffer();
         if (!classPaths.isEmpty()) {
