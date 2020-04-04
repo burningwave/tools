@@ -260,7 +260,7 @@ public class TwoPassCapturer extends Capturer {
 		boolean includeMainClass,
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) throws IOException {
-		 String javaExecutablePath = System.getProperty("java.home") + "/bin/java";
+		String javaExecutablePath = System.getProperty("java.home") + "/bin/java";
 		List<String> command = new LinkedList<String>();
         command.add(Paths.clean(javaExecutablePath));
         command.add("-classpath");
