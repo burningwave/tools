@@ -244,7 +244,7 @@ public class Sniffer extends MemoryClassLoader {
     	if (fileSystemItem != null) {
     		return fileSystemItem.toInputStream();
     	} else {
-    		return getLoadedCompiledClassesAsInputStream(name);
+    		return getCompiledClassAsInputStream(name);
     	}
     }
     
