@@ -121,6 +121,9 @@
 				<configuration>
 					<archive>
 						<addMavenDescriptor>false</addMavenDescriptor>
+						<manifestEntries>
+							<built-by>Burningwave</built-by>
+						</manifestEntries>
 					</archive>
 				</configuration>
 			</plugin>
