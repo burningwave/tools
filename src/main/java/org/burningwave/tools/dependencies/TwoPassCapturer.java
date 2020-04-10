@@ -271,7 +271,7 @@ public class TwoPassCapturer extends Capturer {
         }
         generatedClassPath.append("\"");
         command.add(generatedClassPath.toString());
-        command.add(Launcher.class.getName());
+        command.add(InternalLauncher.class.getName());
         command.add("\"" + String.join(System.getProperty("path.separator"), classPathsToBeScanned) + "\"");
         command.add(mainClassName);
         command.add("\"" + destinationPath + "\"");
@@ -340,7 +340,7 @@ public class TwoPassCapturer extends Capturer {
 		}
 	}
 	
-	private static class Launcher {
+	private static class InternalLauncher {
 		
 		@SuppressWarnings("unused")
 		public static void main(String[] args) {
