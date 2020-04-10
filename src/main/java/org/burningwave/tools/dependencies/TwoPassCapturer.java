@@ -271,7 +271,7 @@ public class TwoPassCapturer extends Capturer {
         }
         generatedClassPath.append("\"");
         command.add(generatedClassPath.toString());
-        command.add(this.getClass().getName());
+        command.add(Launcher.class.getName());
         command.add("\"" + String.join(System.getProperty("path.separator"), classPathsToBeScanned) + "\"");
         command.add(mainClassName);
         command.add("\"" + destinationPath + "\"");
@@ -313,29 +313,6 @@ public class TwoPassCapturer extends Capturer {
         return processBuilder.inheritIO();
 	}
 	
-	public static void main(String[] args) throws ClassNotFoundException {
-		String[] mainMethodArguments = args.length > 5 ?
-			Arrays.copyOfRange(args, 5, args.length): 
-			new String[0];
-		TwoPassCapturer capturer = TwoPassCapturer.getInstance();
-		try {
-			Collection<String> paths = Arrays.asList(args[0].split(System.getProperty("path.separator")));
-			String mainClassName = args[1];		
-			String destinationPath = args[2];
-			boolean includeMainClass = Boolean.valueOf(args[3]);
-			long continueToCaptureAfterSimulatorClassEndExecutionFor = Long.valueOf(args[4]);
-			capturer.captureAndStore(
-				mainClassName, mainMethodArguments, paths, destinationPath, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor, false
-			).waitForTaskEnding();
-		} catch (Throwable exc) {
-			ManagedLoggersRepository.logError(TwoPassCapturer.class, "Exception occurred", exc);
-		} finally {
-			String suffix = UUID.randomUUID().toString();
-			capturer.logReceivedParameters(args, 0, suffix);
-			capturer.createExecutor(args[2], args[1], mainMethodArguments, suffix);
-		}
-	}
-	
 	private void logReceivedParameters(String[] args, long wait, String fileSuffix) {
 		try {
 			
@@ -360,6 +337,33 @@ public class TwoPassCapturer extends Capturer {
 			}
 		} catch (Throwable e) {
 			e.printStackTrace();
+		}
+	}
+	
+	private static class Launcher {
+		
+		@SuppressWarnings("unused")
+		public static void main(String[] args) {
+			String[] mainMethodArguments = args.length > 5 ?
+				Arrays.copyOfRange(args, 5, args.length): 
+				new String[0];
+			TwoPassCapturer capturer = TwoPassCapturer.getInstance();
+			try {
+				Collection<String> paths = Arrays.asList(args[0].split(System.getProperty("path.separator")));
+				String mainClassName = args[1];		
+				String destinationPath = args[2];
+				boolean includeMainClass = Boolean.valueOf(args[3]);
+				long continueToCaptureAfterSimulatorClassEndExecutionFor = Long.valueOf(args[4]);
+				capturer.captureAndStore(
+					mainClassName, mainMethodArguments, paths, destinationPath, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor, false
+				).waitForTaskEnding();
+			} catch (Throwable exc) {
+				ManagedLoggersRepository.logError(TwoPassCapturer.class, "Exception occurred", exc);
+			} finally {
+				String suffix = UUID.randomUUID().toString();
+				capturer.logReceivedParameters(args, 0, suffix);
+				capturer.createExecutor(args[2], args[1], mainMethodArguments, suffix);
+			}
 		}
 	}
 	
