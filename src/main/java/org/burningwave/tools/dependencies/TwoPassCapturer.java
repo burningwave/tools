@@ -106,7 +106,7 @@ public class TwoPassCapturer extends Capturer {
 		return capture(mainClassName, mainMethodAruments, baseClassPaths, resourceConsumer, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor, true);
 	}
 	
-	public Result capture(
+	private Result capture(
 		String mainClassName,
 		String[] mainMethodAruments,
 		Collection<String> baseClassPaths,
