@@ -173,7 +173,6 @@ public class TwoPassCapturer extends Capturer {
 					}
 				}
 			}
-			LowLevelObjectsHandler.enableIllegalAccessLogger();
 		});
 		return result;
 	}

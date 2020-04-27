@@ -138,7 +138,6 @@ public class Capturer implements Component {
 					createExecutor(result.getStore().getAbsolutePath(), mainClassName, mainMethodAruments, UUID.randomUUID().toString());
 				}
 			}
-			LowLevelObjectsHandler.enableIllegalAccessLogger();
 		});
 		return result;
 	}
