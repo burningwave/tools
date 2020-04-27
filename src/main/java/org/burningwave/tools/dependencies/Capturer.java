@@ -28,7 +28,6 @@
  */
 package org.burningwave.tools.dependencies;
 
-import static org.burningwave.core.assembler.StaticComponentContainer.LowLevelObjectsHandler;
 import static org.burningwave.core.assembler.StaticComponentContainer.Paths;
 import static org.burningwave.core.assembler.StaticComponentContainer.Streams;
 import static org.burningwave.core.assembler.StaticComponentContainer.Throwables;
@@ -99,7 +98,6 @@ public class Capturer implements Component {
 		boolean includeMainClass,
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) {	
-		LowLevelObjectsHandler.disableIllegalAccessLogger();
 		final Result result = new Result();
 		Function<JavaClass, Boolean> javaClassAdder = includeMainClass ? 
 			(javaClass) -> {

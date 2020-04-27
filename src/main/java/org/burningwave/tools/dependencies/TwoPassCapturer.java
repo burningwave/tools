@@ -29,7 +29,6 @@
 package org.burningwave.tools.dependencies;
 
 import static org.burningwave.core.assembler.StaticComponentContainer.FileSystemHelper;
-import static org.burningwave.core.assembler.StaticComponentContainer.LowLevelObjectsHandler;
 import static org.burningwave.core.assembler.StaticComponentContainer.ManagedLoggersRepository;
 import static org.burningwave.core.assembler.StaticComponentContainer.Paths;
 import static org.burningwave.core.assembler.StaticComponentContainer.Throwables;
@@ -115,7 +114,6 @@ public class TwoPassCapturer extends Capturer {
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor,
 		boolean recursive
 	) {
-		LowLevelObjectsHandler.disableIllegalAccessLogger();
 		final Result result = new Result(
 			this.fileSystemScanner,
 				javaClass -> true,
