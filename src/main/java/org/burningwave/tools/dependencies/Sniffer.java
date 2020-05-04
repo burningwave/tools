@@ -137,8 +137,8 @@ public class Sniffer extends MemoryClassLoader {
 	}
 	
 	@Override
-	public synchronized void addCompiledClass(String className, ByteBuffer byteCode) {
-		super.addCompiledClass(className, byteCode);
+	public synchronized void addByteCode(String className, ByteBuffer byteCode) {
+		super.addByteCode(className, byteCode);
 	}
 	
     Consumer<Scan.ItemContext> getMapStorer() {
@@ -150,7 +150,7 @@ public class Sniffer extends MemoryClassLoader {
 				!absolutePath.endsWith("package-info.class")
 			) {
 				JavaClass javaClass = JavaClass.create(scannedItemContext.getScannedItem().toByteBuffer());
-				addCompiledClass(javaClass.getName(), javaClass.getByteCode());
+				addByteCode(javaClass.getName(), javaClass.getByteCode());
 				javaClasses.put(absolutePath, javaClass);
 				if (javaClass.getName().startsWith("org.burningwave.")) {
 					bwJavaClasses.put(javaClass.getName(), javaClass);
@@ -197,8 +197,8 @@ public class Sniffer extends MemoryClassLoader {
 	}
 	
 	@Override
-	public void addLoadedCompiledClass(String className, ByteBuffer byteCode) {
-		super.addLoadedCompiledClass(className, byteCode);
+	public void addLoadedByteCode(String className, ByteBuffer byteCode) {
+		super.addLoadedByteCode(className, byteCode);
 		consumeClass(className);
 	};
 	
@@ -244,7 +244,7 @@ public class Sniffer extends MemoryClassLoader {
     	if (fileSystemItem != null) {
     		return fileSystemItem.toInputStream();
     	} else {
-    		return getCompiledClassAsInputStream(name);
+    		return getByteCodeAsInputStream(name);
     	}
     }
     
