@@ -17,11 +17,8 @@ Burningwave Tools [![Tweet](https://img.shields.io/twitter/url/http/shields.io.s
 [![Tested on Java 14](https://img.shields.io/badge/Tested%20on-Java%2014-blue)](https://www.oracle.com/java/technologies/javase-downloads.html)
 
 **Burningwave Tools** is a set of components based on Burningwave Core library that have high-level functionality
-## Dependencies shrinking
+## Dependencies shrinking / Adapting old Java applications to Java 9 or later
 By this functionality only the classes and resources strictly used by an application will be extracted and stored in a specified path. At the end of the execution of the task, a script will be created in the destination path to run the application using the extracted classes. **The dependency shrinkers can also be used to adapt applications written with Java old versions to Java 9 or later**.
-
-## Adapter mode
-In this mode you can adapt a Java old version application to Java 9 or later. To use this mode you must **run the main of the application adapter with a jdk 9 or later**, load, by using PathHelper, the jdk libraries by which the target application was developed and pass to the method **captureAndStore**, as first parameter, the name of the class of your application that contains the main method. In the example below we adapt a Java 8 application to Java 9 or later.
 
 ## [Get started](https://github.com/burningwave/tools/wiki)
 ## [**Ask for assistance to Burningwave community**](https://www.burningwave.org/forum/forum/how-to-do-2/)
