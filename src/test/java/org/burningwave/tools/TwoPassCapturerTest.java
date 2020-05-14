@@ -52,9 +52,13 @@ public class TwoPassCapturerTest extends BaseTest {
 			}
 			List<String> _paths = new ArrayList<>(paths);
 			Collections.sort(_paths);
+			String[] args = System.getProperty("os.name").toLowerCase().contains("windows") ?
+				new String[]{"\"C:\\Program Files (x86)\""} :
+				new String[]{"\"/\""};
+			
 			Result result = TwoPassCapturer.getInstance().captureAndStore(
 				"org.burningwave.tools.TwoPassCapturerTest",
-				new String[]{"\"" + "C:\\Program Files (x86)" + "\""},
+				args,
 				_paths,
 				System.getProperty("user.home") + "/Desktop/bw-tests/TwoPassCapturer/testTwo",
 				true, 0L
