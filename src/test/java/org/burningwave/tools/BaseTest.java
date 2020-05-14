@@ -23,12 +23,14 @@ public class BaseTest implements Component {
 
 	Collection<ComponentSupplier> componentSuppliers = new CopyOnWriteArrayList<>();
 	
+	
 	protected ComponentSupplier getComponentSupplier() {
 		//Set<ComponentSupplier> componentSuppliers = getComponentSupplierSetForTest();
 		//return getNewComponentSupplier();
 		return ComponentSupplier.getInstance();
 	}
 
+	
 	protected Set<ComponentSupplier> getComponentSupplierSetForTest() {
 		Set<ComponentSupplier> componentSuppliers = ConcurrentHashMap.newKeySet();
 		List<Thread> threadList = new CopyOnWriteArrayList<>();
@@ -51,12 +53,14 @@ public class BaseTest implements Component {
 		return componentSuppliers;
 	}
 	
+	
 	protected ComponentSupplier getNewComponentSupplier() {
 		ComponentSupplier componentSupplier = ComponentContainer.create("burningwave.properties");
 		componentSuppliers.add(componentSupplier);
 		return componentSupplier;
 	}
 		
+	
 	void testNotNull(ThrowingSupplier<?> supplier) {
 		Object object = null;
 		try {
@@ -67,9 +71,11 @@ public class BaseTest implements Component {
 		assertNotNull(object);
 	}
 	
+	
 	protected void testNotEmpty(ThrowingSupplier<Collection<?>> supplier) {
 		testNotEmpty(supplier, false);
 	}
+	
 	
 	protected void testNotEmpty(ThrowingSupplier<Collection<?>> supplier, boolean printAllElements) {
 		long initialTime = System.currentTimeMillis();
@@ -90,9 +96,11 @@ public class BaseTest implements Component {
 		assertTrue(!coll.isEmpty());
 	}
 	
+	
 	<T extends AutoCloseable> void testNotEmpty(Supplier<T> autoCloaseableSupplier, Function<T, Collection<?>> collSupplier) {
 		testNotEmpty(autoCloaseableSupplier, collSupplier, false);
 	}
+	
 	
 	<T extends AutoCloseable> void testNotEmpty(Supplier<T> autoCloaseableSupplier, Function<T, Collection<?>> collSupplier, boolean printAllElements) {
 		long initialTime = System.currentTimeMillis();
