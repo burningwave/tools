@@ -298,7 +298,7 @@ public class TwoPassCapturer extends Capturer {
         	generatedClassPath.append(String.join(System.getProperty("path.separator"), classPaths));
         }
         command.add(generatedClassPath.toString());
-        command.add(this.getClass().getName());
+        command.add(InternalLauncher.class.getName());
         command.add(String.join(System.getProperty("path.separator"), classPathsToBeScanned));
         command.add(mainClassName);
         command.add(destinationPath);
