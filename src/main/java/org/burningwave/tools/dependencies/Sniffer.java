@@ -118,7 +118,7 @@ public class Sniffer extends MemoryClassLoader {
 			};
 		} else {
 			Thread.currentThread().setContextClassLoader(this);
-			classLoadingFunction = super::loadClass;
+			classLoadingFunction = (clsName, resolveFlag) -> super.loadClass(clsName, resolveFlag);
 		}
 		return this;
 	}
