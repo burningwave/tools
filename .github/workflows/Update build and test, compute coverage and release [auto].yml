@@ -13,7 +13,7 @@ jobs:
   build-and-test-with-Java-8-and-later:
     name: Build -> Test (JVM ${{ matrix.java }}, ${{ matrix.architecture }}, ${{ matrix.os }})
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macOS-latest, windows-latest]
         java: [8, 9, 10, 11, 12, 13, 14]
