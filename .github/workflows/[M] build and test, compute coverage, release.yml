@@ -21,9 +21,8 @@ jobs:
     name: Build -> Test (JVM ${{ matrix.java }}, ${{ matrix.architecture }}, ${{ matrix.os }})
     strategy:
       fail-fast: true
-      max-parallel: 1
       matrix:
-        os: [ubuntu-latest, macOS-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest]
         java: [8, 9, 10, 11, 12, 13, 14]
         architecture: [x32, x64]
     runs-on: ${{ matrix.os }}
