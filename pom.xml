@@ -16,6 +16,7 @@
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
+	
 	<organization>
 		<name>Burningwave</name>
 		<url>https://www.burningwave.org/</url>
@@ -24,6 +25,7 @@
 	<description>
 		A set of components based on Burningwave Core library that have high-level functionality such as a dependencies extractor and a Java old versions to Java 9 or later application converter
 	</description>
+	
 	<developers>
 		<developer>
 			<name>Roberto Gentili</name>
@@ -49,6 +51,29 @@
 		<project.generated.artifacts.prefix>bw</project.generated.artifacts.prefix>
 		<repository.url>https://burningwave@github.com/burningwave/tools.git</repository.url>
 	</properties>
+	
+	<issueManagement>
+        <system>github.com</system>
+        <url>https://github.com/burningwave/tools/issues</url>
+    </issueManagement>
+	
+	<distributionManagement>
+		<snapshotRepository>
+			<id>ossrh</id>
+			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+		</snapshotRepository>
+		<repository>
+			<id>ossrh</id>
+			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+		</repository>
+	</distributionManagement>
+
+	<scm>
+		<connection>scm:git:${repository.url}</connection>
+		<developerConnection>scm:git:${repository.url}</developerConnection>
+		<url>${repository.url}</url>
+		<tag>HEAD</tag>
+	</scm>
 
 	<dependencies>
 
@@ -250,24 +275,6 @@
 			</plugin>
 		</plugins>
 	</reporting>
-
-	<distributionManagement>
-		<snapshotRepository>
-			<id>ossrh</id>
-			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
-		</snapshotRepository>
-		<repository>
-			<id>ossrh</id>
-			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-		</repository>
-	</distributionManagement>
-
-	<scm>
-		<connection>scm:git:${repository.url}</connection>
-		<developerConnection>scm:git:${repository.url}</developerConnection>
-		<url>${repository.url}</url>
-		<tag>HEAD</tag>
-	</scm>
 
 	<profiles>
 		<!-- GPG Signature on release -->
