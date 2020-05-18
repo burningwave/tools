@@ -1,7 +1,7 @@
 Burningwave Tools [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Dependencies%20shrinking%20and%20making%20applications%20created%20with%20old%20%23Java%20versions%20work%20on%20%23Java8%20%23Java9%20%23Java10%20%23Java11%20%23Java12%20%23Java13%20%23Java14%20with%20%40Burningwave1%20Tools&url=https://github.com/burningwave/tools/wiki)
 ==========
 
-<a href="https://github.com/burningwave/tools">
+<a href="https://burningwave.github.io/tools/">
 <img src="https://raw.githubusercontent.com/burningwave/tools/master/Burningwave-logo.png" alt="Burningwave-logo.png" height="180px" align="right"/>
 </a>
 
