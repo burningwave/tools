@@ -110,7 +110,7 @@ public class Sniffer extends MemoryClassLoader {
 					return super.loadClass(className, resolve);
 		    	} else {	
 		    		try {
-						return ClassLoaders.defineClass(threadContextClassLoader, bwJavaClasses.get(className));
+						return ClassLoaders.defineOrLoad(threadContextClassLoader, bwJavaClasses.get(className));
 					} catch (InvocationTargetException | NoClassDefFoundError exc) {
 						throw new ClassNotFoundException(Classes.retrieveName(exc));
 					}
