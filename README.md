@@ -2,7 +2,7 @@ Burningwave Tools [![Tweet](https://img.shields.io/twitter/url/http/shields.io.s
 ==========
 
 <a href="https://burningwave.github.io/tools/">
-<img src="https://raw.githubusercontent.com/burningwave/tools/master/Burningwave-logo.png" alt="Burningwave-logo.png" height="180px" align="right"/>
+<img src="https://raw.githubusercontent.com/burningwave/core/master/Burningwave-logo.png" alt="Burningwave-logo.png" height="180px" align="right"/>
 </a>
 
 [![Maven Central with version prefix filter](https://img.shields.io/maven-central/v/org.burningwave/tools/0)](https://maven-badges.herokuapp.com/maven-central/org.burningwave/tools/)
@@ -28,7 +28,7 @@ To use dependencies shrinkers in your project add this to your pom:
 <dependency>
     <groupId>org.burningwave</groupId>
     <artifactId>tools</artifactId>
-    <version>0.9.32</version>
+    <version>0.9.34</version>
 </dependency>	
 ```
 <br/>
