@@ -56,8 +56,8 @@ public class DependenciesExtractor {
         ComponentSupplier componentSupplier = ComponentContainer.getInstance();
         PathHelper pathHelper = componentSupplier.getPathHelper();
         Collection<String> paths = pathHelper.getPaths(
-            PathHelper.MAIN_CLASS_PATHS,
-            PathHelper.MAIN_CLASS_PATHS_EXTENSION
+            PathHelper.Configuration.Key.MAIN_CLASS_PATHS,
+            PathHelper.Configuration.Key.MAIN_CLASS_PATHS_EXTENSION
         );
         Result result = TwoPassCapturer.getInstance().captureAndStore(
             //Here you indicate the main class of your application            
@@ -115,8 +115,8 @@ public class ApplicationAdapter {
         ComponentSupplier componentSupplier = ComponentContainer.getInstance();
         PathHelper pathHelper = componentSupplier.getPathHelper();
         Collection<String> paths = pathHelper.getPaths(
-            PathHelper.MAIN_CLASS_PATHS,
-            PathHelper.MAIN_CLASS_PATHS_EXTENSION
+            PathHelper.Configuration.Key.MAIN_CLASS_PATHS,
+            PathHelper.Configuration.Key.MAIN_CLASS_PATHS_EXTENSION
         );
         String jdk8Home = "C:/Program Files/Java/jdk1.8.0_172";
         //Add jdk 8 library
