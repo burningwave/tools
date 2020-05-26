@@ -143,7 +143,7 @@ public class ApplicationAdapter {
         );
         result.waitForTaskEnding();
         ManagedLoggersRepository.logInfo(
-            DependenciesExtractor.class, 
+            ApplicationAdapter.class, 
             "Elapsed time: " + getFormattedDifferenceOfMillis(
                 System.currentTimeMillis(),
                 initialTime
