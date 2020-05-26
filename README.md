@@ -28,7 +28,7 @@ To use dependencies shrinkers in your project add this to your pom:
 <dependency>
     <groupId>org.burningwave</groupId>
     <artifactId>tools</artifactId>
-    <version>0.9.35</version>
+    <version>0.9.36</version>
 </dependency>	
 ```
 <br/>
