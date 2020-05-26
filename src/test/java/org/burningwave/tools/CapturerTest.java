@@ -23,7 +23,7 @@ public class CapturerTest extends BaseTest {
 		testNotEmpty(() -> {
 			ComponentSupplier componentSupplier = ComponentContainer.getInstance();
 			PathHelper pathHelper = componentSupplier.getPathHelper();
-			Collection<String> paths = pathHelper.getPaths(PathHelper.MAIN_CLASS_PATHS, PathHelper.MAIN_CLASS_PATHS_EXTENSION);
+			Collection<String> paths = pathHelper.getPaths(PathHelper.Configuration.Key.MAIN_CLASS_PATHS, PathHelper.Configuration.Key.MAIN_CLASS_PATHS_EXTENSION);
 			if (JVMInfo.getVersion() > 8) {
 				paths.addAll(pathHelper.getPaths("dependencies-capturer.additional-resources-path"));
 			}
