@@ -23,7 +23,7 @@ The classes that deal the dependencies extraction are:
 
 It can be used indiscriminately or one or the other class: the first performs a normal scan, the second a deep scan. **When the operations are finished a batch will be generated in the destination path to run your application with the extracted dependencies**.
 
-To use dependencies shrinkers in your project add this to your pom:
+To include Burningwave Core library in your projects simply use with **Apache Maven**:
 ```xml
 <dependency>
     <groupId>org.burningwave</groupId>
