@@ -55,10 +55,7 @@ public class DependenciesExtractor {
         long initialTime = System.currentTimeMillis();
         ComponentSupplier componentSupplier = ComponentContainer.getInstance();
         PathHelper pathHelper = componentSupplier.getPathHelper();
-        Collection<String> paths = pathHelper.getPaths(
-            PathHelper.Configuration.Key.MAIN_CLASS_PATHS,
-            PathHelper.Configuration.Key.MAIN_CLASS_PATHS_EXTENSION
-        );
+        Collection<String> paths = pathHelper.getAllMainClassPaths();
         Result result = TwoPassCapturer.getInstance().captureAndStore(
             //Here you indicate the main class of your application            
             "my.class.that.contains.a.MainMethod",
@@ -114,10 +111,7 @@ public class ApplicationAdapter {
         long initialTime = System.currentTimeMillis();
         ComponentSupplier componentSupplier = ComponentContainer.getInstance();
         PathHelper pathHelper = componentSupplier.getPathHelper();
-        Collection<String> paths = pathHelper.getPaths(
-            PathHelper.Configuration.Key.MAIN_CLASS_PATHS,
-            PathHelper.Configuration.Key.MAIN_CLASS_PATHS_EXTENSION
-        );
+        Collection<String> paths = pathHelper.getAllMainClassPaths();
         String jdk8Home = "C:/Program Files/Java/jdk1.8.0_172";
         //Add jdk 8 library
         paths.addAll(
