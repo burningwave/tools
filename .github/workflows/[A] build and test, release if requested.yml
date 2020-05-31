@@ -5,10 +5,9 @@ on:
     branches:
       - master
     paths: 
-      - "**.java"
+      - "src/main/**.java"
       - "**.properties"
       - "**.xml"
-      - "pom.xml"
 
 jobs:
     
@@ -36,19 +35,6 @@ jobs:
         name: Build and test with early access version JDK
         run: mvn -B clean test -Dproject_jdk_version=15 -DskipTests=false --file pom.xml
         
-  test-and-compute-coverage:
-    name: Test -> Compute coverage
-    needs: [build-and-test-with-Java-8-and-later]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-java@v1
-        with:
-          java-version: 8
-          architecture: x64
-      - name: Build and test
-        run: mvn clean test -DskipTests=false -P run-coveralls jacoco:report coveralls:report -DrepoToken=${{ secrets.coveralls_repo_token }}
- 
   release:
     name: Release if requested
     needs: [build-and-test-with-Java-8-and-later]
