@@ -412,12 +412,10 @@ public class TwoPassCapturer extends Capturer {
 			Collection<JavaClass> javaClasses = ConcurrentHashMap.newKeySet();
 			Map.Entry<Collection<FileSystemItem>, Collection<JavaClass>> itemsFound = new 
 				AbstractMap.SimpleEntry<>(resources, javaClasses);
-			for (FileSystemItem fileSystemItem : store.getChildren(fileSystemItem -> fileSystemItem.isFolder())) {
-				if (resourceFilter.apply(fileSystemItem)) {
-					resources.add(fileSystemItem);
-					if (fileSystemItem.getExtension().equals("class")) {
-						javaClasses.add(JavaClass.create(fileSystemItem.toByteBuffer()));
-					}
+			for (FileSystemItem fileSystemItem : store.refresh().getAllChildren(fileSystemItem -> resourceFilter.apply(fileSystemItem))) {
+				resources.add(fileSystemItem);
+				if ("class".equals(fileSystemItem.getExtension())) {
+					javaClasses.add(JavaClass.create(fileSystemItem.toByteBuffer()));
 				}
 			}
 			return itemsFound;
