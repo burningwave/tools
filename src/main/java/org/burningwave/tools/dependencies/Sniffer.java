@@ -45,18 +45,15 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.burningwave.core.classes.JavaClass;
 import org.burningwave.core.classes.MemoryClassLoader;
 import org.burningwave.core.function.ThrowingBiFunction;
 import org.burningwave.core.function.TriConsumer;
-import org.burningwave.core.io.FileScanConfig;
 import org.burningwave.core.io.FileSystemItem;
-import org.burningwave.core.io.FileSystemScanner;
-import org.burningwave.core.io.FileSystemScanner.Scan;
 
 
 public class Sniffer extends MemoryClassLoader {
@@ -81,7 +78,6 @@ public class Sniffer extends MemoryClassLoader {
     }
 	
 	protected  Sniffer init(boolean useAsMasterClassLoader,
-		FileSystemScanner fileSystemScanner,
 		Collection<String> baseClassPaths,
 		Function<JavaClass, Boolean> javaClassAdder,
 		Function<FileSystemItem, Boolean> resourceAdder,
@@ -95,11 +91,9 @@ public class Sniffer extends MemoryClassLoader {
 		this.javaClasses = new ConcurrentHashMap<>();
 		this.bwJavaClasses = new ConcurrentHashMap<>();
 		logInfo("Scanning paths :\n{}",String.join("\n", baseClassPaths));
-		fileSystemScanner.scan(
-			FileScanConfig.forPaths(baseClassPaths).toScanConfiguration(
-				getMapStorer()
-			)
-		);
+		for (String classPath : baseClassPaths) {
+			FileSystemItem.ofPath(classPath).refresh().getAllChildren(getMapStorer());
+		}
 		if (useAsMasterClassLoader) {
 			//Load in cache defineClass and definePackage methods for threadContextClassLoader
 			ClassLoaders.getDefineClassMethod(threadContextClassLoader);
@@ -141,21 +135,22 @@ public class Sniffer extends MemoryClassLoader {
 		super.addByteCode(className, byteCode);
 	}
 	
-    Consumer<Scan.ItemContext> getMapStorer() {
-		return (scannedItemContext) -> {
-			String absolutePath = scannedItemContext.getScannedItem().getAbsolutePath();
+    Predicate<FileSystemItem> getMapStorer() {
+		return (fileSystemItem) -> {
+			String absolutePath = fileSystemItem.getAbsolutePath();
 			resources.put(absolutePath, FileSystemItem.ofPath(absolutePath));
 			if (absolutePath.endsWith(".class") && 
 				!absolutePath.endsWith("module-info.class") &&
 				!absolutePath.endsWith("package-info.class")
 			) {
-				JavaClass javaClass = JavaClass.create(scannedItemContext.getScannedItem().toByteBuffer());
+				JavaClass javaClass = JavaClass.create(fileSystemItem.toByteBuffer());
 				addByteCode(javaClass.getName(), javaClass.getByteCode());
 				javaClasses.put(absolutePath, javaClass);
 				if (javaClass.getName().startsWith("org.burningwave.")) {
 					bwJavaClasses.put(javaClass.getName(), javaClass);
 				}
 			}
+			return true;
 		};
 	}    	
 	

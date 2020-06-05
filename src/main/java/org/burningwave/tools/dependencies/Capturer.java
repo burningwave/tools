@@ -51,26 +51,21 @@ import org.burningwave.core.classes.ByteCodeHunter;
 import org.burningwave.core.classes.JavaClass;
 import org.burningwave.core.function.TriConsumer;
 import org.burningwave.core.io.FileSystemItem;
-import org.burningwave.core.io.FileSystemScanner;
 
 
 public class Capturer implements Component {
 	protected static final String ADDITIONAL_RESOURCES_PATH = "dependencies-capturer.additional-resources-path";
 	protected static final String BURNINGWAVE_CLASSES_RELATIVE_DESTINATION_PATH = "[org.burningwave]";
 	ByteCodeHunter byteCodeHunter;
-	FileSystemScanner fileSystemScanner;
 	
 	Capturer(
-		FileSystemScanner fileSystemScanner,
 		ByteCodeHunter byteCodeHunter
 	) {
-		this.fileSystemScanner = fileSystemScanner;
 		this.byteCodeHunter = byteCodeHunter;
 	}
 	
 	public static Capturer create(ComponentSupplier componentSupplier) {
 		return new Capturer(
-			componentSupplier.getFileSystemScanner(),
 			componentSupplier.getByteCodeHunter()
 		);
 	}
@@ -115,7 +110,6 @@ public class Capturer implements Component {
 			Class<?> cls;
 			try (Sniffer resourceSniffer = new Sniffer(null).init(
 				false,
-				fileSystemScanner,
 				baseClassPaths,
 				javaClassAdder,
 				fileSystemItem -> {
@@ -222,7 +216,7 @@ public class Capturer implements Component {
 	
 	void createWindowsExecutor(String destinationPath, String mainClassName, String[] mainMethodAruments, String executorSuffix) {
 		try {
-			Set<String> classPathSet = FileSystemItem.ofPath(destinationPath).getChildren(fileSystemItem -> 
+			Set<String> classPathSet = FileSystemItem.ofPath(destinationPath).refresh().getChildren(fileSystemItem -> 
 				fileSystemItem.isFolder()
 			).stream().map(fileSystemItem -> 
 				fileSystemItem.getAbsolutePath().replace(destinationPath + "/", "%~dp0")).collect(Collectors.toSet()
@@ -245,7 +239,7 @@ public class Capturer implements Component {
 	
 	void createUnixExecutor(String destinationPath, String mainClassName, String[] mainMethodAruments, String executorSuffix) {
 		try {
-			Set<String> classPathSet = FileSystemItem.ofPath(destinationPath).getChildren(fileSystemItem -> 
+			Set<String> classPathSet = FileSystemItem.ofPath(destinationPath).refresh().getChildren(fileSystemItem -> 
 				fileSystemItem.isFolder()
 			).stream().map(fileSystemItem -> fileSystemItem.getAbsolutePath()).collect(Collectors.toSet());
 			String externalExecutorForUnix = 

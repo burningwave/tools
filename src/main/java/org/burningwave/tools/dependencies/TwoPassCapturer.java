@@ -60,9 +60,7 @@ import org.burningwave.core.classes.JavaClass;
 import org.burningwave.core.classes.SearchConfig;
 import org.burningwave.core.function.ThrowingSupplier;
 import org.burningwave.core.function.TriConsumer;
-import org.burningwave.core.io.FileScanConfig;
 import org.burningwave.core.io.FileSystemItem;
-import org.burningwave.core.io.FileSystemScanner;
 import org.burningwave.core.io.PathHelper;
 
 
@@ -70,19 +68,17 @@ public class TwoPassCapturer extends Capturer {
 	ClassPathHunter classPathHunter;
 	PathHelper pathHelper;
 	private TwoPassCapturer(
-		FileSystemScanner fileSystemScanner,
 		PathHelper pathHelper,
 		ByteCodeHunter byteCodeHunter,
 		ClassPathHunter classPathHunter
 	) {
-		super(fileSystemScanner, byteCodeHunter);
+		super(byteCodeHunter);
 		this.pathHelper = pathHelper;
 		this.classPathHunter = classPathHunter;
 	}
 	
 	public static TwoPassCapturer create(ComponentSupplier componentSupplier) {
 		return new TwoPassCapturer(
-			componentSupplier.getFileSystemScanner(),
 			componentSupplier.getPathHelper(),
 			componentSupplier.getByteCodeHunter(),
 			componentSupplier.getClassPathHunter()
@@ -115,14 +111,12 @@ public class TwoPassCapturer extends Capturer {
 		boolean recursive
 	) {
 		final Result result = new Result(
-			this.fileSystemScanner,
 				javaClass -> true,
 				fileSystemItem -> true
 		);
 		result.findingTask = CompletableFuture.runAsync(() -> {
 			try (Sniffer resourceSniffer = new Sniffer(null).init(
 					!recursive,
-					fileSystemScanner,
 					baseClassPaths,
 					result.javaClassFilter,
 					result.resourceFilter,
@@ -206,7 +200,7 @@ public class TwoPassCapturer extends Capturer {
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) throws IOException, InterruptedException {        
         //Excluding Burningwave from next process classpath
-        Set<String> classPaths = FileSystemItem.ofPath(destinationPath).getChildren(fileSystemItem -> 
+        Set<String> classPaths = FileSystemItem.ofPath(destinationPath).refresh().getChildren(fileSystemItem -> 
         	!fileSystemItem.getAbsolutePath().endsWith(BURNINGWAVE_CLASSES_RELATIVE_DESTINATION_PATH)
         ).stream().map(child ->
         	child.getAbsolutePath()
@@ -365,16 +359,13 @@ public class TwoPassCapturer extends Capturer {
 	}
 	
 	private static class Result extends Capturer.Result {
-		FileSystemScanner fileSystemScanner;
 		Function<JavaClass, Boolean> javaClassFilter;
 		Function<FileSystemItem, Boolean> resourceFilter;
 
 		Result(
-			FileSystemScanner fileSystemScanner,
 			Function<JavaClass, Boolean> javaClassFilter,
 			Function<FileSystemItem, Boolean> resourceFilter
 		) {
-			this.fileSystemScanner = fileSystemScanner;
 			this.javaClassFilter = javaClassFilter;
 			this.resourceFilter = resourceFilter;
 			this.javaClasses = null;
@@ -421,27 +412,14 @@ public class TwoPassCapturer extends Capturer {
 			Collection<JavaClass> javaClasses = ConcurrentHashMap.newKeySet();
 			Map.Entry<Collection<FileSystemItem>, Collection<JavaClass>> itemsFound = new 
 				AbstractMap.SimpleEntry<>(resources, javaClasses);
-			fileSystemScanner.scan(
-				FileScanConfig.forPaths(
-					store.getChildren().stream().filter(fileSystemItem ->
-						fileSystemItem.isFolder()
-					).map(fileSystemItem ->
-						fileSystemItem.getAbsolutePath()
-					).collect(
-						Collectors.toSet()
-					)
-				).toScanConfiguration(
-					FileSystemItem.getFilteredConsumerForFileSystemScanner(
-						(fileSystemItem) -> resourceFilter.apply(fileSystemItem),
-						(fileSystemItem) -> {
-							resources.add(fileSystemItem);
-							if (fileSystemItem.getExtension().equals("class")) {
-								javaClasses.add(JavaClass.create(fileSystemItem.toByteBuffer()));
-							}
-						}
-					)
-				)
-			);
+			for (FileSystemItem fileSystemItem : store.getChildren(fileSystemItem -> fileSystemItem.isFolder())) {
+				if (resourceFilter.apply(fileSystemItem)) {
+					resources.add(fileSystemItem);
+					if (fileSystemItem.getExtension().equals("class")) {
+						javaClasses.add(JavaClass.create(fileSystemItem.toByteBuffer()));
+					}
+				}
+			}
 			return itemsFound;
 		}
 	}
