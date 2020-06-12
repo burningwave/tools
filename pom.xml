@@ -4,7 +4,7 @@
 	<groupId>org.burningwave</groupId>
 	<artifactId>tools</artifactId>
 
-	<version>0.9.38-SNAPSHOT</version>
+	<version>0.9.39-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	
 	<name>Burningwave Tools</name>
