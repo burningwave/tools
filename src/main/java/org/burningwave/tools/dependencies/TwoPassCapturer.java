@@ -200,8 +200,10 @@ public class TwoPassCapturer extends Capturer {
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) throws IOException, InterruptedException {        
         //Excluding Burningwave from next process classpath
-        Set<String> classPaths = FileSystemItem.ofPath(destinationPath).refresh().getChildren(fileSystemItem -> 
-        	!fileSystemItem.getAbsolutePath().endsWith(BURNINGWAVE_CLASSES_RELATIVE_DESTINATION_PATH)
+        Set<String> classPaths = FileSystemItem.ofPath(destinationPath).refresh().findInChildren(
+        	FileSystemItem.Criteria.forAllFileThat(fileSystemItem -> 
+        		!fileSystemItem.getAbsolutePath().endsWith(BURNINGWAVE_CLASSES_RELATIVE_DESTINATION_PATH)
+        	)
         ).stream().map(child ->
         	child.getAbsolutePath()
         ).collect(Collectors.toSet());
@@ -412,7 +414,12 @@ public class TwoPassCapturer extends Capturer {
 			Collection<JavaClass> javaClasses = ConcurrentHashMap.newKeySet();
 			Map.Entry<Collection<FileSystemItem>, Collection<JavaClass>> itemsFound = new 
 				AbstractMap.SimpleEntry<>(resources, javaClasses);
-			for (FileSystemItem fileSystemItem : store.refresh().getAllChildren(fileSystemItem -> resourceFilter.apply(fileSystemItem))) {
+			for (FileSystemItem fileSystemItem : store.refresh().findInAllChildren(
+					FileSystemItem.Criteria.forAllFileThat(fileSystemItem ->
+						resourceFilter.apply(fileSystemItem)
+					)
+				)
+			) {
 				resources.add(fileSystemItem);
 				if ("class".equals(fileSystemItem.getExtension())) {
 					javaClasses.add(JavaClass.create(fileSystemItem.toByteBuffer()));

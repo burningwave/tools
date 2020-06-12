@@ -92,7 +92,9 @@ public class Sniffer extends MemoryClassLoader {
 		this.bwJavaClasses = new ConcurrentHashMap<>();
 		logInfo("Scanning paths :\n{}",String.join("\n", baseClassPaths));
 		for (String classPath : baseClassPaths) {
-			FileSystemItem.ofPath(classPath).refresh().getAllChildren(getMapStorer());
+			FileSystemItem.ofPath(classPath).refresh().findInAllChildren(
+				FileSystemItem.Criteria.forAllFileThat(getFilterAndToMapStorer())
+			);
 		}
 		if (useAsMasterClassLoader) {
 			//Load in cache defineClass and definePackage methods for threadContextClassLoader
@@ -135,7 +137,7 @@ public class Sniffer extends MemoryClassLoader {
 		super.addByteCode(className, byteCode);
 	}
 	
-    Predicate<FileSystemItem> getMapStorer() {
+    Predicate<FileSystemItem> getFilterAndToMapStorer() {
 		return (fileSystemItem) -> {
 			String absolutePath = fileSystemItem.getAbsolutePath();
 			resources.put(absolutePath, FileSystemItem.ofPath(absolutePath));

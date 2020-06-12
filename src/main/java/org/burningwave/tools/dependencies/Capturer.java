@@ -216,8 +216,8 @@ public class Capturer implements Component {
 	
 	void createWindowsExecutor(String destinationPath, String mainClassName, String[] mainMethodAruments, String executorSuffix) {
 		try {
-			Set<String> classPathSet = FileSystemItem.ofPath(destinationPath).refresh().getChildren(fileSystemItem -> 
-				fileSystemItem.isFolder()
+			Set<String> classPathSet = FileSystemItem.ofPath(destinationPath).refresh().findInChildren(
+				FileSystemItem.Criteria.forAllFileThat(FileSystemItem::isFolder)
 			).stream().map(fileSystemItem -> 
 				fileSystemItem.getAbsolutePath().replace(destinationPath + "/", "%~dp0")).collect(Collectors.toSet()
 			);
@@ -239,8 +239,8 @@ public class Capturer implements Component {
 	
 	void createUnixExecutor(String destinationPath, String mainClassName, String[] mainMethodAruments, String executorSuffix) {
 		try {
-			Set<String> classPathSet = FileSystemItem.ofPath(destinationPath).refresh().getChildren(fileSystemItem -> 
-				fileSystemItem.isFolder()
+			Set<String> classPathSet = FileSystemItem.ofPath(destinationPath).refresh().findInChildren(
+				FileSystemItem.Criteria.forAllFileThat(FileSystemItem::isFolder)
 			).stream().map(fileSystemItem -> fileSystemItem.getAbsolutePath()).collect(Collectors.toSet());
 			String externalExecutorForUnix = 
 				FileSystemItem.ofPath(
