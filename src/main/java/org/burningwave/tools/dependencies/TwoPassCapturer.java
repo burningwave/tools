@@ -396,7 +396,7 @@ public class TwoPassCapturer extends Capturer {
 			Map.Entry<Collection<FileSystemItem>, Collection<JavaClass>> itemsFound = null;
 			if (this.findingTask.isDone()) {
 				if (this.resources == null) {
-					synchronized (this.toString() + "_" + "resources") {
+					synchronized (this) {
 						if (this.resources == null) {
 							itemsFound = retrieveResources();
 							this.resources = itemsFound.getKey();
