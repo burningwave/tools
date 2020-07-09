@@ -1,4 +1,4 @@
-Burningwave Tools [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Dependencies%20shrinking%20and%20making%20applications%20created%20with%20old%20%23Java%20versions%20work%20on%20%23Java8%20%23Java9%20%23Java10%20%23Java11%20%23Java12%20%23Java13%20%23Java14%20with%20%40Burningwave_fw%20Tools&url=https://github.com/burningwave/tools/wiki)
+Burningwave Tools [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Dependencies%20shrinking%20and%20making%20applications%20created%20with%20old%20%23Java%20versions%20work%20on%20%23Java8%20%23Java9%20%23Java10%20%23Java11%20%23Java12%20%23Java13%20%23Java14%20with%20%40Burningwave_fw%20Tools&url=https://github.com/burningwave/tools%23burningwave-tools-)
 ==========
 
 <a href="https://burningwave.github.io/tools/">
@@ -13,7 +13,7 @@ Burningwave Tools [![Tweet](https://img.shields.io/twitter/url/http/shields.io.s
 [![Coveralls github branch](https://img.shields.io/coveralls/github/burningwave/tools/master)](https://coveralls.io/github/burningwave/tools)
 [![GitHub issues](https://img.shields.io/github/issues/burningwave/tools)](https://github.com/burningwave/tools/issues)
 
-**Burningwave Tools** is a set of components based on [Burningwave Core](https://github.com/burningwave/core) library that have high-level functionality
+**Burningwave Tools** is a set of components based on [**Burningwave Core**](https://github.com/burningwave/core#burningwave-core-) library that have high-level functionality
 
 # Dependencies shrinking
 By this functionality only the classes and resources strictly used by an application will be extracted and stored in a specified path. At the end of the execution of the task, a script will be created in the destination path to run the application using the extracted classes. **The dependency shrinkers can also be used to adapt applications written with Java old versions to Java 9 or later**.
