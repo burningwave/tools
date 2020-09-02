@@ -247,23 +247,25 @@ public class Sniffer extends MemoryClassLoader {
     
     @Override
     public void close() {
-    	if (threadContextClassLoader != null) {
-    		Thread.currentThread().setContextClassLoader(threadContextClassLoader);
-    	}
-    	if (masterClassLoaderRetrieverAndResetter != null) {
-    		masterClassLoaderRetrieverAndResetter.apply(true);
-    	}
-    	resources.clear();
-    	//Nulling resources will cause crash
-    	//resources = null;
-    	javaClasses.clear();
-    	//Nulling javaClasses will cause crash
-    	//javaClasses = null;
-    	javaClassFilterAndAdder = null;
-    	resourceFilterAndAdder = null;
-    	threadContextClassLoader = null;
-    	classLoadingFunction = null;
-    	clear();
-    	unregister();
+    	closeResources(() -> javaClassFilterAndAdder == null, () -> {
+	    	if (threadContextClassLoader != null) {
+	    		Thread.currentThread().setContextClassLoader(threadContextClassLoader);
+	    	}
+	    	if (masterClassLoaderRetrieverAndResetter != null) {
+	    		masterClassLoaderRetrieverAndResetter.apply(true);
+	    	}
+	    	resources.clear();
+	    	//Nulling resources will cause crash
+	    	//resources = null;
+	    	javaClasses.clear();
+	    	//Nulling javaClasses will cause crash
+	    	//javaClasses = null;
+//	    	javaClassFilterAndAdder = null;
+//	    	resourceFilterAndAdder = null;
+//	    	threadContextClassLoader = null;
+//	    	classLoadingFunction = null;
+//	    	clear();
+	    	unregister();
+    	});
     }
 }
