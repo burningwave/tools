@@ -43,8 +43,7 @@ public class CapturerTest extends BaseTest {
 	
 	public static void main(String[] args) {
 		for (FileSystemItem fileSystemItem : FileSystemItem.ofPath(System.getProperty("user.home")).getChildren()) {
-			ManagedLoggersRepository.logDebug(
-				TwoPassCapturerTest.class, fileSystemItem.getAbsolutePath()
+			ManagedLoggersRepository.logDebug(fileSystemItem.getAbsolutePath()
 			);
 		}
 	}
