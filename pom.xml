@@ -4,7 +4,7 @@
 	<groupId>org.burningwave</groupId>
 	<artifactId>tools</artifactId>
 
-	<version>0.9.40</version>
+	<version>0.9.41-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	
 	<name>Burningwave Tools</name>
@@ -73,7 +73,7 @@
 		<connection>scm:git:${repository.url}</connection>
 		<developerConnection>scm:git:${repository.url}</developerConnection>
 		<url>https://github.com/burningwave/tools</url>
-		<tag>tools-0.9.40</tag>
+		<tag>HEAD</tag>
 	</scm>
 
 	<dependencies>
