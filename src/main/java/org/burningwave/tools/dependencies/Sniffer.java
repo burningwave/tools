@@ -121,7 +121,7 @@ public class Sniffer extends MemoryClassLoader {
 	
 	public Function<Boolean, ClassLoader> setAsMasterClassLoader(ClassLoader classLoader) {
 		ClassLoader masterClassLoader = getMasterClassLoader(Thread.currentThread().getContextClassLoader());
-		return ClassLoaders.setAsParent(masterClassLoader, classLoader, false);
+		return ClassLoaders.setAsParent(masterClassLoader, classLoader);
 	}
 	
 	public ClassLoader getMasterClassLoader(ClassLoader classLoader) {
