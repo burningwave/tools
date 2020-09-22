@@ -81,7 +81,7 @@
 		<dependency>
 			<groupId>org.burningwave</groupId>
 			<artifactId>core</artifactId>
-			<version>[7.42.0,)</version>
+			<version>[7.42.1,)</version>
 		</dependency>
 
 		<dependency>
