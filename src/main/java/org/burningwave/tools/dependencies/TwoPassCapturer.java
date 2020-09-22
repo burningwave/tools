@@ -324,7 +324,7 @@ public class TwoPassCapturer extends Capturer {
 			);
 			
 			Files.write(java.nio.file.Paths.get(args[2] + "/params-" + fileSuffix + ".txt"), logs.getBytes());
-			ManagedLoggersRepository.logDebug("\n\n" + logs + "\n\n");
+			ManagedLoggersRepository.logDebug(() -> this.getClass().getName(), "\n\n" + logs + "\n\n");
 			if (wait > 0) {
 				Thread.sleep(wait);
 			}
@@ -351,7 +351,7 @@ public class TwoPassCapturer extends Capturer {
 					mainClassName, mainMethodArguments, paths, destinationPath, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor, false
 				).waitForTaskEnding();
 			} catch (Throwable exc) {
-				ManagedLoggersRepository.logError("Exception occurred", exc);
+				ManagedLoggersRepository.logError(() -> TwoPassCapturer.class.getName(), "Exception occurred", exc);
 			} finally {
 				String suffix = UUID.randomUUID().toString();
 				capturer.logReceivedParameters(args, 0, suffix);

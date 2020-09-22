@@ -77,7 +77,7 @@ public class TwoPassCapturerTest extends BaseTest {
 			folderName = folderName.substring(0, folderName.length() -1);
 		}
 		for (FileSystemItem fileSystemItem : FileSystemItem.ofPath(folderName).getChildren()) {
-			ManagedLoggersRepository.logDebug(fileSystemItem.getAbsolutePath()
+			ManagedLoggersRepository.logDebug(() -> TwoPassCapturerTest.class.getName(), fileSystemItem.getAbsolutePath()
 			);
 		}
 	}

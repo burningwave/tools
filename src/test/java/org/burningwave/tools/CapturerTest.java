@@ -43,7 +43,7 @@ public class CapturerTest extends BaseTest {
 	
 	public static void main(String[] args) {
 		for (FileSystemItem fileSystemItem : FileSystemItem.ofPath(System.getProperty("user.home")).getChildren()) {
-			ManagedLoggersRepository.logDebug(fileSystemItem.getAbsolutePath()
+			ManagedLoggersRepository.logDebug(() -> CapturerTest.class.getName(), fileSystemItem.getAbsolutePath()
 			);
 		}
 	}
