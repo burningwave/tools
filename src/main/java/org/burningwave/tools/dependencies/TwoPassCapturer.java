@@ -133,7 +133,7 @@ public class TwoPassCapturer extends Capturer {
 					}
 				} catch (Throwable exc) {
 					logError("Exception occurred", exc);
-					throw Throwables.toRuntimeException(exc);				
+					Throwables.throwException(exc);				
 				}
 			}
 			if (recursive) {
@@ -142,7 +142,7 @@ public class TwoPassCapturer extends Capturer {
 						mainClassName, mainMethodAruments, result.getStore().getAbsolutePath(), baseClassPaths, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor
 					);
 				} catch (IOException | InterruptedException exc) {
-					throw Throwables.toRuntimeException(exc);
+					Throwables.throwException(exc);
 				}
 			}
 			if (recursive && !includeMainClass) {	

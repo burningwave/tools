@@ -34,7 +34,6 @@ import static org.burningwave.core.assembler.StaticComponentContainer.Strings;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -107,7 +106,7 @@ public class Sniffer extends MemoryClassLoader {
 		    	} else {	
 		    		try {
 						return ClassLoaders.defineOrLoad(threadContextClassLoader, bwJavaClasses.get(className));
-					} catch (InvocationTargetException | NoClassDefFoundError exc) {
+					} catch (NoClassDefFoundError | ReflectiveOperationException exc) {
 						throw new ClassNotFoundException(Classes.retrieveName(exc));
 					}
 		    	}

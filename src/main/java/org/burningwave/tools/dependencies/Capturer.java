@@ -125,7 +125,7 @@ public class Capturer implements Component {
 						Thread.sleep(continueToCaptureAfterSimulatorClassEndExecutionFor);
 					}
 				} catch (Throwable exc) {
-					throw Throwables.toRuntimeException(exc);				
+					Throwables.throwException(exc);				
 				} finally {
 					createExecutor(result.getStore().getAbsolutePath(), mainClassName, mainMethodAruments, UUID.randomUUID().toString());
 				}
