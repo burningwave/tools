@@ -318,7 +318,7 @@ public class Capturer implements Component {
 		
 		@Override
 		public void close() {
-			//findingTask.cancel(true);
+			findingTask.abort();
 			findingTask = null;
 			resources.clear();
 			resources = null;
