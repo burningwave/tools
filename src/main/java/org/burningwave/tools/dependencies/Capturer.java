@@ -28,6 +28,7 @@
  */
 package org.burningwave.tools.dependencies;
 
+import static org.burningwave.core.assembler.StaticComponentContainer.BackgroundExecutor;
 import static org.burningwave.core.assembler.StaticComponentContainer.Paths;
 import static org.burningwave.core.assembler.StaticComponentContainer.Streams;
 import static org.burningwave.core.assembler.StaticComponentContainer.Throwables;
@@ -37,7 +38,6 @@ import java.nio.file.Files;
 import java.util.Collection;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
@@ -49,6 +49,8 @@ import org.burningwave.core.assembler.ComponentContainer;
 import org.burningwave.core.assembler.ComponentSupplier;
 import org.burningwave.core.classes.ByteCodeHunter;
 import org.burningwave.core.classes.JavaClass;
+import org.burningwave.core.concurrent.QueuedTasksExecutor;
+import org.burningwave.core.concurrent.QueuedTasksExecutor.Task;
 import org.burningwave.core.function.TriConsumer;
 import org.burningwave.core.io.FileSystemItem;
 
@@ -106,7 +108,7 @@ public class Capturer implements Component {
 				}
 				return false;
 			};
-		result.findingTask = CompletableFuture.runAsync(() -> {
+		result.findingTask = BackgroundExecutor.createTask(() -> {
 			Class<?> cls;
 			try (Sniffer resourceSniffer = new Sniffer(null).init(
 				false,
@@ -130,7 +132,7 @@ public class Capturer implements Component {
 					createExecutor(result.getStore().getAbsolutePath(), mainClassName, mainMethodAruments, UUID.randomUUID().toString());
 				}
 			}
-		});
+		}).submit();
 		return result;
 	}
 	
@@ -267,7 +269,7 @@ public class Capturer implements Component {
 	}
 	
 	public static class Result implements Component {
-		CompletableFuture<Void> findingTask;
+		QueuedTasksExecutor.Task findingTask;
 		Collection<FileSystemItem> resources;
 		Collection<JavaClass> javaClasses;
 		FileSystemItem store;
@@ -302,12 +304,12 @@ public class Capturer implements Component {
 			return getResources().stream().filter(predicate).collect(Collectors.toSet());
 		}
 		
-		public CompletableFuture<Void> getFindingTask() {
+		public Task getFindingTask() {
 			return this.findingTask;
 		}
 		
 		public void waitForTaskEnding() {
-			findingTask.join();
+			findingTask.waitForFinish();
 		}
 		
 		public FileSystemItem getStore() {
@@ -316,7 +318,7 @@ public class Capturer implements Component {
 		
 		@Override
 		public void close() {
-			findingTask.cancel(true);
+			//findingTask.cancel(true);
 			findingTask = null;
 			resources.clear();
 			resources = null;

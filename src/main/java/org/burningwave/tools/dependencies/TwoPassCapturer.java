@@ -27,7 +27,7 @@
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
 package org.burningwave.tools.dependencies;
-
+import static org.burningwave.core.assembler.StaticComponentContainer.BackgroundExecutor;
 import static org.burningwave.core.assembler.StaticComponentContainer.FileSystemHelper;
 import static org.burningwave.core.assembler.StaticComponentContainer.ManagedLoggersRepository;
 import static org.burningwave.core.assembler.StaticComponentContainer.Paths;
@@ -46,7 +46,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -114,7 +113,7 @@ public class TwoPassCapturer extends Capturer {
 				javaClass -> true,
 				fileSystemItem -> true
 		);
-		result.findingTask = CompletableFuture.runAsync(() -> {
+		result.findingTask = BackgroundExecutor.createTask(() -> {
 			try (Sniffer resourceSniffer = new Sniffer(null).init(
 					!recursive,
 					baseClassPaths,
@@ -165,7 +164,7 @@ public class TwoPassCapturer extends Capturer {
 					}
 				}
 			}
-		});
+		}).submit();
 		return result;
 	}
 	
@@ -394,7 +393,7 @@ public class TwoPassCapturer extends Capturer {
 		
 		public Map.Entry<Collection<FileSystemItem>, Collection<JavaClass>> loadResourcesAndJavaClasses() {
 			Map.Entry<Collection<FileSystemItem>, Collection<JavaClass>> itemsFound = null;
-			if (this.findingTask.isDone()) {
+			if (this.findingTask.hasFinished()) {
 				if (this.resources == null) {
 					synchronized (this) {
 						if (this.resources == null) {
