@@ -119,7 +119,7 @@ public class ApplicationAdapter {
         String jdk8Home = "C:/Program Files/Java/jdk1.8.0_172";
         //Add jdk 8 library
         paths.addAll(
-            pathHelper.loadPaths(
+            pathHelper.loadAndMapPaths(
                 "dependencies-capturer.additional-resources-path", 
                 "//" + jdk8Home + "/jre/lib//children:.*\\.jar;" +
                 "//" + jdk8Home + "/jre/lib/ext//children:.*\\.jar;"
