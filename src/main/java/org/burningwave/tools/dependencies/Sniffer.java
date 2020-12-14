@@ -30,6 +30,7 @@ package org.burningwave.tools.dependencies;
 
 import static org.burningwave.core.assembler.StaticComponentContainer.ClassLoaders;
 import static org.burningwave.core.assembler.StaticComponentContainer.Classes;
+import static org.burningwave.core.assembler.StaticComponentContainer.ManagedLoggersRepository;
 import static org.burningwave.core.assembler.StaticComponentContainer.Strings;
 
 import java.io.IOException;
@@ -89,7 +90,7 @@ public class Sniffer extends MemoryClassLoader {
 		this.resources = new ConcurrentHashMap<>();
 		this.javaClasses = new ConcurrentHashMap<>();
 		this.bwJavaClasses = new ConcurrentHashMap<>();
-		logInfo("Scanning paths :\n{}",String.join("\n", baseClassPaths));
+		ManagedLoggersRepository.logInfo(getClass()::getName, "Scanning paths :\n{}",String.join("\n", baseClassPaths));
 		for (String classPath : baseClassPaths) {
 			FileSystemItem.ofPath(classPath).refresh().findInAllChildren(
 				FileSystemItem.Criteria.forAllFileThat(getFilterAndToMapStorer())

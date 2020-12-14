@@ -131,7 +131,7 @@ public class TwoPassCapturer extends Capturer {
 						Thread.sleep(continueToCaptureAfterSimulatorClassEndExecutionFor);
 					}
 				} catch (Throwable exc) {
-					logError("Exception occurred", exc);
+					ManagedLoggersRepository.logError(getClass()::getName, "Exception occurred", exc);
 					Throwables.throwException(exc);				
 				}
 			}
@@ -253,7 +253,7 @@ public class TwoPassCapturer extends Capturer {
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) throws IOException {
 		String javaExecutablePath = System.getProperty("java.home") + "/bin/java";
-		List<String> command = new LinkedList<String>();
+		List<String> command = new LinkedList<>();
         command.add(Paths.clean(javaExecutablePath));
         command.add("-classpath");
         StringBuffer generatedClassPath = new StringBuffer();
@@ -284,7 +284,7 @@ public class TwoPassCapturer extends Capturer {
 		boolean includeMainClass,
 		Long continueToCaptureAfterSimulatorClassEndExecutionFor
 	) throws IOException {
-		List<String> command = new LinkedList<String>();
+		List<String> command = new LinkedList<>();
 		String javaExecutablePath = Paths.clean(System.getProperty("java.home") + "/bin/java");
         command.add(javaExecutablePath);
         command.add("-classpath");
