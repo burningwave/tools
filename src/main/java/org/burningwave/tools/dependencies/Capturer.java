@@ -57,7 +57,6 @@ import org.burningwave.core.io.FileSystemItem;
 
 
 public class Capturer implements Component {
-	protected static final String ADDITIONAL_RESOURCES_PATH = "dependencies-capturer.additional-resources-path";
 	protected static final String BURNINGWAVE_CLASSES_RELATIVE_DESTINATION_PATH = "[org.burningwave]";
 	ByteCodeHunter byteCodeHunter;
 	
