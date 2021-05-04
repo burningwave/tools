@@ -14,7 +14,6 @@ Burningwave Tools [![Tweet](https://img.shields.io/twitter/url/http/shields.io.s
 [![HitCount](https://mhlstatus.herokuapp.com/burningwave/all.svg)](https://mhlstatus.herokuapp.com/burningwave/all)
 
 [![ArtifactDownload](https://www.burningwave.org/generators/generate-burningwave-artifact-downloads-badge.php?type=svg&artifactId=tools)](https://www.burningwave.org/artifact-downloads/?show-monthly-trend-chart=false)
-[![HitCount](http://hits.dwyl.com/burningwave/all.svg)](http://hits.dwyl.com/burningwave/all)
 
 **Burningwave Tools** is a set of components based on [**Burningwave Core**](https://github.com/burningwave/core#burningwave-core-) library that have high-level functionality
 
