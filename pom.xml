@@ -1,3 +1,31 @@
+<!-- 
+	This file is part of Burningwave Tools.                                                                      
+	                                                                                                            
+	Author: Roberto Gentili                                                                                     
+	                                                                                                            
+	Hosted at: https://github.com/burningwave/core                                                              
+	                                                                                                            
+	- -                                                                                                          
+	                                                                                                            
+	The MIT License (MIT)                                                                                       
+	                                                                                                            
+	Copyright (c) 2021 Roberto Gentili                                                                          
+	                                                                                                            
+	Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+	documentation files (the "Software"), to deal in the Software without restriction, including without        
+	limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of   
+	the Software, and to permit persons to whom the Software is furnished to do so, subject to the following    
+	conditions:                                                                                                 
+	                                                                                                            
+	The above copyright notice and this permission notice shall be included in all copies or substantial        
+	portions of the Software.                                                                                   
+	                                                                                                            
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT       
+	LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO   
+	EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN
+	AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+	OR OTHER DEALINGS IN THE SOFTWARE.
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
@@ -38,6 +66,16 @@
 				<role>Developer</role>
 			</roles>
 		</developer>
+		<developer>
+			<name>Alessio Perrotta</name>
+			<email>info@burningwave.org</email>
+			<organization>Burningwave</organization>
+			<organizationUrl>https://www.burningwave.org/</organizationUrl>
+			<roles>
+				<role>External relationship manager</role>
+				<role>Developer</role>
+			</roles>
+		</developer>
 	</developers>
 
 	<properties>
@@ -51,6 +89,23 @@
 		<project.test.excludes>**/*Test.java</project.test.excludes>
 		<project.generated.artifacts.prefix>bw</project.generated.artifacts.prefix>
 		<repository.url>https://burningwave@github.com/burningwave/tools.git</repository.url>
+		
+		<burningwave-core.version>[8.22.0,)</burningwave-core.version>
+		<coveralls-maven-plugin.version>4.3.0</coveralls-maven-plugin.version>
+		<jacoco-maven-plugin.version>0.7.6.201602180812</jacoco-maven-plugin.version>
+		<junit-jupiter.version>5.7.0</junit-jupiter.version>
+		<junit.version>1.7.0</junit.version>
+		<maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
+		<maven-deploy-plugin.version>2.8.2</maven-deploy-plugin.version>
+		<maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
+		<maven-jar-plugin.version>3.2.0</maven-jar-plugin.version>
+		<maven-javadoc-plugin.version>3.2.0</maven-javadoc-plugin.version>
+		<maven-jxr-plugin.version>2.5</maven-jxr-plugin.version>
+		<maven-release-plugin.version>2.5.3</maven-release-plugin.version>
+		<maven-source-plugin.version>3.0.1</maven-source-plugin.version>
+		<maven-scm-provider-gitexe.version>1.9.5</maven-scm-provider-gitexe.version>
+		<maven-surefire-plugin.version>2.21.0</maven-surefire-plugin.version>
+		<nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>
 	</properties>
 	
 	<issueManagement>
@@ -81,34 +136,34 @@
 		<dependency>
 			<groupId>org.burningwave</groupId>
 			<artifactId>core</artifactId>
-			<version>[8.12.1,)</version>
+			<version>${burningwave-core.version}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter-engine</artifactId>
-			<version>5.6.2</version>
+			<version>${junit-jupiter.version}</version>
 			<scope>test</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>org.junit.platform</groupId>
 			<artifactId>junit-platform-engine</artifactId>
-			<version>1.6.2</version>
+			<version>${junit.version}</version>
 			<scope>test</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>org.junit.platform</groupId>
 			<artifactId>junit-platform-commons</artifactId>
-			<version>1.6.2</version>
+			<version>${junit.version}</version>
 			<scope>test</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>org.junit.platform</groupId>
 			<artifactId>junit-platform-runner</artifactId>
-			<version>1.6.2</version>
+			<version>${junit.version}</version>
 			<scope>test</scope>
 		</dependency>
 
@@ -146,7 +201,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.8.1</version>
+				<version>${maven-compiler-plugin.version}</version>
 				<configuration>
 					<source>${project_jdk_version}</source>
 					<target>${project_jdk_version}</target>
@@ -156,7 +211,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.9</version>
+				<version>${maven-surefire-plugin.version}</version>
 				<configuration>
 					<skipTests>${skipTests}</skipTests>
 					<excludes>
@@ -169,7 +224,7 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-jar-plugin</artifactId>
-				<version>3.2.0</version>
+				<version>${maven-jar-plugin.version}</version>
 				<configuration>
 					<excludes>
 						<exclude>jdk/</exclude>
@@ -185,7 +240,7 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-deploy-plugin</artifactId>
-				<version>2.8.2</version>
+				<version>${maven-deploy-plugin.version}</version>
 				<executions>
 					<execution>
 						<id>default-deploy</id>
@@ -199,7 +254,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-release-plugin</artifactId>
-				<version>2.5.3</version>
+				<version>${maven-release-plugin.version}</version>
 				<configuration>
 					<localCheckout>true</localCheckout>
 					<pushChanges>true</pushChanges>
@@ -211,14 +266,14 @@
 					<dependency>
 						<groupId>org.apache.maven.scm</groupId>
 						<artifactId>maven-scm-provider-gitexe</artifactId>
-						<version>1.9.5</version>
+						<version>${maven-scm-provider-gitexe.version}</version>
 					</dependency>
 				</dependencies>
 			</plugin>
 			<plugin>
 				<groupId>org.sonatype.plugins</groupId>
 				<artifactId>nexus-staging-maven-plugin</artifactId>
-				<version>1.6.7</version>
+				<version>${nexus-staging-maven-plugin.version}</version>
 				<extensions>true</extensions>
 				<configuration>
 					<!-- <stagingProgressTimeoutMinutes>10</stagingProgressTimeoutMinutes> -->
@@ -230,7 +285,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>
-				<version>3.0.1</version>
+				<version>${maven-source-plugin.version}</version>
 				<configuration>
 					<excludes>
 						<exclude>org/burningwave/core/classes/ClassLoaderDelegate.bwc</exclude>
@@ -249,7 +304,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>3.1.1</version>
+				<version>${maven-javadoc-plugin.version}</version>
 				<configuration>
 					<javadocExecutable>${java.home}/${javadocExecutable.relativePath}</javadocExecutable>
 					<encoding>UTF-8</encoding>
@@ -272,7 +327,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jxr-plugin</artifactId>
-				<version>2.5</version>
+				<version>${maven-jxr-plugin.version}</version>
 			</plugin>
 		</plugins>
 	</reporting>
@@ -292,7 +347,7 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-gpg-plugin</artifactId>
-						<version>1.6</version>
+						<version>${maven-gpg-plugin.version}</version>
 						<executions>
 							<execution>
 								<phase>verify</phase>
@@ -322,7 +377,7 @@
 					<plugin>
 						<groupId>org.eluder.coveralls</groupId>
 						<artifactId>coveralls-maven-plugin</artifactId>
-						<version>4.3.0</version>
+						<version>${coveralls-maven-plugin.version}</version>
 						<configuration>
 							<sourceDirectories>
 								<sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
@@ -332,7 +387,7 @@
 					<plugin>
 						<groupId>org.jacoco</groupId>
 						<artifactId>jacoco-maven-plugin</artifactId>
-						<version>0.7.6.201602180812</version>
+						<version>${jacoco-maven-plugin.version}</version>
 						<executions>
 							<execution>
 								<id>prepare-agent</id>
