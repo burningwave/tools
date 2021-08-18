@@ -12,7 +12,7 @@ Burningwave Tools [![Tweet](https://img.shields.io/twitter/url/http/shields.io.s
 
 [![Coveralls github branch](https://img.shields.io/coveralls/github/burningwave/tools/master)](https://coveralls.io/github/burningwave/tools)
 
-[![ArtifactDownload](https://www.burningwave.org/generators/generate-burningwave-artifact-downloads-badge.php?type=svg&artifactId=tools)](https://www.burningwave.org/artifact-downloads/?show-monthly-trend-chart=false)
+[![ArtifactDownload](https://www.burningwave.org/generators/generate-burningwave-artifact-downloads-badge.php?type=svgg&artifactId=tools)](https://www.burningwave.org/artifact-downloads/?show-monthly-trend-chart=false)
 
 **Burningwave Tools** is a set of components based on [**Burningwave Core**](https://github.com/burningwave/core#burningwave-core-) library that have high-level functionality
 
