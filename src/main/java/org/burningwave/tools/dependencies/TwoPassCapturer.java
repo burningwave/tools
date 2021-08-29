@@ -9,7 +9,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 Roberto Gentili
+ * Copyright (c) 2020-2021 Roberto Gentili
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without
@@ -212,8 +212,10 @@ public class TwoPassCapturer extends Capturer {
 			SearchConfig.forPaths(
 				pathHelper.getMainClassPaths()
 			).by(
-				ClassCriteria.create().className(clsName -> 
-					clsName.equals(this.getClass().getName()) || clsName.equals(ComponentSupplier.class.getName())
+				ClassCriteria.create().packageName(packageName -> 
+					packageName.startsWith("org.burningwave.jvm") ||
+					packageName.startsWith("org.burningwave.core") ||
+					packageName.startsWith("org.burningwave.tools")
 				)
 			)
     	);
