@@ -159,4 +159,6 @@ public class ApplicationAdapter {
 }
 ```
 
+<br />
+
 **For assistance you can [subscribe](https://www.burningwave.org/registration/) to the [forum](https://www.burningwave.org/forum/) and then ask in the topic ["How to do?"](https://www.burningwave.org/forum/forum/how-to-do-2) or you can ask on [Stack Overflow](https://stackoverflow.com/search?q=burningwave)**.
