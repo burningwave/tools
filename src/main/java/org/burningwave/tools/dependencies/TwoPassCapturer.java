@@ -213,7 +213,7 @@ public class TwoPassCapturer extends Capturer {
 				pathHelper.getMainClassPaths()
 			).by(
 				ClassCriteria.create().packageName(packageName -> 
-					packageName.startsWith("org.burningwave.jvm") ||
+					packageName.startsWith("io.github.toolfactory.jvm") ||
 					packageName.startsWith("org.burningwave.core") ||
 					packageName.startsWith("org.burningwave.tools")
 				)
