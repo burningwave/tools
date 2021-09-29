@@ -102,7 +102,9 @@ public class Sniffer extends MemoryClassLoader {
 			ClassLoaders.getDefinePackageMethod(threadContextClassLoader);
 			masterClassLoaderRetrieverAndResetter = setAsMasterClassLoader(this);
 			classLoadingFunction = (className, resolve) -> {
-				if (!className.startsWith("org.burningwave.")) {
+				if (!className.startsWith("org.burningwave.") && 
+					!className.startsWith("io.github.toolfactory.jvm.")
+				) {
 					return super.loadClass(className, resolve);
 		    	} else {	
 		    		try {
@@ -148,7 +150,9 @@ public class Sniffer extends MemoryClassLoader {
 				JavaClass javaClass = JavaClass.create(fileSystemItem.toByteBuffer());
 				addByteCode(javaClass.getName(), javaClass.getByteCode());
 				javaClasses.put(absolutePath, javaClass);
-				if (javaClass.getName().startsWith("org.burningwave.")) {
+				if (javaClass.getName().startsWith("org.burningwave.") ||
+					javaClass.getName().startsWith("io.github.toolfactory.jvm.")
+				) {
 					bwJavaClasses.put(javaClass.getName(), javaClass);
 				}
 			}
