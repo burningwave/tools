@@ -29,10 +29,10 @@
 package org.burningwave.tools.dependencies;
 
 import static org.burningwave.core.assembler.StaticComponentContainer.BackgroundExecutor;
+import static org.burningwave.core.assembler.StaticComponentContainer.Driver;
 import static org.burningwave.core.assembler.StaticComponentContainer.ManagedLoggersRepository;
 import static org.burningwave.core.assembler.StaticComponentContainer.Paths;
 import static org.burningwave.core.assembler.StaticComponentContainer.Streams;
-import static org.burningwave.core.assembler.StaticComponentContainer.Throwables;
 
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
@@ -127,7 +127,7 @@ public class Capturer implements Component {
 						Thread.sleep(continueToCaptureAfterSimulatorClassEndExecutionFor);
 					}
 				} catch (Throwable exc) {
-					Throwables.throwException(exc);				
+					Driver.throwException(exc);				
 				} finally {
 					createExecutor(result.getStore().getAbsolutePath(), mainClassName, mainMethodAruments, UUID.randomUUID().toString());
 				}

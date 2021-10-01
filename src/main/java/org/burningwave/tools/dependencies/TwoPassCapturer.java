@@ -28,10 +28,10 @@
  */
 package org.burningwave.tools.dependencies;
 import static org.burningwave.core.assembler.StaticComponentContainer.BackgroundExecutor;
+import static org.burningwave.core.assembler.StaticComponentContainer.Driver;
 import static org.burningwave.core.assembler.StaticComponentContainer.FileSystemHelper;
 import static org.burningwave.core.assembler.StaticComponentContainer.ManagedLoggersRepository;
 import static org.burningwave.core.assembler.StaticComponentContainer.Paths;
-import static org.burningwave.core.assembler.StaticComponentContainer.Throwables;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -132,7 +132,7 @@ public class TwoPassCapturer extends Capturer {
 					}
 				} catch (Throwable exc) {
 					ManagedLoggersRepository.logError(getClass()::getName, "Exception occurred", exc);
-					Throwables.throwException(exc);				
+					Driver.throwException(exc);				
 				}
 			}
 			if (recursive) {
@@ -141,7 +141,7 @@ public class TwoPassCapturer extends Capturer {
 						mainClassName, mainMethodAruments, result.getStore().getAbsolutePath(), baseClassPaths, includeMainClass, continueToCaptureAfterSimulatorClassEndExecutionFor
 					);
 				} catch (IOException | InterruptedException exc) {
-					Throwables.throwException(exc);
+					Driver.throwException(exc);
 				}
 			}
 			if (recursive && !includeMainClass) {	
@@ -214,6 +214,7 @@ public class TwoPassCapturer extends Capturer {
 			).by(
 				ClassCriteria.create().packageName(packageName -> 
 					packageName.startsWith("io.github.toolfactory.jvm") ||
+					packageName.startsWith("org.burningwave.jvm") ||
 					packageName.startsWith("org.burningwave.core") ||
 					packageName.startsWith("org.burningwave.tools")
 				)
