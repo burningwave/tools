@@ -201,7 +201,8 @@ public class TwoPassCapturer extends Capturer {
         //Excluding Burningwave from next process classpath
         Set<String> classPaths = FileSystemItem.ofPath(destinationPath).refresh().findInChildren(
         	FileSystemItem.Criteria.forAllFileThat(fileSystemItem -> 
-        		!fileSystemItem.getAbsolutePath().endsWith(BURNINGWAVE_CLASSES_RELATIVE_DESTINATION_PATH)
+        		!fileSystemItem.getAbsolutePath().endsWith(BURNINGWAVE_CLASSES_RELATIVE_DESTINATION_PATH) &&
+        		!fileSystemItem.getAbsolutePath().endsWith(TOOLFACTORY_CLASSES_RELATIVE_DESTINATION_PATH)
         	)
         ).stream().map(child ->
         	child.getAbsolutePath()
@@ -213,7 +214,7 @@ public class TwoPassCapturer extends Capturer {
 				pathHelper.getMainClassPaths()
 			).by(
 				ClassCriteria.create().packageName(packageName -> 
-					packageName.startsWith("io.github.toolfactory.jvm") ||
+					packageName.startsWith("io.github.toolfactory") ||
 					packageName.startsWith("org.burningwave.jvm") ||
 					packageName.startsWith("org.burningwave.core") ||
 					packageName.startsWith("org.burningwave.tools")

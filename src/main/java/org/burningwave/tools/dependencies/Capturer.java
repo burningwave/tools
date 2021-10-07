@@ -58,6 +58,7 @@ import org.burningwave.core.io.FileSystemItem;
 
 public class Capturer implements Component {
 	protected static final String BURNINGWAVE_CLASSES_RELATIVE_DESTINATION_PATH = "[org.burningwave]";
+	protected static final String TOOLFACTORY_CLASSES_RELATIVE_DESTINATION_PATH = "[io.github.toolfactory]";
 	ByteCodeHunter byteCodeHunter;
 	
 	Capturer(
@@ -177,10 +178,12 @@ public class Capturer implements Component {
 			!fileSystemItem.exists();
 		return (resourceAbsolutePath, resourceRelativePath, resourceContent) -> {
 			String finalPath;
-			if (!resourceRelativePath.startsWith("org/burningwave")) {
-				finalPath = getStoreEntryBasePath(destinationPath, resourceAbsolutePath, resourceRelativePath);
-			} else {
+			if (resourceRelativePath.startsWith("io/github/toolfactory")) {
+				finalPath = destinationPath + "/" + TOOLFACTORY_CLASSES_RELATIVE_DESTINATION_PATH;
+			} else if (resourceRelativePath.startsWith("org/burningwave")) {
 				finalPath = destinationPath + "/" + BURNINGWAVE_CLASSES_RELATIVE_DESTINATION_PATH;
+			} else {
+				finalPath = getStoreEntryBasePath(destinationPath, resourceAbsolutePath, resourceRelativePath);
 			}
 			FileSystemItem fileSystemItem = FileSystemItem.ofPath(finalPath + "/" + resourceRelativePath);
 			if (storePredicate.test(resourceAbsolutePath, fileSystemItem)) {

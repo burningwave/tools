@@ -102,11 +102,17 @@ public class Sniffer extends MemoryClassLoader {
 			ClassLoaders.getDefinePackageMethod(threadContextClassLoader);
 			masterClassLoaderRetrieverAndResetter = setAsMasterClassLoader(this);
 			classLoadingFunction = (className, resolve) -> {
-				if (!className.startsWith("org.burningwave.") && 
-					!className.startsWith("io.github.toolfactory.jvm.")
+				if ((!className.startsWith("org.burningwave.") && 
+					!className.startsWith("io.github.toolfactory.")) ||
+					/*	Patch for jvm-driver 5.0.0: the problem is caused 
+					 * by the pre-loading of some driver classesrespect 
+					 * to the invocation of the main method */
+					((className.startsWith("org.burningwave.") || 
+					className.startsWith("io.github.toolfactory.")) && 
+					bwJavaClasses.get(className) == null)
 				) {
 					return super.loadClass(className, resolve);
-		    	} else {	
+		    	} else {
 		    		try {
 						return ClassLoaders.defineOrLoad(threadContextClassLoader, bwJavaClasses.get(className));
 					} catch (NoClassDefFoundError | ReflectiveOperationException exc) {
@@ -151,7 +157,7 @@ public class Sniffer extends MemoryClassLoader {
 				addByteCode(javaClass.getName(), javaClass.getByteCode());
 				javaClasses.put(absolutePath, javaClass);
 				if (javaClass.getName().startsWith("org.burningwave.") ||
-					javaClass.getName().startsWith("io.github.toolfactory.jvm.")
+					javaClass.getName().startsWith("io.github.toolfactory.")
 				) {
 					bwJavaClasses.put(javaClass.getName(), javaClass);
 				}
