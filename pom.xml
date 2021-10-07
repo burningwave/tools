@@ -90,12 +90,11 @@
 		<project.generated.artifacts.prefix>bw</project.generated.artifacts.prefix>
 		<repository.url>https://burningwave@github.com/burningwave/tools.git</repository.url>
 		
-		<burningwave-core.version>10.0.0</burningwave-core.version>
+		<burningwave-core.version>10.1.0</burningwave-core.version>
 		<coveralls-maven-plugin.version>4.3.0</coveralls-maven-plugin.version>
 		<jacoco-maven-plugin.version>0.7.6.201602180812</jacoco-maven-plugin.version>
 		<junit-jupiter.version>5.8.0</junit-jupiter.version>
 		<junit.version>1.8.0</junit.version>
-		<jvm-driver.version>4.0.2</jvm-driver.version>
 		<maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
 		<maven-deploy-plugin.version>2.8.2</maven-deploy-plugin.version>
 		<maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
@@ -138,18 +137,6 @@
 			<groupId>org.burningwave</groupId>
 			<artifactId>core</artifactId>
 			<version>${burningwave-core.version}</version>
-			<exclusions>
-				<exclusion>
-					<groupId>io.github.toolfactory</groupId>
-					<artifactId>narcissus</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		
-		<dependency>
-			<groupId>org.burningwave</groupId>
-			<artifactId>jvm-driver</artifactId>
-			<version>${jvm-driver.version}</version>
 		</dependency>
 
 		<dependency>
