@@ -103,13 +103,7 @@ public class Sniffer extends MemoryClassLoader {
 			masterClassLoaderRetrieverAndResetter = setAsMasterClassLoader(this);
 			classLoadingFunction = (className, resolve) -> {
 				if ((!className.startsWith("org.burningwave.") && 
-					!className.startsWith("io.github.toolfactory.")) ||
-					/*	Patch for jvm-driver 5.0.0: the problem is caused 
-					 * by the pre-loading of some driver classesrespect 
-					 * to the invocation of the main method */
-					((className.startsWith("org.burningwave.") || 
-					className.startsWith("io.github.toolfactory.")) && 
-					bwJavaClasses.get(className) == null)
+					!className.startsWith("io.github.toolfactory."))
 				) {
 					return super.loadClass(className, resolve);
 		    	} else {
