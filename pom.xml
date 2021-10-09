@@ -19,13 +19,13 @@
 	                                                                                                            
 	The above copyright notice and this permission notice shall be included in all copies or substantial        
 	portions of the Software.                                                                                   
-	                                                                                                            
+	                                                                                                           
 	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT       
 	LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO   
 	EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN
 	AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
 	OR OTHER DEALINGS IN THE SOFTWARE.
---> 
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
@@ -90,7 +90,7 @@
 		<project.generated.artifacts.prefix>bw</project.generated.artifacts.prefix>
 		<repository.url>https://burningwave@github.com/burningwave/tools.git</repository.url>
 		
-		<burningwave-core.version>11.0.2</burningwave-core.version>
+		<burningwave-core.version>11.0.4</burningwave-core.version>
 		<coveralls-maven-plugin.version>4.3.0</coveralls-maven-plugin.version>
 		<jacoco-maven-plugin.version>0.7.6.201602180812</jacoco-maven-plugin.version>
 		<junit-jupiter.version>5.8.0</junit-jupiter.version>
