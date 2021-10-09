@@ -45,6 +45,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -312,10 +313,10 @@ public class TwoPassCapturer extends Capturer {
 	private void logReceivedParameters(String[] args, long wait, String fileSuffix) {
 		try {
 			
-			String logs =String.join("\n",
-				"classpath: " + System.getProperty("java.class.path"),
-				"path to be scanned: " + String.join(System.getProperty("path.separator"),
-					args[0].split(System.getProperty("path.separator"))
+			String logs =String.join("\n\n",
+				"classpath:\n\t" + String.join("\n\t", new TreeSet<>(Arrays.asList(System.getProperty("java.class.path").split(System.getProperty("path.separator"))))),
+				"path to be scanned:\n\t" + String.join(System.getProperty("path.separator") + "\n\t",
+					new TreeSet<>(Arrays.asList(args[0].split(System.getProperty("path.separator"))))
 				),
 				"mainClassName: " + args[1],
 				"destinationPath: " + args[2],
