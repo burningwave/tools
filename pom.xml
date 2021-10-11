@@ -32,7 +32,7 @@
 	<groupId>org.burningwave</groupId>
 	<artifactId>tools</artifactId>
 
-	<version>0.10.18-SNAPSHOT</version>
+	<version>0.10.19-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	
 	<name>Burningwave Tools</name>
@@ -90,7 +90,7 @@
 		<project.generated.artifacts.prefix>bw</project.generated.artifacts.prefix>
 		<repository.url>https://burningwave@github.com/burningwave/tools.git</repository.url>
 		
-		<burningwave-core.version>11.0.5</burningwave-core.version>
+		<burningwave-core.version>11.0.6</burningwave-core.version>
 		<coveralls-maven-plugin.version>4.3.0</coveralls-maven-plugin.version>
 		<jacoco-maven-plugin.version>0.7.6.201602180812</jacoco-maven-plugin.version>
 		<junit-jupiter.version>5.8.0</junit-jupiter.version>
