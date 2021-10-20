@@ -32,6 +32,7 @@ import static org.burningwave.core.assembler.StaticComponentContainer.ClassLoade
 import static org.burningwave.core.assembler.StaticComponentContainer.Classes;
 import static org.burningwave.core.assembler.StaticComponentContainer.ManagedLoggersRepository;
 import static org.burningwave.core.assembler.StaticComponentContainer.Strings;
+import static org.burningwave.core.assembler.StaticComponentContainer.Synchronizer;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,7 +47,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.burningwave.core.classes.JavaClass;
@@ -68,6 +68,7 @@ public class Sniffer extends MemoryClassLoader {
 	ClassLoader threadContextClassLoader;
 	Function<Boolean, ClassLoader> masterClassLoaderRetrieverAndResetter;
 	ThrowingBiFunction<String, Boolean, Class<?>, ClassNotFoundException> classLoadingFunction;
+	private Collection<String> baseClassPaths;
 	
 	public Sniffer(ClassLoader parent) {
 		super(parent);
@@ -91,11 +92,7 @@ public class Sniffer extends MemoryClassLoader {
 		this.javaClasses = new ConcurrentHashMap<>();
 		this.bwJavaClasses = new ConcurrentHashMap<>();
 		ManagedLoggersRepository.logInfo(getClass()::getName, "Scanning paths :\n{}",String.join("\n", baseClassPaths));
-		for (String classPath : baseClassPaths) {
-			FileSystemItem.ofPath(classPath).refresh().findInAllChildren(
-				FileSystemItem.Criteria.forAllFileThat(getFilterAndToMapStorer())
-			);
-		}
+		this.baseClassPaths = baseClassPaths;
 		if (useAsMasterClassLoader) {
 			//Load in cache defineClass and definePackage methods for threadContextClassLoader
 			ClassLoaders.getDefineClassMethod(threadContextClassLoader);
@@ -113,53 +110,70 @@ public class Sniffer extends MemoryClassLoader {
 					}
 		    	}
 			};
-			masterClassLoaderRetrieverAndResetter = setAsMasterClassLoader(this);
+			initResourceLoader();
+			masterClassLoaderRetrieverAndResetter = ClassLoaders.setAsMaster(threadContextClassLoader, this);
 		} else {
 			classLoadingFunction = (clsName, resolveFlag) -> super.loadClass(clsName, resolveFlag);
+			initResourceLoader();
 			Thread.currentThread().setContextClassLoader(this);
 		}
+		
 		return this;
 	}
 	
-	public Function<Boolean, ClassLoader> setAsMasterClassLoader(ClassLoader classLoader) {
-		ClassLoader masterClassLoader = getMasterClassLoader(Thread.currentThread().getContextClassLoader());
-		return ClassLoaders.setAsParent(masterClassLoader, classLoader);
-	}
-	
-	public ClassLoader getMasterClassLoader(ClassLoader classLoader) {
-		ClassLoader child = classLoader;
-		while (child.getParent() != null) {
-			child = child.getParent();
-		}
-		return child;
-	}
+//	public Function<Boolean, ClassLoader> setAsMasterClassLoader(ClassLoader classLoader) {
+//		ClassLoader masterClassLoader = getMasterClassLoader(Thread.currentThread().getContextClassLoader());
+//		return ClassLoaders.setAsParent(masterClassLoader, classLoader);
+//	}
+//	
+//	public ClassLoader getMasterClassLoader(ClassLoader classLoader) {
+//		ClassLoader child = classLoader;
+//		while (child.getParent() != null) {
+//			child = child.getParent();
+//		}
+//		return child;
+//	}
 	
 	@Override
 	public synchronized void addByteCode(String className, ByteBuffer byteCode) {
 		super.addByteCode(className, byteCode);
 	}
+ 	
 	
-    Predicate<FileSystemItem> getFilterAndToMapStorer() {
-		return (fileSystemItem) -> {
-			String absolutePath = fileSystemItem.getAbsolutePath();
-			resources.put(absolutePath, FileSystemItem.ofPath(absolutePath));
-			if (absolutePath.endsWith(".class") && 
-				!absolutePath.endsWith("module-info.class") &&
-				!absolutePath.endsWith("package-info.class")
-			) {
-				JavaClass javaClass = JavaClass.create(fileSystemItem.toByteBuffer());
-				addByteCode(javaClass.getName(), javaClass.getByteCode());
-				javaClasses.put(absolutePath, javaClass);
-				if (javaClass.getName().startsWith("org.burningwave.") ||
-					javaClass.getName().startsWith("io.github.toolfactory.")
-				) {
-					bwJavaClasses.put(javaClass.getName(), javaClass);
+	private void initResourceLoader() {
+		if (baseClassPaths != null) {
+			Synchronizer.execute(getOperationId("initResourceLoader"), () ->{
+				if (baseClassPaths != null) {
+					ManagedLoggersRepository.logInfo(getClass()::getName, "I'm loaaaaaaading");
+					this.resources = new ConcurrentHashMap<>();
+					this.javaClasses = new ConcurrentHashMap<>();
+					this.bwJavaClasses = new ConcurrentHashMap<>();
+					ManagedLoggersRepository.logInfo(getClass()::getName, "Scanning paths :\n{}",String.join("\n", baseClassPaths));
+					for (String classPath : baseClassPaths) {
+						FileSystemItem.ofPath(classPath).refresh().findInAllChildren(
+							FileSystemItem.Criteria.forAllFileThat((fileSystemItem) -> {								
+								String absolutePath = fileSystemItem.getAbsolutePath();
+								resources.put(absolutePath, FileSystemItem.ofPath(absolutePath));
+								JavaClass javaClass = fileSystemItem.toJavaClass();
+								if (javaClass != null) {
+									addByteCode(javaClass.getName(), javaClass.getByteCode());
+									javaClasses.put(absolutePath, javaClass);
+									if (javaClass.getName().startsWith("org.burningwave.") ||
+										javaClass.getName().startsWith("io.github.toolfactory.")
+									) {
+										bwJavaClasses.put(javaClass.getName(), javaClass);
+									}
+								}
+								return true;
+							})
+						);
+					}
+					baseClassPaths = null;
 				}
-			}
-			return true;
-		};
-	}    	
-	
+			});
+		}
+	}
+    
 	protected Collection<JavaClass> consumeClass(String className) {
 		return consumeClasses(Arrays.asList(className));
 	}
