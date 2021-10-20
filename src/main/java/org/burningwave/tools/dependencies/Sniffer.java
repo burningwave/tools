@@ -69,7 +69,6 @@ public class Sniffer extends MemoryClassLoader {
 	Function<Boolean, ClassLoader> masterClassLoaderRetrieverAndResetter;
 	ThrowingBiFunction<String, Boolean, Class<?>, ClassNotFoundException> classLoadingFunction;
 	private Collection<String> baseClassPaths;
-	
 	public Sniffer(ClassLoader parent) {
 		super(parent);
 	}
