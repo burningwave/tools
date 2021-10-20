@@ -28,7 +28,6 @@
  */
 package org.burningwave.tools.dependencies;
 
-import static org.burningwave.core.assembler.StaticComponentContainer.BackgroundExecutor;
 import static org.burningwave.core.assembler.StaticComponentContainer.ClassLoaders;
 import static org.burningwave.core.assembler.StaticComponentContainer.Classes;
 import static org.burningwave.core.assembler.StaticComponentContainer.ManagedLoggersRepository;
@@ -46,13 +45,11 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.burningwave.core.classes.JavaClass;
 import org.burningwave.core.classes.MemoryClassLoader;
-import org.burningwave.core.concurrent.QueuedTasksExecutor;
 import org.burningwave.core.function.ThrowingBiFunction;
 import org.burningwave.core.function.TriConsumer;
 import org.burningwave.core.io.FileSystemItem;
@@ -70,7 +67,6 @@ public class Sniffer extends MemoryClassLoader {
 	ClassLoader threadContextClassLoader;
 	Function<Boolean, ClassLoader> masterClassLoaderRetrieverAndResetter;
 	ThrowingBiFunction<String, Boolean, Class<?>, ClassNotFoundException> classLoadingFunction;
-	Collection<QueuedTasksExecutor.Task> runningTasks;
 	
 	public Sniffer(ClassLoader parent) {
 		super(parent);
@@ -93,7 +89,6 @@ public class Sniffer extends MemoryClassLoader {
 		this.resources = new ConcurrentHashMap<>();
 		this.javaClasses = new ConcurrentHashMap<>();
 		this.bwJavaClasses = new ConcurrentHashMap<>();
-		this.runningTasks = ConcurrentHashMap.newKeySet();
 		initResourceLoader(baseClassPaths);
 		if (useAsMasterClassLoader) {
 			//Load in cache defineClass and definePackage methods for threadContextClassLoader
@@ -162,28 +157,14 @@ public class Sniffer extends MemoryClassLoader {
 	}
 	
 	public void consumeClasses(Collection<String> currentNotFoundClasses) {
-		AtomicReference<QueuedTasksExecutor.Task> taskWrapper = new AtomicReference<>();
-		QueuedTasksExecutor.Task task =	BackgroundExecutor.createTask(() -> {
-			for (Map.Entry<String, JavaClass> entry : javaClasses.entrySet()) {
-				if (currentNotFoundClasses.contains(entry.getValue().getName())) {
-					JavaClass javaClass = entry.getValue();
-					if (javaClassFilterAndAdder.apply(javaClass)) {
-						AtomicReference<QueuedTasksExecutor.Task> innerTaskWrapper = new AtomicReference<>();
-						QueuedTasksExecutor.Task innerTask = BackgroundExecutor.createTask(() -> {
-							resourcesConsumer.accept(entry.getKey(), javaClass.getPath(), javaClass.getByteCode());
-							runningTasks.remove(innerTaskWrapper.get());
-						});
-						innerTaskWrapper.set(innerTask);
-						runningTasks.add(innerTask);
-						innerTask.submit();
-					}
+		for (Map.Entry<String, JavaClass> entry : javaClasses.entrySet()) {
+			if (currentNotFoundClasses.contains(entry.getValue().getName())) {
+				JavaClass javaClass = entry.getValue();
+				if (javaClassFilterAndAdder.apply(javaClass)) {
+					resourcesConsumer.accept(entry.getKey(), javaClass.getPath(), javaClass.getByteCode());
 				}
 			}
-			runningTasks.remove(taskWrapper.get());
-		});
-		taskWrapper.set(task);
-		runningTasks.add(task);
-		task.submit();
+		}
 	}
 	
 	protected Collection<FileSystemItem> consumeResource(String relativePath, boolean breakWhenFound) {
@@ -194,14 +175,7 @@ public class Sniffer extends MemoryClassLoader {
 					FileSystemItem fileSystemItem = entry.getValue();
 					founds.add(fileSystemItem);
 					if (resourceFilterAndAdder.apply(fileSystemItem)) {
-						AtomicReference<QueuedTasksExecutor.Task> innerTaskWrapper = new AtomicReference<>();
-						QueuedTasksExecutor.Task innerTask = BackgroundExecutor.createTask(() -> {
-							resourcesConsumer.accept(entry.getKey(), relativePath, fileSystemItem.toByteBuffer());
-							runningTasks.remove(innerTaskWrapper.get());
-						});
-						innerTaskWrapper.set(innerTask);
-						runningTasks.add(innerTask);
-						innerTask.submit();
+						resourcesConsumer.accept(entry.getKey(), relativePath, fileSystemItem.toByteBuffer());
 					}
 					if (breakWhenFound) {
 						break;
@@ -266,13 +240,13 @@ public class Sniffer extends MemoryClassLoader {
     
     @Override
     public void close() {
-    	closeResources(() -> runningTasks == null, () -> {
-    		runningTasks.stream().forEach(task -> task.waitForFinish());
+    	closeResources(() -> masterClassLoaderRetrieverAndResetter == null, () -> {
 	    	if (threadContextClassLoader != null) {
 	    		Thread.currentThread().setContextClassLoader(threadContextClassLoader);
 	    	}
 	    	if (masterClassLoaderRetrieverAndResetter != null) {
 	    		masterClassLoaderRetrieverAndResetter.apply(true);
+	    		masterClassLoaderRetrieverAndResetter = null;
 	    	}
 	    	resources.clear();
 	    	//Nulling resources will cause crash
@@ -286,8 +260,6 @@ public class Sniffer extends MemoryClassLoader {
 //	    	classLoadingFunction = null;
 //	    	clear();
 	    	unregister();
-    		runningTasks.clear();
-    		runningTasks = null;
     	});
     }
 }
