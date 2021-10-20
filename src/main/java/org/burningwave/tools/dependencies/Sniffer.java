@@ -143,7 +143,6 @@ public class Sniffer extends MemoryClassLoader {
 		if (baseClassPaths != null) {
 			Synchronizer.execute(getOperationId("initResourceLoader"), () ->{
 				if (baseClassPaths != null) {
-					ManagedLoggersRepository.logInfo(getClass()::getName, "I'm loaaaaaaading");
 					this.resources = new ConcurrentHashMap<>();
 					this.javaClasses = new ConcurrentHashMap<>();
 					this.bwJavaClasses = new ConcurrentHashMap<>();
