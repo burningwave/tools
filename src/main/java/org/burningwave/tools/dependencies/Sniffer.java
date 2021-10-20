@@ -100,7 +100,6 @@ public class Sniffer extends MemoryClassLoader {
 			//Load in cache defineClass and definePackage methods for threadContextClassLoader
 			ClassLoaders.getDefineClassMethod(threadContextClassLoader);
 			ClassLoaders.getDefinePackageMethod(threadContextClassLoader);
-			masterClassLoaderRetrieverAndResetter = setAsMasterClassLoader(this);
 			classLoadingFunction = (className, resolve) -> {
 				if ((!className.startsWith("org.burningwave.") && 
 					!className.startsWith("io.github.toolfactory."))
@@ -114,9 +113,10 @@ public class Sniffer extends MemoryClassLoader {
 					}
 		    	}
 			};
+			masterClassLoaderRetrieverAndResetter = setAsMasterClassLoader(this);
 		} else {
-			Thread.currentThread().setContextClassLoader(this);
 			classLoadingFunction = (clsName, resolveFlag) -> super.loadClass(clsName, resolveFlag);
+			Thread.currentThread().setContextClassLoader(this);
 		}
 		return this;
 	}
