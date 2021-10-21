@@ -109,7 +109,7 @@ public class Capturer implements Component {
 				}
 				return false;
 			};
-		result.findingTask = BackgroundExecutor.createTask(() -> {
+		result.findingTask = BackgroundExecutor.createTask(task -> {
 			Class<?> cls;
 			try (Sniffer resourceSniffer = new Sniffer(null).init(
 				false,

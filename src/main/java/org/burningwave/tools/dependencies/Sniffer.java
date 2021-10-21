@@ -240,7 +240,7 @@ public class Sniffer extends MemoryClassLoader {
     
     @Override
     public void close() {
-    	closeResources(() -> masterClassLoaderRetrieverAndResetter == null, () -> {
+    	closeResources(() -> masterClassLoaderRetrieverAndResetter == null, task -> {
 	    	if (threadContextClassLoader != null) {
 	    		Thread.currentThread().setContextClassLoader(threadContextClassLoader);
 	    	}

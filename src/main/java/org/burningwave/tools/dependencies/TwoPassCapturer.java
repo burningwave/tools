@@ -114,7 +114,7 @@ public class TwoPassCapturer extends Capturer {
 				javaClass -> true,
 				fileSystemItem -> true
 		);
-		result.findingTask = BackgroundExecutor.createTask(() -> {
+		result.findingTask = BackgroundExecutor.createTask(task -> {
 			try (Sniffer resourceSniffer = new Sniffer(null).init(
 					!recursive,
 					baseClassPaths,
