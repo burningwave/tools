@@ -132,7 +132,8 @@ public class Sniffer extends MemoryClassLoader {
 		this.bwJavaClasses = new ConcurrentHashMap<>();
 		ManagedLoggersRepository.logInfo(getClass()::getName, "Scanning paths :\n{}",String.join("\n", baseClassPaths));
 		for (String classPath : baseClassPaths) {
-			FileSystemItem.ofPath(classPath).refresh().findInAllChildren(
+			FileSystemItem.ofPath(classPath).refresh().getAllChildren().stream().forEach(System.out::println);
+			FileSystemItem.ofPath(classPath).findInAllChildren(
 				FileSystemItem.Criteria.forAllFileThat((fileSystemItem) -> {
 					String absolutePath = fileSystemItem.getAbsolutePath();
 					ManagedLoggersRepository.logInfo(getClass()::getName, absolutePath);					
