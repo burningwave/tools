@@ -155,7 +155,7 @@ public class Sniffer extends MemoryClassLoader {
 					})
 				);
 			}
-		}, Thread.MAX_PRIORITY);
+		}, Thread.MAX_PRIORITY).submit();
 	}
     
 	protected void consumeClass(String className) {
