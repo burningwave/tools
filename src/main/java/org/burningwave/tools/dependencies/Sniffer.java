@@ -28,7 +28,6 @@
  */
 package org.burningwave.tools.dependencies;
 
-import static org.burningwave.core.assembler.StaticComponentContainer.BackgroundExecutor;
 import static org.burningwave.core.assembler.StaticComponentContainer.ClassLoaders;
 import static org.burningwave.core.assembler.StaticComponentContainer.Classes;
 import static org.burningwave.core.assembler.StaticComponentContainer.ManagedLoggersRepository;
@@ -159,10 +158,7 @@ public class Sniffer extends MemoryClassLoader {
 			if (currentNotFoundClasses.contains(entry.getValue().getName())) {
 				JavaClass javaClass = entry.getValue();
 				if (javaClassFilterAndAdder.apply(javaClass)) {
-					BackgroundExecutor.createTask(task -> {
-						ManagedLoggersRepository.logInfo(getClass()::getName, " - " + entry.getKey());
-						resourcesConsumer.accept(entry.getKey(), javaClass.getPath(), javaClass.getByteCode());
-					}).submit();
+					resourcesConsumer.accept(entry.getKey(), javaClass.getPath(), javaClass.getByteCode());
 				}
 			}
 		}
@@ -176,10 +172,7 @@ public class Sniffer extends MemoryClassLoader {
 					FileSystemItem fileSystemItem = entry.getValue();
 					founds.add(fileSystemItem);
 					if (resourceFilterAndAdder.apply(fileSystemItem)) {
-						BackgroundExecutor.createTask(task -> {
-							ManagedLoggersRepository.logInfo(getClass()::getName, " - " + entry.getKey());
-							resourcesConsumer.accept(entry.getKey(), relativePath, fileSystemItem.toByteBuffer());
-						}).submit();
+						resourcesConsumer.accept(entry.getKey(), relativePath, fileSystemItem.toByteBuffer());
 					}
 					if (breakWhenFound) {
 						break;
