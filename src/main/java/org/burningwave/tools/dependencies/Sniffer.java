@@ -135,21 +135,21 @@ public class Sniffer extends MemoryClassLoader {
 			FileSystemItem.ofPath(classPath).refresh().findInAllChildren(
 				FileSystemItem.Criteria.forAllFileThat((fileSystemItem) -> {								
 					String absolutePath = fileSystemItem.getAbsolutePath();
-					ManagedLoggersRepository.logInfo(getClass()::getName, "Analyzing {}",absolutePath);
-					resources.put(absolutePath, FileSystemItem.ofPath(absolutePath));
-					JavaClass javaClass = fileSystemItem.toJavaClass();
-					ManagedLoggersRepository.logInfo(getClass()::getName, "Loaded java class of {}",absolutePath);
-					if (javaClass != null) {
-						addByteCode(javaClass.getName(), javaClass.getByteCode());
-						javaClasses.put(absolutePath, javaClass);
-						if (javaClass.getName().startsWith("org.burningwave.") ||
-							javaClass.getName().startsWith("io.github.toolfactory.")
-						) {
-							bwJavaClasses.put(javaClass.getName(), javaClass);
+					resources.put(absolutePath, fileSystemItem);
+					if (!fileSystemItem.isFolder()) {
+						JavaClass javaClass = fileSystemItem.toJavaClass();
+						if (javaClass != null) {
+							addByteCode(javaClass.getName(), javaClass.getByteCode());
+							javaClasses.put(absolutePath, javaClass);
+							if (javaClass.getName().startsWith("org.burningwave.") ||
+								javaClass.getName().startsWith("io.github.toolfactory.")
+							) {
+								bwJavaClasses.put(javaClass.getName(), javaClass);
+							}
 						}
 					}
 					return true;
-				}).setMinimumCollectionSizeForParallelIteration(-1)
+				})
 			);
 		}
 	}
