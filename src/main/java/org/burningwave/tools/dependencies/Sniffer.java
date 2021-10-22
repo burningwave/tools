@@ -167,6 +167,7 @@ public class Sniffer extends MemoryClassLoader {
 			if (currentNotFoundClasses.contains(entry.getValue().getName())) {
 				JavaClass javaClass = entry.getValue();
 				if (javaClassFilterAndAdder.apply(javaClass)) {
+					ManagedLoggersRepository.logInfo(getClass()::getName, " - " + entry.getKey());		
 					resourcesConsumer.accept(entry.getKey(), javaClass.getPath(), javaClass.getByteCode());
 				}
 			}
