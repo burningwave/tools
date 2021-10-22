@@ -144,7 +144,7 @@ public class Sniffer extends MemoryClassLoader {
 						}
 					}
 					return true;
-				})
+				}).setMinimumCollectionSizeForParallelIteration(-1)
 			);
 		}
 	}
