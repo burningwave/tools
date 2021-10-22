@@ -135,6 +135,7 @@ public class Sniffer extends MemoryClassLoader {
 			FileSystemItem.ofPath(classPath).refresh().findInAllChildren(
 				FileSystemItem.Criteria.forAllFileThat((fileSystemItem) -> {								
 					String absolutePath = fileSystemItem.getAbsolutePath();
+					ManagedLoggersRepository.logInfo(getClass()::getName, "Analyzing {}",absolutePath);
 					resources.put(absolutePath, FileSystemItem.ofPath(absolutePath));
 					JavaClass javaClass = fileSystemItem.toJavaClass();
 					if (javaClass != null) {
