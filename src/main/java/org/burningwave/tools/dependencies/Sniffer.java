@@ -138,6 +138,7 @@ public class Sniffer extends MemoryClassLoader {
 					ManagedLoggersRepository.logInfo(getClass()::getName, "Analyzing {}",absolutePath);
 					resources.put(absolutePath, FileSystemItem.ofPath(absolutePath));
 					JavaClass javaClass = fileSystemItem.toJavaClass();
+					ManagedLoggersRepository.logInfo(getClass()::getName, "Loaded java class of {}",absolutePath);
 					if (javaClass != null) {
 						addByteCode(javaClass.getName(), javaClass.getByteCode());
 						javaClasses.put(absolutePath, javaClass);
