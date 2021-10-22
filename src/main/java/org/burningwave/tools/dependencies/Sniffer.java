@@ -28,7 +28,6 @@
  */
 package org.burningwave.tools.dependencies;
 
-import static org.burningwave.core.assembler.StaticComponentContainer.BackgroundExecutor;
 import static org.burningwave.core.assembler.StaticComponentContainer.ClassLoaders;
 import static org.burningwave.core.assembler.StaticComponentContainer.Classes;
 import static org.burningwave.core.assembler.StaticComponentContainer.ManagedLoggersRepository;
@@ -51,7 +50,6 @@ import java.util.stream.Collectors;
 
 import org.burningwave.core.classes.JavaClass;
 import org.burningwave.core.classes.MemoryClassLoader;
-import org.burningwave.core.concurrent.QueuedTasksExecutor;
 import org.burningwave.core.function.ThrowingBiFunction;
 import org.burningwave.core.function.TriConsumer;
 import org.burningwave.core.io.FileSystemItem;
@@ -69,7 +67,6 @@ public class Sniffer extends MemoryClassLoader {
 	ClassLoader threadContextClassLoader;
 	Function<Boolean, ClassLoader> masterClassLoaderRetrieverAndResetter;
 	ThrowingBiFunction<String, Boolean, Class<?>, ClassNotFoundException> classLoadingFunction;
-	QueuedTasksExecutor.Task initResourceLoaderTask;
 	
 	public Sniffer(ClassLoader parent) {
 		super(parent);
@@ -89,13 +86,12 @@ public class Sniffer extends MemoryClassLoader {
 		this.javaClassFilterAndAdder = javaClassAdder;
 		this.resourceFilterAndAdder = resourceAdder;
 		this.resourcesConsumer = resourcesConsumer;
-		initResourceLoaderTask = initResourceLoader(baseClassPaths);
+		initResourceLoader(baseClassPaths);
 		if (useAsMasterClassLoader) {
 			//Load in cache defineClass and definePackage methods for threadContextClassLoader
 			ClassLoaders.getDefineClassMethod(threadContextClassLoader);
 			ClassLoaders.getDefinePackageMethod(threadContextClassLoader);
 			classLoadingFunction = (className, resolve) -> {
-				initResourceLoaderTask.waitForFinish();
 				if ((!className.startsWith("org.burningwave.") && 
 					!className.startsWith("io.github.toolfactory."))
 				) {
@@ -108,10 +104,10 @@ public class Sniffer extends MemoryClassLoader {
 					}
 		    	}
 			};
+			
 			masterClassLoaderRetrieverAndResetter = ClassLoaders.setAsParent(threadContextClassLoader, this);
 		} else {
-			classLoadingFunction = (clsName, resolveFlag) -> {
-				initResourceLoaderTask.waitForFinish();
+			classLoadingFunction = (clsName, resolveFlag) -> { 
 				return super.loadClass(clsName, resolveFlag);
 			};
 			Thread.currentThread().setContextClassLoader(this);
@@ -127,35 +123,30 @@ public class Sniffer extends MemoryClassLoader {
 	}
  	
 	
-	private QueuedTasksExecutor.Task initResourceLoader(Collection<String> baseClassPaths) {
+	private void initResourceLoader(Collection<String> baseClassPaths) {
 		this.resources = new ConcurrentHashMap<>();
 		this.javaClasses = new ConcurrentHashMap<>();
 		this.bwJavaClasses = new ConcurrentHashMap<>();
-		return BackgroundExecutor.createTask(task -> {
-			ManagedLoggersRepository.logInfo(getClass()::getName, "Scanning paths :\n{}",String.join("\n", baseClassPaths));
-			for (String classPath : baseClassPaths) {
-				FileSystemItem.ofPath(classPath).refresh().findInAllChildren(
-					FileSystemItem.Criteria.forAllFileThat((fileSystemItem) -> {
-						String absolutePath = fileSystemItem.getAbsolutePath();
-						ManagedLoggersRepository.logInfo(getClass()::getName, absolutePath);					
-						resources.put(absolutePath, fileSystemItem);
-						if (!fileSystemItem.isContainer()) {
-							JavaClass javaClass = fileSystemItem.toJavaClass();
-							if (javaClass != null) {
-								addByteCode(javaClass.getName(), javaClass.getByteCode());
-								javaClasses.put(absolutePath, javaClass);
-								if (javaClass.getName().startsWith("org.burningwave.") ||
-									javaClass.getName().startsWith("io.github.toolfactory.")
-								) {
-									bwJavaClasses.put(javaClass.getName(), javaClass);
-								}
-							}
+		ManagedLoggersRepository.logInfo(getClass()::getName, "Scanning paths :\n{}",String.join("\n", baseClassPaths));
+		for (String classPath : baseClassPaths) {
+			FileSystemItem.ofPath(classPath).refresh().findInAllChildren(
+				FileSystemItem.Criteria.forAllFileThat((fileSystemItem) -> {								
+					String absolutePath = fileSystemItem.getAbsolutePath();
+					resources.put(absolutePath, FileSystemItem.ofPath(absolutePath));
+					JavaClass javaClass = fileSystemItem.toJavaClass();
+					if (javaClass != null) {
+						addByteCode(javaClass.getName(), javaClass.getByteCode());
+						javaClasses.put(absolutePath, javaClass);
+						if (javaClass.getName().startsWith("org.burningwave.") ||
+							javaClass.getName().startsWith("io.github.toolfactory.")
+						) {
+							bwJavaClasses.put(javaClass.getName(), javaClass);
 						}
-						return true;
-					})
-				);
-			}
-		}, Thread.MAX_PRIORITY).submit();
+					}
+					return true;
+				})
+			);
+		}
 	}
     
 	protected void consumeClass(String className) {
@@ -167,7 +158,6 @@ public class Sniffer extends MemoryClassLoader {
 			if (currentNotFoundClasses.contains(entry.getValue().getName())) {
 				JavaClass javaClass = entry.getValue();
 				if (javaClassFilterAndAdder.apply(javaClass)) {
-					ManagedLoggersRepository.logInfo(getClass()::getName, " - " + entry.getKey());		
 					resourcesConsumer.accept(entry.getKey(), javaClass.getPath(), javaClass.getByteCode());
 				}
 			}
@@ -182,6 +172,7 @@ public class Sniffer extends MemoryClassLoader {
 					FileSystemItem fileSystemItem = entry.getValue();
 					founds.add(fileSystemItem);
 					if (resourceFilterAndAdder.apply(fileSystemItem)) {
+						ManagedLoggersRepository.logInfo(getClass()::getName, " - " + entry.getKey());
 						resourcesConsumer.accept(entry.getKey(), relativePath, fileSystemItem.toByteBuffer());
 					}
 					if (breakWhenFound) {
