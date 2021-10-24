@@ -163,7 +163,7 @@ public class Sniffer extends MemoryClassLoader {
 				if (javaClassFilterAndAdder.apply(javaClass)) {
 					Task task = BackgroundExecutor.createTask(tsk -> {
 						resourcesConsumer.accept(entry.getKey(), javaClass.getPath(), javaClass.getByteCode());
-					}).submit().waitForFinish(5000);
+					}).submit().waitForFinish(1000);
 					if (!task.hasFinished()) {
 						ManagedLoggersRepository.logError(getClass()::getName, "Aborting storing for path {}", entry.getKey());
 						task.abort();
@@ -183,7 +183,7 @@ public class Sniffer extends MemoryClassLoader {
 					if (resourceFilterAndAdder.apply(fileSystemItem)) {
 						Task task = BackgroundExecutor.createTask(tsk -> {
 							resourcesConsumer.accept(entry.getKey(), relativePath, fileSystemItem.toByteBuffer());
-						}).submit().waitForFinish(5000);
+						}).submit().waitForFinish(1000);
 						if (!task.hasFinished()) {
 							ManagedLoggersRepository.logError(getClass()::getName, "Aborting storing for path {}", entry.getKey());
 							task.abort();
