@@ -28,6 +28,8 @@
  */
 package org.burningwave.tools.dependencies;
 
+
+import static org.burningwave.core.assembler.StaticComponentContainer.BackgroundExecutor;
 import static org.burningwave.core.assembler.StaticComponentContainer.ClassLoaders;
 import static org.burningwave.core.assembler.StaticComponentContainer.Classes;
 import static org.burningwave.core.assembler.StaticComponentContainer.ManagedLoggersRepository;
@@ -50,6 +52,7 @@ import java.util.stream.Collectors;
 
 import org.burningwave.core.classes.JavaClass;
 import org.burningwave.core.classes.MemoryClassLoader;
+import org.burningwave.core.concurrent.QueuedTasksExecutor.Task;
 import org.burningwave.core.function.ThrowingBiFunction;
 import org.burningwave.core.function.TriConsumer;
 import org.burningwave.core.io.FileSystemItem;
@@ -67,6 +70,7 @@ public class Sniffer extends MemoryClassLoader {
 	ClassLoader threadContextClassLoader;
 	Function<Boolean, ClassLoader> masterClassLoaderRetrieverAndResetter;
 	ThrowingBiFunction<String, Boolean, Class<?>, ClassNotFoundException> classLoadingFunction;
+	private Collection<Task> tasksInExecution;
 	
 	public Sniffer(ClassLoader parent) {
 		super(parent);
@@ -86,6 +90,7 @@ public class Sniffer extends MemoryClassLoader {
 		this.javaClassFilterAndAdder = javaClassAdder;
 		this.resourceFilterAndAdder = resourceAdder;
 		this.resourcesConsumer = resourcesConsumer;
+		this.tasksInExecution = ConcurrentHashMap.newKeySet();
 		initResourceLoader(baseClassPaths);
 		if (useAsMasterClassLoader) {
 			//Load in cache defineClass and definePackage methods for threadContextClassLoader
@@ -158,7 +163,12 @@ public class Sniffer extends MemoryClassLoader {
 			if (currentNotFoundClasses.contains(entry.getValue().getName())) {
 				JavaClass javaClass = entry.getValue();
 				if (javaClassFilterAndAdder.apply(javaClass)) {
-					resourcesConsumer.accept(entry.getKey(), javaClass.getPath(), javaClass.getByteCode());
+					Task tsk = BackgroundExecutor.createTask(task -> {
+						resourcesConsumer.accept(entry.getKey(), javaClass.getPath(), javaClass.getByteCode());
+						tasksInExecution.remove(task);
+					});
+					tasksInExecution.add(tsk);
+					tsk.submit();
 				}
 			}
 		}
@@ -172,7 +182,12 @@ public class Sniffer extends MemoryClassLoader {
 					FileSystemItem fileSystemItem = entry.getValue();
 					founds.add(fileSystemItem);
 					if (resourceFilterAndAdder.apply(fileSystemItem)) {
-						resourcesConsumer.accept(entry.getKey(), relativePath, fileSystemItem.toByteBuffer());
+						Task tsk = BackgroundExecutor.createTask(task -> {
+							resourcesConsumer.accept(entry.getKey(), relativePath, fileSystemItem.toByteBuffer());
+							tasksInExecution.remove(task);
+						});
+						tasksInExecution.add(tsk);
+						tsk.submit();
 					}
 					if (breakWhenFound) {
 						break;
@@ -237,7 +252,11 @@ public class Sniffer extends MemoryClassLoader {
     
     @Override
     public void close() {
-    	closeResources(() -> masterClassLoaderRetrieverAndResetter == null, task -> {
+    	closeResources(() -> tasksInExecution == null, task -> {
+    		if (!tasksInExecution.isEmpty()) {
+    			tasksInExecution.stream().forEach(Task::waitForFinish);
+    			tasksInExecution = null;
+    		}
 	    	if (threadContextClassLoader != null) {
 	    		Thread.currentThread().setContextClassLoader(threadContextClassLoader);
 	    	}
