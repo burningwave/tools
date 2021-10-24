@@ -166,6 +166,7 @@ public class Sniffer extends MemoryClassLoader {
 					}).submit().waitForFinish(5000);
 					if (!task.hasFinished()) {
 						ManagedLoggersRepository.logError(getClass()::getName, "Aborting storing for path {}", entry.getKey());
+						task.abort();
 					}
 				}
 			}
@@ -185,6 +186,7 @@ public class Sniffer extends MemoryClassLoader {
 						}).submit().waitForFinish(5000);
 						if (!task.hasFinished()) {
 							ManagedLoggersRepository.logError(getClass()::getName, "Aborting storing for path {}", entry.getKey());
+							task.abort();
 						}
 					}
 					if (breakWhenFound) {
