@@ -28,6 +28,8 @@
  */
 package org.burningwave.tools.dependencies;
 
+
+import static org.burningwave.core.assembler.StaticComponentContainer.BackgroundExecutor;
 import static org.burningwave.core.assembler.StaticComponentContainer.ClassLoaders;
 import static org.burningwave.core.assembler.StaticComponentContainer.Classes;
 import static org.burningwave.core.assembler.StaticComponentContainer.ManagedLoggersRepository;
@@ -50,6 +52,7 @@ import java.util.stream.Collectors;
 
 import org.burningwave.core.classes.JavaClass;
 import org.burningwave.core.classes.MemoryClassLoader;
+import org.burningwave.core.concurrent.QueuedTasksExecutor.Task;
 import org.burningwave.core.function.ThrowingBiFunction;
 import org.burningwave.core.function.TriConsumer;
 import org.burningwave.core.io.FileSystemItem;
@@ -158,7 +161,12 @@ public class Sniffer extends MemoryClassLoader {
 			if (currentNotFoundClasses.contains(entry.getValue().getName())) {
 				JavaClass javaClass = entry.getValue();
 				if (javaClassFilterAndAdder.apply(javaClass)) {
-					resourcesConsumer.accept(entry.getKey(), javaClass.getPath(), javaClass.getByteCode());
+					Task task = BackgroundExecutor.createTask(tsk -> {
+						resourcesConsumer.accept(entry.getKey(), javaClass.getPath(), javaClass.getByteCode());
+					}).submit().waitForFinish(5000);
+					if (!task.hasFinished()) {
+						ManagedLoggersRepository.logError(getClass()::getName, "Aborting storing for path {}", entry.getKey());
+					}
 				}
 			}
 		}
@@ -172,7 +180,12 @@ public class Sniffer extends MemoryClassLoader {
 					FileSystemItem fileSystemItem = entry.getValue();
 					founds.add(fileSystemItem);
 					if (resourceFilterAndAdder.apply(fileSystemItem)) {
-						resourcesConsumer.accept(entry.getKey(), relativePath, fileSystemItem.toByteBuffer());
+						Task task = BackgroundExecutor.createTask(tsk -> {
+							resourcesConsumer.accept(entry.getKey(), relativePath, fileSystemItem.toByteBuffer());
+						}).submit().waitForFinish(5000);
+						if (!task.hasFinished()) {
+							ManagedLoggersRepository.logError(getClass()::getName, "Aborting storing for path {}", entry.getKey());
+						}
 					}
 					if (breakWhenFound) {
 						break;
