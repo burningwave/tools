@@ -188,7 +188,7 @@ public class Capturer implements Component {
 			FileSystemItem fileSystemItem = FileSystemItem.ofPath(finalPath + "/" + resourceRelativePath);
 			if (storePredicate.test(resourceAbsolutePath, fileSystemItem)) {
 				Streams.store(fileSystemItem.getAbsolutePath(), resourceContent);
-				ManagedLoggersRepository.logInfo(getClass()::getName, "Resource {} has been stored to CLASSPATH {}", resourceRelativePath, fileSystemItem.getAbsolutePath());
+				ManagedLoggersRepository.logInfo(getClass()::getName, "Resource {} has been stored to class path {}", resourceRelativePath, fileSystemItem.getAbsolutePath());
 			}
 		};
 	}
