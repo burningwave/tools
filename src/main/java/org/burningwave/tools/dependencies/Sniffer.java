@@ -28,7 +28,6 @@
  */
 package org.burningwave.tools.dependencies;
 
-
 import static org.burningwave.core.assembler.StaticComponentContainer.BackgroundExecutor;
 import static org.burningwave.core.assembler.StaticComponentContainer.ClassLoaders;
 import static org.burningwave.core.assembler.StaticComponentContainer.Classes;
@@ -57,35 +56,31 @@ import org.burningwave.core.function.ThrowingBiFunction;
 import org.burningwave.core.function.TriConsumer;
 import org.burningwave.core.io.FileSystemItem;
 
-
 public class Sniffer extends MemoryClassLoader {
 	private Function<JavaClass, Boolean> javaClassFilterAndAdder;
 	private Function<FileSystemItem, Boolean> resourceFilterAndAdder;
 	private Map<String, FileSystemItem> resources;
-	//In this map the key is the absolute path
+	// In this map the key is the absolute path
 	private Map<String, JavaClass> javaClasses;
-	//In this map the key is the class name
+	// In this map the key is the class name
 	private Map<String, JavaClass> bwJavaClasses;
 	private TriConsumer<String, String, ByteBuffer> resourcesConsumer;
 	ClassLoader threadContextClassLoader;
 	Function<Boolean, ClassLoader> masterClassLoaderRetrieverAndResetter;
 	ThrowingBiFunction<String, Boolean, Class<?>, ClassNotFoundException> classLoadingFunction;
 	private Collection<Task> tasksInExecution;
-	
+
 	public Sniffer(ClassLoader parent) {
 		super(parent);
 	}
-	
+
 	static {
-        ClassLoader.registerAsParallelCapable();
-    }
-	
-	protected  Sniffer init(boolean useAsMasterClassLoader,
-		Collection<String> baseClassPaths,
-		Function<JavaClass, Boolean> javaClassAdder,
-		Function<FileSystemItem, Boolean> resourceAdder,
-		TriConsumer<String, String, ByteBuffer> resourcesConsumer
-	) {
+		ClassLoader.registerAsParallelCapable();
+	}
+
+	protected Sniffer init(boolean useAsMasterClassLoader, Collection<String> baseClassPaths,
+			Function<JavaClass, Boolean> javaClassAdder, Function<FileSystemItem, Boolean> resourceAdder,
+			TriConsumer<String, String, ByteBuffer> resourcesConsumer) {
 		this.threadContextClassLoader = Thread.currentThread().getContextClassLoader();
 		this.javaClassFilterAndAdder = javaClassAdder;
 		this.resourceFilterAndAdder = resourceAdder;
@@ -93,71 +88,67 @@ public class Sniffer extends MemoryClassLoader {
 		this.tasksInExecution = ConcurrentHashMap.newKeySet();
 		initResourceLoader(baseClassPaths);
 		if (useAsMasterClassLoader) {
-			//Load in cache defineClass and definePackage methods for threadContextClassLoader
+			// Load in cache defineClass and definePackage methods for
+			// threadContextClassLoader
 			ClassLoaders.getDefineClassMethod(threadContextClassLoader);
 			ClassLoaders.getDefinePackageMethod(threadContextClassLoader);
 			classLoadingFunction = (className, resolve) -> {
-				if ((!className.startsWith("org.burningwave.") && 
-					!className.startsWith("io.github.toolfactory."))
-				) {
+				if ((!className.startsWith("org.burningwave.") && !className.startsWith("io.github.toolfactory."))) {
 					return super.loadClass(className, resolve);
-		    	} else {
-		    		try {
+				} else {
+					try {
 						return ClassLoaders.defineOrLoad(threadContextClassLoader, bwJavaClasses.get(className));
 					} catch (NoClassDefFoundError | ReflectiveOperationException exc) {
 						throw new ClassNotFoundException(Classes.retrieveName(exc));
 					}
-		    	}
+				}
 			};
-			
+
 			masterClassLoaderRetrieverAndResetter = ClassLoaders.setAsParent(threadContextClassLoader, this);
 		} else {
-			classLoadingFunction = (clsName, resolveFlag) -> { 
+			classLoadingFunction = (clsName, resolveFlag) -> {
 				return super.loadClass(clsName, resolveFlag);
 			};
 			Thread.currentThread().setContextClassLoader(this);
 		}
-		
+
 		return this;
 	}
 
-	
 	@Override
 	public synchronized void addByteCode(String className, ByteBuffer byteCode) {
 		super.addByteCode(className, byteCode);
 	}
- 	
-	
+
 	private void initResourceLoader(Collection<String> baseClassPaths) {
 		this.resources = new ConcurrentHashMap<>();
 		this.javaClasses = new ConcurrentHashMap<>();
 		this.bwJavaClasses = new ConcurrentHashMap<>();
-		ManagedLoggersRepository.logInfo(getClass()::getName, "Scanning paths :\n{}",String.join("\n", baseClassPaths));
+		ManagedLoggersRepository.logInfo(getClass()::getName, "Scanning paths :\n{}",
+				String.join("\n", baseClassPaths));
 		for (String classPath : baseClassPaths) {
-			FileSystemItem.ofPath(classPath).refresh().findInAllChildren(
-				FileSystemItem.Criteria.forAllFileThat((fileSystemItem) -> {								
-					String absolutePath = fileSystemItem.getAbsolutePath();
-					resources.put(absolutePath, FileSystemItem.ofPath(absolutePath));
-					JavaClass javaClass = fileSystemItem.toJavaClass();
-					if (javaClass != null) {
-						addByteCode(javaClass.getName(), javaClass.getByteCode());
-						javaClasses.put(absolutePath, javaClass);
-						if (javaClass.getName().startsWith("org.burningwave.") ||
-							javaClass.getName().startsWith("io.github.toolfactory.")
-						) {
-							bwJavaClasses.put(javaClass.getName(), javaClass);
+			FileSystemItem.ofPath(classPath).refresh()
+					.findInAllChildren(FileSystemItem.Criteria.forAllFileThat((fileSystemItem) -> {
+						String absolutePath = fileSystemItem.getAbsolutePath();
+						resources.put(absolutePath, FileSystemItem.ofPath(absolutePath));
+						JavaClass javaClass = fileSystemItem.toJavaClass();
+						if (javaClass != null) {
+							addByteCode(javaClass.getName(), javaClass.getByteCode());
+							javaClasses.put(absolutePath, javaClass);
+							if (javaClass.getName().startsWith("org.burningwave.")
+									|| javaClass.getName().startsWith("io.github.toolfactory.")) {
+								bwJavaClasses.put(javaClass.getName(), javaClass);
+							}
 						}
-					}
-					return true;
-				})
-			);
+						return true;
+					}));
 		}
 	}
-    
+
 	protected void consumeClass(String className) {
 		consumeClasses(Arrays.asList(className));
 	}
-	
+
 	public void consumeClasses(Collection<String> currentNotFoundClasses) {
 		for (Map.Entry<String, JavaClass> entry : javaClasses.entrySet()) {
 			if (currentNotFoundClasses.contains(entry.getValue().getName())) {
@@ -173,7 +164,7 @@ public class Sniffer extends MemoryClassLoader {
 			}
 		}
 	}
-	
+
 	protected Collection<FileSystemItem> consumeResource(String relativePath, boolean breakWhenFound) {
 		Set<FileSystemItem> founds = new LinkedHashSet<>();
 		if (Strings.isNotEmpty(relativePath)) {
@@ -197,26 +188,26 @@ public class Sniffer extends MemoryClassLoader {
 		}
 		return founds;
 	}
-	
+
 	@Override
 	public void addLoadedByteCode(String className, ByteBuffer byteCode) {
 		super.addLoadedByteCode(className, byteCode);
 		consumeClass(className);
-	};
-	
+	}
+
 	@Override
-    protected Class<?> loadClass(String className, boolean resolve) throws ClassNotFoundException {
+	protected Class<?> loadClass(String className, boolean resolve) throws ClassNotFoundException {
 		Class<?> cls = classLoadingFunction.apply(className, resolve);
-    	consumeClass(className);
-    	return cls;
-    }
-	
-    public Class<?> _loadClass(String className, boolean resolve) throws ClassNotFoundException {
-    	Class<?> cls = classLoadingFunction.apply(className, resolve);
-    	consumeClass(className);
-    	return cls;
-    }
-	
+		consumeClass(className);
+		return cls;
+	}
+
+	public Class<?> _loadClass(String className, boolean resolve) throws ClassNotFoundException {
+		Class<?> cls = classLoadingFunction.apply(className, resolve);
+		consumeClass(className);
+		return cls;
+	}
+
 	@Override
 	public URL getResource(String name) {
 		Enumeration<URL> urls = getResources(name, true);
@@ -225,57 +216,55 @@ public class Sniffer extends MemoryClassLoader {
 		}
 		return null;
 	}
-	
+
 	@Override
 	public Enumeration<URL> getResources(String name) throws IOException {
 		return getResources(name, false);
 	}
-    
+
 	private Enumeration<URL> getResources(String name, boolean findFirst) {
-		return Collections.enumeration(
-			consumeResource(name, findFirst).stream().map(fileSystemItem -> {
-				resourceFilterAndAdder.apply(fileSystemItem);
-				return fileSystemItem.getURL();
-			}
-		).collect(Collectors.toSet()));
+		return Collections.enumeration(consumeResource(name, findFirst).stream().map(fileSystemItem -> {
+			resourceFilterAndAdder.apply(fileSystemItem);
+			return fileSystemItem.getURL();
+		}).collect(Collectors.toSet()));
 	}
-	
-    @Override
-    public InputStream getResourceAsStream(String name) {
-    	FileSystemItem fileSystemItem = consumeResource(name, true).stream().findFirst().orElseGet(() -> null);
-    	if (fileSystemItem != null) {
-    		return fileSystemItem.toInputStream();
-    	} else {
-    		return getByteCodeAsInputStream(name);
-    	}
-    }
-    
-    @Override
-    public void close() {
-    	closeResources(() -> tasksInExecution == null, task -> {
-    		if (!tasksInExecution.isEmpty()) {
-    			tasksInExecution.stream().forEach(Task::waitForFinish);
-    			tasksInExecution = null;
-    		}
-	    	if (threadContextClassLoader != null) {
-	    		Thread.currentThread().setContextClassLoader(threadContextClassLoader);
-	    	}
-	    	if (masterClassLoaderRetrieverAndResetter != null) {
-	    		masterClassLoaderRetrieverAndResetter.apply(true);
-	    		masterClassLoaderRetrieverAndResetter = null;
-	    	}
-	    	resources.clear();
-	    	//Nulling resources will cause crash
-	    	//resources = null;
-	    	javaClasses.clear();
-	    	//Nulling javaClasses will cause crash
-	    	//javaClasses = null;
+
+	@Override
+	public InputStream getResourceAsStream(String name) {
+		FileSystemItem fileSystemItem = consumeResource(name, true).stream().findFirst().orElseGet(() -> null);
+		if (fileSystemItem != null) {
+			return fileSystemItem.toInputStream();
+		} else {
+			return getByteCodeAsInputStream(name);
+		}
+	}
+
+	@Override
+	public void close() {
+		closeResources(() -> tasksInExecution == null, task -> {
+			if (!tasksInExecution.isEmpty()) {
+				tasksInExecution.stream().forEach(Task::waitForFinish);
+				tasksInExecution = null;
+			}
+			if (threadContextClassLoader != null) {
+				Thread.currentThread().setContextClassLoader(threadContextClassLoader);
+			}
+			if (masterClassLoaderRetrieverAndResetter != null) {
+				masterClassLoaderRetrieverAndResetter.apply(true);
+				masterClassLoaderRetrieverAndResetter = null;
+			}
+			resources.clear();
+			// Nulling resources will cause crash
+			// resources = null;
+			javaClasses.clear();
+			// Nulling javaClasses will cause crash
+			// javaClasses = null;
 //	    	javaClassFilterAndAdder = null;
 //	    	resourceFilterAndAdder = null;
 //	    	threadContextClassLoader = null;
 //	    	classLoadingFunction = null;
 //	    	clear();
-	    	unregister();
-    	});
-    }
+			unregister();
+		});
+	}
 }
