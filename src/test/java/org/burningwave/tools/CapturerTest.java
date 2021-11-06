@@ -17,7 +17,7 @@ import org.burningwave.tools.dependencies.Capturer.Result;
 import org.junit.jupiter.api.Test;
 
 public class CapturerTest extends BaseTest {
-	
+
 	@Test
 	public void storeDependenciesTestOne() {
 		testNotEmpty(() -> {
@@ -38,9 +38,9 @@ public class CapturerTest extends BaseTest {
 			dependencies.waitForTaskEnding();
 			return dependencies.getStore().getAllChildren();
 		});
-	}	
+	}
 
-	
+
 	public static void main(String[] args) {
 		for (FileSystemItem fileSystemItem : FileSystemItem.ofPath(System.getProperty("user.home")).getChildren()) {
 			ManagedLoggersRepository.logDebug(() -> CapturerTest.class.getName(), fileSystemItem.getAbsolutePath()

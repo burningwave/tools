@@ -23,15 +23,15 @@ import org.junit.jupiter.api.function.ThrowingSupplier;
 public class BaseTest implements Component, ManagedLogger {
 
 	Collection<ComponentSupplier> componentSuppliers = new CopyOnWriteArrayList<>();
-	
-	
+
+
 	protected ComponentSupplier getComponentSupplier() {
 		//Set<ComponentSupplier> componentSuppliers = getComponentSupplierSetForTest();
 		//return getNewComponentSupplier();
 		return ComponentSupplier.getInstance();
 	}
 
-	
+
 	protected Set<ComponentSupplier> getComponentSupplierSetForTest() {
 		Set<ComponentSupplier> componentSuppliers = ConcurrentHashMap.newKeySet();
 		List<Thread> threadList = new CopyOnWriteArrayList<>();
@@ -40,7 +40,7 @@ public class BaseTest implements Component, ManagedLogger {
 				@Override
 				public void run() {
 					componentSuppliers.add(ComponentSupplier.getInstance());
-				};
+				}
 			};
 			threadList.add(thread);
 			thread.start();
@@ -54,15 +54,15 @@ public class BaseTest implements Component, ManagedLogger {
 		});
 		return componentSuppliers;
 	}
-	
-	
+
+
 	protected ComponentSupplier getNewComponentSupplier() {
 		ComponentSupplier componentSupplier = ComponentContainer.create("burningwave.properties");
 		componentSuppliers.add(componentSupplier);
 		return componentSupplier;
 	}
-		
-	
+
+
 	void testNotNull(ThrowingSupplier<?> supplier) {
 		Object object = null;
 		try {
@@ -72,13 +72,13 @@ public class BaseTest implements Component, ManagedLogger {
 		}
 		assertNotNull(object);
 	}
-	
-	
+
+
 	protected void testNotEmpty(ThrowingSupplier<Collection<?>> supplier) {
 		testNotEmpty(supplier, false);
 	}
-	
-	
+
+
 	protected void testNotEmpty(ThrowingSupplier<Collection<?>> supplier, boolean printAllElements) {
 		long initialTime = System.currentTimeMillis();
 		Collection<?> coll = null;
@@ -97,13 +97,13 @@ public class BaseTest implements Component, ManagedLogger {
 		}
 		assertTrue(!coll.isEmpty());
 	}
-	
-	
+
+
 	<T extends AutoCloseable> void testNotEmpty(Supplier<T> autoCloaseableSupplier, Function<T, Collection<?>> collSupplier) {
 		testNotEmpty(autoCloaseableSupplier, collSupplier, false);
 	}
-	
-	
+
+
 	<T extends AutoCloseable> void testNotEmpty(Supplier<T> autoCloaseableSupplier, Function<T, Collection<?>> collSupplier, boolean printAllElements) {
 		long initialTime = System.currentTimeMillis();
 		Collection<?> coll = null;
@@ -122,10 +122,10 @@ public class BaseTest implements Component, ManagedLogger {
 		}
 		assertTrue(isNotEmpty);
 	}
-	
-	
+
+
 	<T extends AutoCloseable> void testNotNull(
-		ThrowingSupplier<T> autoCloseableSupplier, 
+		ThrowingSupplier<T> autoCloseableSupplier,
 		Function<T, ?> objectSupplier
 	) {
 		long initialTime = System.currentTimeMillis();
@@ -134,10 +134,10 @@ public class BaseTest implements Component, ManagedLogger {
 			logInfo("Elapsed time: " + getFormattedDifferenceOfMillis(System.currentTimeMillis(), initialTime));
 		} catch (Throwable exc) {
 			logError("Exception occurred", exc);
-		}		
+		}
 	}
-	
-	
+
+
 	void testDoesNotThrow(Executable executable) {
 		Throwable throwable = null;
 		long initialTime = System.currentTimeMillis();
@@ -151,14 +151,14 @@ public class BaseTest implements Component, ManagedLogger {
 		}
 		assertNull(throwable);
 	}
-	
-	
+
+
 	private String getFormattedDifferenceOfMillis(long value1, long value2) {
 		String valueFormatted = String.format("%04d", (value1 - value2));
 		return valueFormatted.substring(0, valueFormatted.length() - 3) + "," + valueFormatted.substring(valueFormatted.length() -3);
 	}
-	
-	
+
+
 	@Override
 	protected void finalize() throws Throwable {
 		componentSuppliers.forEach(componentSupplier -> componentSupplier.close());

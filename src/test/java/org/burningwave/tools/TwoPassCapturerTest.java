@@ -17,7 +17,7 @@ import org.burningwave.tools.dependencies.TwoPassCapturer;
 import org.junit.jupiter.api.Test;
 
 public class TwoPassCapturerTest extends BaseTest {
-	
+
 	@Test
 	public void storeDependenciesTestOne() {
 		testNotEmpty(() -> {
@@ -40,7 +40,7 @@ public class TwoPassCapturerTest extends BaseTest {
 			return result.getJavaClasses();
 		});
 	}
-	
+
 	@Test
 	public void storeDependenciesTestTwo() {
 		testNotEmpty(() -> {
@@ -55,7 +55,7 @@ public class TwoPassCapturerTest extends BaseTest {
 			String[] args = System.getProperty("os.name").toLowerCase().contains("windows") ?
 				new String[]{"\"C:\\Program Files (x86)\""} :
 				new String[]{"\"/\""};
-			
+
 			Result result = TwoPassCapturer.getInstance().captureAndStore(
 				"org.burningwave.tools.TwoPassCapturerTest",
 				args,
@@ -66,7 +66,7 @@ public class TwoPassCapturerTest extends BaseTest {
 			result.waitForTaskEnding();
 			return result.getJavaClasses();
 		});
-	}	
+	}
 
 	public static void main(String[] args) {
 		String folderName = args[0];
