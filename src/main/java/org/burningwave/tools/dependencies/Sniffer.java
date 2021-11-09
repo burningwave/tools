@@ -102,7 +102,10 @@ public class Sniffer extends MemoryClassLoader {
 					} catch (NoClassDefFoundError | ReflectiveOperationException exc) {
 						throw new ClassNotFoundException(Classes.retrieveName(exc));
 					} catch (NullPointerException exc) {
-						throw new ClassNotFoundException(className);
+						if (javaClass == null) {
+							throw new ClassNotFoundException(className);
+						}
+						throw exc;
 					}
 				}
 			};
