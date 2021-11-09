@@ -59,7 +59,7 @@ import org.burningwave.core.io.FileSystemItem;
 public class Sniffer extends MemoryClassLoader {
 	private Function<JavaClass, Boolean> javaClassFilterAndAdder;
 	private Function<FileSystemItem, Boolean> resourceFilterAndAdder;
-	private Map<String, FileSystemItem> resources;
+	private Map<String, String> resources;
 	// In this map the key is the absolute path
 	private Map<String, JavaClass> javaClasses;
 	// In this map the key is the class name
@@ -96,14 +96,16 @@ public class Sniffer extends MemoryClassLoader {
 				if ((!className.startsWith("org.burningwave.") && !className.startsWith("io.github.toolfactory."))) {
 					return super.loadClass(className, resolve);
 				} else {
+					JavaClass javaClass = bwJavaClasses.get(className);
 					try {
-						return ClassLoaders.defineOrLoad(threadContextClassLoader, bwJavaClasses.get(className));
+						return ClassLoaders.defineOrLoad(threadContextClassLoader, javaClass);
 					} catch (NoClassDefFoundError | ReflectiveOperationException exc) {
 						throw new ClassNotFoundException(Classes.retrieveName(exc));
+					} catch (NullPointerException exc) {
+						throw new ClassNotFoundException(className);
 					}
 				}
 			};
-
 			masterClassLoaderRetrieverAndResetter = ClassLoaders.setAsParent(threadContextClassLoader, this);
 		} else {
 			classLoadingFunction = (clsName, resolveFlag) -> {
@@ -128,20 +130,21 @@ public class Sniffer extends MemoryClassLoader {
 				String.join("\n", baseClassPaths));
 		for (String classPath : baseClassPaths) {
 			FileSystemItem.ofPath(classPath).refresh()
-					.findInAllChildren(FileSystemItem.Criteria.forAllFileThat((fileSystemItem) -> {
-						String absolutePath = fileSystemItem.getAbsolutePath();
-						resources.put(absolutePath, FileSystemItem.ofPath(absolutePath));
-						JavaClass javaClass = fileSystemItem.toJavaClass();
-						if (javaClass != null) {
-							addByteCode(javaClass.getName(), javaClass.getByteCode());
-							javaClasses.put(absolutePath, javaClass);
-							if (javaClass.getName().startsWith("org.burningwave.")
-									|| javaClass.getName().startsWith("io.github.toolfactory.")) {
-								bwJavaClasses.put(javaClass.getName(), javaClass);
-							}
-						}
-						return true;
-					}));
+			.findInAllChildren(FileSystemItem.Criteria.forAllFileThat((fileSystemItem) -> {
+				String absolutePath = fileSystemItem.getAbsolutePath();
+				ManagedLoggersRepository.logInfo(getClass()::getName, absolutePath);
+				resources.put(absolutePath, classPath);
+				JavaClass javaClass = fileSystemItem.toJavaClass();
+				if (javaClass != null) {
+					addByteCode(javaClass.getName(), javaClass.getByteCode());
+					javaClasses.put(absolutePath, javaClass);
+					if (javaClass.getName().startsWith("org.burningwave.")
+							|| javaClass.getName().startsWith("io.github.toolfactory.")) {
+						bwJavaClasses.put(javaClass.getName(), javaClass);
+					}
+				}
+				return true;
+			}));
 		}
 	}
 
@@ -155,7 +158,18 @@ public class Sniffer extends MemoryClassLoader {
 				JavaClass javaClass = entry.getValue();
 				if (javaClassFilterAndAdder.apply(javaClass)) {
 					Task tsk = BackgroundExecutor.createTask(task -> {
-						resourcesConsumer.accept(entry.getKey(), javaClass.getPath(), javaClass.getByteCode());
+						try {
+							resourcesConsumer.accept(entry.getKey(), javaClass.getPath(), javaClass.getByteCode());
+						} catch (Throwable exc) {
+							try {
+								FileSystemItem classPath = FileSystemItem.ofPath(resources.get(entry.getKey()));
+								FileSystemItem javaClassFIS = FileSystemItem.ofPath(entry.getKey());
+								String itemRelativePath = javaClassFIS.getAbsolutePath().substring(classPath.getAbsolutePath().length() + 1);
+								resourcesConsumer.accept(entry.getKey(), itemRelativePath, javaClass.getByteCode());
+							} catch (Throwable exception) {
+								throw exc;
+							}
+						}
 						tasksInExecution.remove(task);
 					});
 					tasksInExecution.add(tsk);
@@ -168,9 +182,9 @@ public class Sniffer extends MemoryClassLoader {
 	protected Collection<FileSystemItem> consumeResource(String relativePath, boolean breakWhenFound) {
 		Set<FileSystemItem> founds = new LinkedHashSet<>();
 		if (Strings.isNotEmpty(relativePath)) {
-			for (Map.Entry<String, FileSystemItem> entry : resources.entrySet()) {
-				if (entry.getValue().getAbsolutePath().endsWith(relativePath)) {
-					FileSystemItem fileSystemItem = entry.getValue();
+			for (Map.Entry<String, String> entry : resources.entrySet()) {
+				if (entry.getKey().endsWith(relativePath)) {
+					FileSystemItem fileSystemItem = FileSystemItem.ofPath(entry.getKey());
 					founds.add(fileSystemItem);
 					if (resourceFilterAndAdder.apply(fileSystemItem)) {
 						Task tsk = BackgroundExecutor.createTask(task -> {
