@@ -31,7 +31,7 @@ package org.burningwave.tools.dependencies;
 import static org.burningwave.core.assembler.StaticComponentContainer.BackgroundExecutor;
 import static org.burningwave.core.assembler.StaticComponentContainer.Driver;
 import static org.burningwave.core.assembler.StaticComponentContainer.FileSystemHelper;
-import static org.burningwave.core.assembler.StaticComponentContainer.ManagedLoggersRepository;
+import static org.burningwave.core.assembler.StaticComponentContainer.ManagedLoggerRepository;
 import static org.burningwave.core.assembler.StaticComponentContainer.Paths;
 
 import java.io.IOException;
@@ -108,7 +108,7 @@ public class TwoPassCapturer extends Capturer {
 						Thread.sleep(continueToCaptureAfterSimulatorClassEndExecutionFor);
 					}
 				} catch (Throwable exc) {
-					ManagedLoggersRepository.logError(getClass()::getName, "Exception occurred", exc);
+					ManagedLoggerRepository.logError(getClass()::getName, "Exception occurred", exc);
 					Driver.throwException(exc);
 				}
 			}
@@ -256,7 +256,7 @@ public class TwoPassCapturer extends Capturer {
 							: ""));
 
 			Files.write(java.nio.file.Paths.get(args[2] + "/params-" + fileSuffix + ".txt"), logs.getBytes());
-			ManagedLoggersRepository.logDebug(() -> this.getClass().getName(), "\n\n" + logs + "\n\n");
+			ManagedLoggerRepository.logDebug(() -> this.getClass().getName(), "\n\n" + logs + "\n\n");
 			if (wait > 0) {
 				Thread.sleep(wait);
 			}
@@ -280,7 +280,7 @@ public class TwoPassCapturer extends Capturer {
 				capturer.captureAndStore(mainClassName, mainMethodArguments, paths, destinationPath, includeMainClass,
 						continueToCaptureAfterSimulatorClassEndExecutionFor, false).waitForTaskEnding();
 			} catch (Throwable exc) {
-				ManagedLoggersRepository.logError(() -> TwoPassCapturer.class.getName(), "Exception occurred", exc);
+				ManagedLoggerRepository.logError(() -> TwoPassCapturer.class.getName(), "Exception occurred", exc);
 			} finally {
 				String suffix = UUID.randomUUID().toString();
 				capturer.logReceivedParameters(args, 0, suffix);

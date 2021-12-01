@@ -1,7 +1,7 @@
 package org.burningwave.tools;
 
 import static org.burningwave.core.assembler.StaticComponentContainer.JVMInfo;
-import static org.burningwave.core.assembler.StaticComponentContainer.ManagedLoggersRepository;
+import static org.burningwave.core.assembler.StaticComponentContainer.ManagedLoggerRepository;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,8 +43,7 @@ public class CapturerTest extends BaseTest {
 
 	public static void main(String[] args) {
 		for (FileSystemItem fileSystemItem : FileSystemItem.ofPath(System.getProperty("user.home")).getChildren()) {
-			ManagedLoggersRepository.logDebug(() -> CapturerTest.class.getName(), fileSystemItem.getAbsolutePath()
-			);
+			ManagedLoggerRepository.logDebug(() -> CapturerTest.class.getName(), fileSystemItem.getAbsolutePath());
 		}
 	}
 }

@@ -1,7 +1,7 @@
 package org.burningwave.tools;
 
 import static org.burningwave.core.assembler.StaticComponentContainer.JVMInfo;
-import static org.burningwave.core.assembler.StaticComponentContainer.ManagedLoggersRepository;
+import static org.burningwave.core.assembler.StaticComponentContainer.ManagedLoggerRepository;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -77,8 +77,7 @@ public class TwoPassCapturerTest extends BaseTest {
 			folderName = folderName.substring(0, folderName.length() -1);
 		}
 		for (FileSystemItem fileSystemItem : FileSystemItem.ofPath(folderName).getChildren()) {
-			ManagedLoggersRepository.logDebug(() -> TwoPassCapturerTest.class.getName(), fileSystemItem.getAbsolutePath()
-			);
+			ManagedLoggerRepository.logDebug(() -> TwoPassCapturerTest.class.getName(), fileSystemItem.getAbsolutePath());
 		}
 	}
 }

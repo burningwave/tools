@@ -30,7 +30,7 @@ package org.burningwave.tools.dependencies;
 
 import static org.burningwave.core.assembler.StaticComponentContainer.BackgroundExecutor;
 import static org.burningwave.core.assembler.StaticComponentContainer.Driver;
-import static org.burningwave.core.assembler.StaticComponentContainer.ManagedLoggersRepository;
+import static org.burningwave.core.assembler.StaticComponentContainer.ManagedLoggerRepository;
 import static org.burningwave.core.assembler.StaticComponentContainer.Paths;
 import static org.burningwave.core.assembler.StaticComponentContainer.Streams;
 
@@ -152,7 +152,7 @@ public class Capturer implements Component {
 			FileSystemItem fileSystemItem = FileSystemItem.ofPath(finalPath + "/" + resourceRelativePath);
 			if (storePredicate.test(resourceAbsolutePath, fileSystemItem)) {
 				Streams.store(fileSystemItem.getAbsolutePath(), resourceContent);
-				ManagedLoggersRepository.logInfo(getClass()::getName, "Resource {} has been stored to class path {}",
+				ManagedLoggerRepository.logInfo(getClass()::getName, "Resource {} has been stored to class path {}",
 						resourceRelativePath, fileSystemItem.getAbsolutePath());
 			}
 		};
@@ -203,7 +203,7 @@ public class Capturer implements Component {
 			Files.write(java.nio.file.Paths.get(destinationPath + "/executor-" + executorSuffix + ".cmd"),
 					externalExecutorForWindows.getBytes());
 		} catch (Throwable exc) {
-			ManagedLoggersRepository.logError(getClass()::getName, "Exception occurred", exc);
+			ManagedLoggerRepository.logError(getClass()::getName, "Exception occurred", exc);
 		}
 	}
 
@@ -223,7 +223,7 @@ public class Capturer implements Component {
 			Files.write(java.nio.file.Paths.get(destinationPath + "/executor-" + executorSuffix + ".sh"),
 					externalExecutorForUnix.getBytes());
 		} catch (Throwable exc) {
-			ManagedLoggersRepository.logError(getClass()::getName, "Exception occurred", exc);
+			ManagedLoggerRepository.logError(getClass()::getName, "Exception occurred", exc);
 		}
 	}
 
