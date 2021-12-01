@@ -8,7 +8,7 @@ Burningwave Tools [![Tweet](https://img.shields.io/twitter/url/http/shields.io.s
 [![Maven Central with version prefix filter](https://img.shields.io/maven-central/v/org.burningwave/tools/0)](https://maven-badges.herokuapp.com/maven-central/org.burningwave/tools/)
 [![GitHub](https://img.shields.io/github/license/burningwave/tools)](https://github.com/burningwave/tools/blob/master/LICENSE)
 
-[![Supported JVM](https://img.shields.io/badge/supported%20JVM-8%2C%209+%20(17)-blueviolet)](https://github.com/burningwave/tools/actions/runs/1503209328)
+[![Supported JVM](https://img.shields.io/badge/supported%20JVM-8%2C%209+%20(17)-blueviolet)](https://github.com/burningwave/tools/actions/runs/1527002561)
 
 [![Coveralls github branch](https://img.shields.io/coveralls/github/burningwave/tools/master)](https://coveralls.io/github/burningwave/tools)
 [![GitHub open issues](https://img.shields.io/github/issues/burningwave/tools)](https://github.com/burningwave/tools/issues)
@@ -33,7 +33,7 @@ To include Burningwave Tools in your projects simply use with **Apache Maven**:
 <dependency>
     <groupId>org.burningwave</groupId>
     <artifactId>tools</artifactId>
-    <version>0.10.74</version>
+    <version>0.10.77</version>
 </dependency>	
 ```
 <br/>
@@ -44,7 +44,7 @@ To use this mode simply pass to the method **captureAndStore**, as first paramet
 package org.burningwave.tools.examples.twopasscapturer;
 
 import static
-    org.burningwave.core.assembler.StaticComponentContainer.ManagedLoggersRepository;
+    org.burningwave.core.assembler.StaticComponentContainer.ManagedLoggerRepository;
 
 import java.util.Collection;
 
@@ -76,7 +76,7 @@ public class DependenciesExtractor {
             0L
         );
         result.waitForTaskEnding();
-        ManagedLoggersRepository.logInfo(
+        ManagedLoggerRepository.logInfo(
             () -> DependenciesExtractor.class.getName(),
             "Elapsed time: " + getFormattedDifferenceOfMillis(
                 System.currentTimeMillis(), initialTime
@@ -100,7 +100,7 @@ In this mode you can adapt a Java old version application to Java 9 or later. To
 package org.burningwave.tools.examples.twopasscapturer;
 
 import static
-    org.burningwave.core.assembler.StaticComponentContainer.ManagedLoggersRepository;
+    org.burningwave.core.assembler.StaticComponentContainer.ManagedLoggerRepository;
 
 import java.util.Collection;
 
@@ -141,7 +141,7 @@ public class ApplicationAdapter {
             0L
         );
         result.waitForTaskEnding();
-        ManagedLoggersRepository.logInfo(
+        ManagedLoggerRepository.logInfo(
             () -> ApplicationAdapter.class.getName(),
             "Elapsed time: " + getFormattedDifferenceOfMillis(
                 System.currentTimeMillis(),
