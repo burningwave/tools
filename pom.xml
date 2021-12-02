@@ -32,7 +32,7 @@
 	<groupId>org.burningwave</groupId>
 	<artifactId>tools</artifactId>
 
-	<version>0.10.80-SNAPSHOT</version>
+	<version>0.10.79-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	
 	<name>Burningwave Tools</name>
@@ -289,7 +289,7 @@
 				<version>${nexus-staging-maven-plugin.version}</version>
 				<extensions>true</extensions>
 				<configuration>
-					<!-- <stagingProgressTimeoutMinutes>10</stagingProgressTimeoutMinutes> -->
+					<stagingProgressTimeoutMinutes>20</stagingProgressTimeoutMinutes>
 					<serverId>ossrh</serverId>
 					<nexusUrl>https://oss.sonatype.org/</nexusUrl>
 					<autoReleaseAfterClose>true</autoReleaseAfterClose>
