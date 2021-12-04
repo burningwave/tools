@@ -50,8 +50,8 @@ import org.burningwave.core.assembler.ComponentContainer;
 import org.burningwave.core.assembler.ComponentSupplier;
 import org.burningwave.core.classes.ByteCodeHunter;
 import org.burningwave.core.classes.JavaClass;
-import org.burningwave.core.concurrent.QueuedTasksExecutor;
-import org.burningwave.core.concurrent.QueuedTasksExecutor.Task;
+import org.burningwave.core.concurrent.QueuedTaskExecutor;
+import org.burningwave.core.concurrent.QueuedTaskExecutor.Task;
 import org.burningwave.core.function.TriConsumer;
 import org.burningwave.core.io.FileSystemItem;
 
@@ -236,7 +236,7 @@ public class Capturer implements Component {
 	}
 
 	public static class Result implements Component {
-		QueuedTasksExecutor.Task findingTask;
+		QueuedTaskExecutor.Task findingTask;
 		Collection<FileSystemItem> resources;
 		Collection<JavaClass> javaClasses;
 		FileSystemItem store;

@@ -51,7 +51,7 @@ import java.util.stream.Collectors;
 
 import org.burningwave.core.classes.JavaClass;
 import org.burningwave.core.classes.MemoryClassLoader;
-import org.burningwave.core.concurrent.QueuedTasksExecutor.Task;
+import org.burningwave.core.concurrent.QueuedTaskExecutor.Task;
 import org.burningwave.core.function.ThrowingBiFunction;
 import org.burningwave.core.function.TriConsumer;
 import org.burningwave.core.io.FileSystemItem;
