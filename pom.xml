@@ -94,8 +94,8 @@
 		<burningwave-jvm-driver.version>6.6.6</burningwave-jvm-driver.version>
 		<coveralls-maven-plugin.version>4.3.0</coveralls-maven-plugin.version>
 		<jacoco-maven-plugin.version>0.7.6.201602180812</jacoco-maven-plugin.version>
-		<junit-jupiter.version>5.8.1</junit-jupiter.version>
-		<junit.version>1.8.1</junit.version>
+		<junit-jupiter.version>5.8.2</junit-jupiter.version>
+		<junit.version>1.8.2</junit.version>
 		<maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
 		<maven-deploy-plugin.version>2.8.2</maven-deploy-plugin.version>
 		<maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
