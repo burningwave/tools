@@ -34,6 +34,7 @@ import static org.burningwave.core.assembler.StaticComponentContainer.FileSystem
 import static org.burningwave.core.assembler.StaticComponentContainer.ManagedLoggerRepository;
 import static org.burningwave.core.assembler.StaticComponentContainer.Paths;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
@@ -201,12 +202,12 @@ public class TwoPassCapturer extends Capturer {
 		StringBuffer generatedClassPath = new StringBuffer();
 		generatedClassPath.append("\"");
 		if (!classPaths.isEmpty()) {
-			generatedClassPath.append(String.join(System.getProperty("path.separator"), classPaths));
+			generatedClassPath.append(String.join(File.pathSeparator, classPaths));
 		}
 		generatedClassPath.append("\"");
 		command.add(generatedClassPath.toString());
 		command.add(InternalLauncher.class.getName());
-		command.add("\"" + String.join(System.getProperty("path.separator"), classPathsToBeScanned) + "\"");
+		command.add("\"" + String.join(File.pathSeparator, classPathsToBeScanned) + "\"");
 		command.add(mainClassName);
 		command.add("\"" + destinationPath + "\"");
 		command.add(Boolean.valueOf(includeMainClass).toString());
@@ -227,11 +228,11 @@ public class TwoPassCapturer extends Capturer {
 		command.add("-classpath");
 		StringBuffer generatedClassPath = new StringBuffer();
 		if (!classPaths.isEmpty()) {
-			generatedClassPath.append(String.join(System.getProperty("path.separator"), classPaths));
+			generatedClassPath.append(String.join(File.pathSeparator, classPaths));
 		}
 		command.add(generatedClassPath.toString());
 		command.add(InternalLauncher.class.getName());
-		command.add(String.join(System.getProperty("path.separator"), classPathsToBeScanned));
+		command.add(String.join(File.pathSeparator, classPathsToBeScanned));
 		command.add(mainClassName);
 		command.add(destinationPath);
 		command.add(Boolean.valueOf(includeMainClass).toString());
@@ -247,9 +248,9 @@ public class TwoPassCapturer extends Capturer {
 
 			String logs = String.join("\n\n", "classpath:\n\t" + String.join("\n\t",
 					new TreeSet<>(Arrays.asList(
-							System.getProperty("java.class.path").split(System.getProperty("path.separator"))))),
-					"path to be scanned:\n\t" + String.join(System.getProperty("path.separator") + "\n\t",
-							new TreeSet<>(Arrays.asList(args[0].split(System.getProperty("path.separator"))))),
+							System.getProperty("java.class.path").split(File.pathSeparator)))),
+					"path to be scanned:\n\t" + String.join(File.pathSeparator + "\n\t",
+							new TreeSet<>(Arrays.asList(args[0].split(File.pathSeparator)))),
 					"mainClassName: " + args[1], "destinationPath: " + args[2], "includeMainClass: " + args[3],
 					"continueToCaptureAfterSimulatorClassEndExecutionFor: " + args[4],
 					(args.length > 5 ? "arguments: " + String.join(", ", Arrays.copyOfRange(args, 5, args.length))
@@ -272,7 +273,7 @@ public class TwoPassCapturer extends Capturer {
 			String[] mainMethodArguments = args.length > 5 ? Arrays.copyOfRange(args, 5, args.length) : new String[0];
 			TwoPassCapturer capturer = TwoPassCapturer.getInstance();
 			try {
-				Collection<String> paths = Arrays.asList(args[0].split(System.getProperty("path.separator")));
+				Collection<String> paths = Arrays.asList(args[0].split(File.pathSeparator));
 				String mainClassName = args[1];
 				String destinationPath = args[2];
 				boolean includeMainClass = Boolean.valueOf(args[3]);

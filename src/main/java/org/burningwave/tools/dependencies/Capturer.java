@@ -34,6 +34,7 @@ import static org.burningwave.core.assembler.StaticComponentContainer.ManagedLog
 import static org.burningwave.core.assembler.StaticComponentContainer.Paths;
 import static org.burningwave.core.assembler.StaticComponentContainer.Streams;
 
+import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.util.Collection;
@@ -194,7 +195,7 @@ public class Capturer implements Component {
 					.collect(Collectors.toSet());
 			String externalExecutorForWindows = "@echo off\n\""
 					+ FileSystemItem.ofPath(System.getProperty("java.home")).getAbsolutePath()
-					+ "/bin/java\" -classpath \"" + String.join(System.getProperty("path.separator"), classPathSet)
+					+ "/bin/java\" -classpath \"" + String.join(File.pathSeparator, classPathSet)
 					+ "\" " + mainClassName
 					+ (mainMethodAruments.length > 0
 							? " " + String.join(" ",
@@ -214,7 +215,7 @@ public class Capturer implements Component {
 					.findInChildren(FileSystemItem.Criteria.forAllFileThat(FileSystemItem::isFolder)).stream()
 					.map(fileSystemItem -> fileSystemItem.getAbsolutePath()).collect(Collectors.toSet());
 			String externalExecutorForUnix = FileSystemItem.ofPath(System.getProperty("java.home")).getAbsolutePath()
-					+ "/bin/java -classpath " + String.join(System.getProperty("path.separator"), classPathSet) + " "
+					+ "/bin/java -classpath " + String.join(File.pathSeparator, classPathSet) + " "
 					+ mainClassName
 					+ (mainMethodAruments.length > 0
 							? " " + String.join(" ",
