@@ -91,7 +91,7 @@
 		<repository.url>https://burningwave@github.com/burningwave/tools.git</repository.url>
 		
 		<burningwave-core.version>12.41.1</burningwave-core.version>
-		<burningwave-jvm-driver.version>6.7.0</burningwave-jvm-driver.version>
+		<burningwave-jvm-driver.version>6.7.1</burningwave-jvm-driver.version>
 		<coveralls-maven-plugin.version>4.3.0</coveralls-maven-plugin.version>
 		<jacoco-maven-plugin.version>0.7.6.201602180812</jacoco-maven-plugin.version>
 		<junit-jupiter.version>5.8.2</junit-jupiter.version>
