@@ -8,13 +8,13 @@ Burningwave Tools [![Tweet](https://img.shields.io/twitter/url/http/shields.io.s
 [![Maven Central with version prefix filter](https://img.shields.io/maven-central/v/org.burningwave/tools/0)](https://maven-badges.herokuapp.com/maven-central/org.burningwave/tools/)
 [![GitHub](https://img.shields.io/github/license/burningwave/tools)](https://github.com/burningwave/tools/blob/master/LICENSE)
 
-[![Supported JVM](https://img.shields.io/badge/supported%20JVM-8%2C%209+%20(17)-blueviolet)](https://github.com/burningwave/tools/actions/runs/1728708871)
+[![Supported JVM](https://img.shields.io/badge/supported%20JVM-8%2C%209+%20(17)-blueviolet)](https://github.com/burningwave/tools/actions/runs/1751480040)
 
 [![Coveralls github branch](https://img.shields.io/coveralls/github/burningwave/tools/master)](https://coveralls.io/github/burningwave/tools)
 [![GitHub open issues](https://img.shields.io/github/issues/burningwave/tools)](https://github.com/burningwave/tools/issues)
 [![GitHub closed issues](https://img.shields.io/github/issues-closed/burningwave/tools)](https://github.com/burningwave/tools/issues?q=is%3Aissue+is%3Aclosed)
 
-[![ArtifactDownload](https://burningwave.herokuapp.com/miscellaneous-services/stats/total-downloads-badge?format=svgggg&artifactId=tools)](https://www.burningwave.org/artifact-downloads/?show-monthly-trend-chart=false)
+[![ArtifactDownload](https://burningwave.herokuapp.com/miscellaneous-services/stats/total-downloads-badge?format=svggggggg&artifactId=tools)](https://www.burningwave.org/artifact-downloads/?show-monthly-trend-chart=false)
 [![Repository dependents](https://badgen.net/github/dependents-repo/burningwave/tools)](https://github.com/burningwave/tools/network/dependents)
 
 **Burningwave Tools** is a set of components based on [**Burningwave Core**](https://burningwave.github.io/core/) library that have high-level functionality
@@ -33,7 +33,7 @@ To include Burningwave Tools in your projects simply use with **Apache Maven**:
 <dependency>
     <groupId>org.burningwave</groupId>
     <artifactId>tools</artifactId>
-    <version>0.10.96</version>
+    <version>0.10.97</version>
 </dependency>	
 ```
 <br/>
