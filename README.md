@@ -8,7 +8,7 @@ Burningwave Tools [![Tweet](https://img.shields.io/twitter/url/http/shields.io.s
 [![Maven Central with version prefix filter](https://img.shields.io/maven-central/v/org.burningwave/tools/0)](https://maven-badges.herokuapp.com/maven-central/org.burningwave/tools/)
 [![GitHub](https://img.shields.io/github/license/burningwave/tools)](https://github.com/burningwave/tools/blob/master/LICENSE)
 
-[![Supported JVM](https://img.shields.io/badge/supported%20JVM-8%2C%209+%20(17)-blueviolet)](https://github.com/burningwave/tools/actions/runs/1801918954)
+[![Supported JVM](https://img.shields.io/badge/supported%20JVM-8%2C%209+%20(17)-blueviolet)](https://github.com/burningwave/tools/actions/runs/1859575512)
 
 [![Coveralls github branch](https://img.shields.io/coveralls/github/burningwave/tools/master)](https://coveralls.io/github/burningwave/tools)
 [![GitHub open issues](https://img.shields.io/github/issues/burningwave/tools)](https://github.com/burningwave/tools/issues)
@@ -33,7 +33,7 @@ To include Burningwave Tools in your projects simply use with **Apache Maven**:
 <dependency>
     <groupId>org.burningwave</groupId>
     <artifactId>tools</artifactId>
-    <version>0.10.100</version>
+    <version>0.10.101</version>
 </dependency>	
 ```
 <br/>
