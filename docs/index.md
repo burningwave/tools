@@ -33,7 +33,7 @@ To include Burningwave Tools in your projects simply use with **Apache Maven**:
 <dependency>
     <groupId>org.burningwave</groupId>
     <artifactId>tools</artifactId>
-    <version>0.10.106</version>
+    <version>0.10.107</version>
 </dependency>	
 ```
 <br/>
