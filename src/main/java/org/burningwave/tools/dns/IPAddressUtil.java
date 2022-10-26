@@ -1,3 +1,31 @@
+/*
+ * This file is part of Burningwave Tools.
+ *
+ * Author: Roberto Gentili
+ *
+ * Hosted at: https://github.com/burningwave/tools
+ *
+ * --
+ *
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2020-2022 Roberto Gentili
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+ * documentation files (the "Software"), to deal in the Software without restriction, including without
+ * limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so, subject to the following
+ * conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all copies or substantial
+ * portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+ * LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO
+ * EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN
+ * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+ * OR OTHER DEALINGS IN THE SOFTWARE.
+ */
 package org.burningwave.tools.dns;
 
 public class IPAddressUtil {
@@ -135,7 +163,7 @@ public class IPAddressUtil {
                     dst[j++] = v4addr[k];
                 }
                 sawXDigit = false;
-                break; /* '\0' was seen by inet_pton4(). */
+                break;
             }
             return null;
         }
@@ -180,11 +208,6 @@ public class IPAddressUtil {
         try {
             switch (s.length) {
             case 1:
-                /*
-                 * When only one part is given, the value is stored directly in
-                 * the network address without any byte rearrangement.
-                 */
-
                 val = Long.parseLong(s[0]);
                 if (val < 0 || val > 0xffffffffL)
                     return null;
@@ -194,14 +217,6 @@ public class IPAddressUtil {
                 res[3] = (byte) (val & 0xff);
                 break;
             case 2:
-                /*
-                 * When a two part address is supplied, the last part is
-                 * interpreted as a 24-bit quantity and placed in the right
-                 * most three bytes of the network address. This makes the
-                 * two part address format convenient for specifying Class A
-                 * network addresses as net.host.
-                 */
-
                 val = Integer.parseInt(s[0]);
                 if (val < 0 || val > 0xff)
                     return null;
@@ -214,13 +229,6 @@ public class IPAddressUtil {
                 res[3] = (byte) (val & 0xff);
                 break;
             case 3:
-                /*
-                 * When a three part address is specified, the last part is
-                 * interpreted as a 16-bit quantity and placed in the right
-                 * most two bytes of the network address. This makes the
-                 * three part address format convenient for specifying
-                 * Class B net- work addresses as 128.net.host.
-                 */
                 for (int i = 0; i < 2; i++) {
                     val = Integer.parseInt(s[i]);
                     if (val < 0 || val > 0xff)
@@ -234,11 +242,6 @@ public class IPAddressUtil {
                 res[3] = (byte) (val & 0xff);
                 break;
             case 4:
-                /*
-                 * When four parts are specified, each is interpreted as a
-                 * byte of data and assigned, from left to right, to the
-                 * four bytes of an IPv4 address.
-                 */
                 for (int i = 0; i < 4; i++) {
                     val = Integer.parseInt(s[i]);
                     if (val < 0 || val > 0xff)
@@ -264,13 +267,6 @@ public class IPAddressUtil {
         return null;
     }
 
-    /**
-     * Utility routine to check if the InetAddress is an
-     * IPv4 mapped IPv6 address.
-     *
-     * @return a <code>boolean</code> indicating if the InetAddress is
-     * an IPv4 mapped IPv6 address; or false if address is IPv4 address.
-     */
     private boolean isIPv4MappedAddress(byte[] addr) {
         if (addr.length < INADDR16SZ) {
             return false;
