@@ -18,21 +18,23 @@ public class HostNameForIPMapperTest extends BaseTest {
 
 	@Test
 	public void resolveTestOne() throws UnknownHostException {
-		List<Map<String, Object>> hostAliases = new ArrayList<>();
-		Map<String, Object> hostNamesForIp = new LinkedHashMap<>();
-		hostAliases.add(hostNamesForIp);
-		hostNamesForIp.put("ip", "123.123.123.123");
-		hostNamesForIp.put("hostnames", Arrays.asList("hello.world.one", "hello.world.two"));
-		HostNameForIPMapper.INSTANCE.install(hostAliases);
-		InetAddress inetAddress = InetAddress.getByName("hello.world.one");
-		assertNotNull(inetAddress);
-		assertTrue("123.123.123.123".equals(inetAddress.getHostAddress()));
-		inetAddress = InetAddress.getByName("hello.world.two");
-		assertNotNull(inetAddress);
-		assertTrue("123.123.123.123".equals(inetAddress.getHostAddress()));
-		inetAddress = InetAddress.getByName("localhost");
-		assertNotNull(inetAddress);
-		assertTrue("127.0.0.1".equals(inetAddress.getHostAddress()));
+		testDoesNotThrow(() -> {
+			List<Map<String, Object>> hostAliases = new ArrayList<>();
+			Map<String, Object> hostNamesForIp = new LinkedHashMap<>();
+			hostAliases.add(hostNamesForIp);
+			hostNamesForIp.put("ip", "123.123.123.123");
+			hostNamesForIp.put("hostnames", Arrays.asList("hello.world.one", "hello.world.two"));
+			HostNameForIPMapper.INSTANCE.install(hostAliases);
+			InetAddress inetAddress = InetAddress.getByName("hello.world.one");
+			assertNotNull(inetAddress);
+			assertTrue("123.123.123.123".equals(inetAddress.getHostAddress()));
+			inetAddress = InetAddress.getByName("hello.world.two");
+			assertNotNull(inetAddress);
+			assertTrue("123.123.123.123".equals(inetAddress.getHostAddress()));
+			inetAddress = InetAddress.getByName("localhost");
+			assertNotNull(inetAddress);
+			assertTrue("127.0.0.1".equals(inetAddress.getHostAddress()));
+		});
 	}
 
 }
