@@ -64,7 +64,7 @@ public class HostNameForIPMapper {
 		inetAddressClass = InetAddress.class;
 		nameServiceField = Fields.findFirst(
 			FieldCriteria.withoutConsideringParentClasses().name(fieldName ->
-				fieldName.equals("nameService") || fieldName.equals("nameServices")  || fieldName.equals("resolver")
+				fieldName.equals("nameService") || fieldName.equals("nameServices") || fieldName.equals("resolver")
 			),
 			inetAddressClass
 		);
