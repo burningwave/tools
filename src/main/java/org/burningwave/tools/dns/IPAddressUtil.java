@@ -104,7 +104,6 @@ public class IPAddressUtil {
         colonp = -1;
         int i = 0;
         int j = 0;
-        /* Leading :: requires some special handling. */
         if (srcb[i] == ':' && srcb[++i] != ':') {
         	return null;
         }
@@ -145,7 +144,6 @@ public class IPAddressUtil {
             }
             if (ch == '.' && ((j + INADDR4SZ) <= INADDR16SZ)) {
                 String ia4 = src.substring(curtok, srcbLength);
-                /* check this IPv4 address has 3 dots, ie. A.B.C.D */
                 int dotCount = 0;
                 int index = 0;
                 while ((index = ia4.indexOf('.', index)) != -1) {
@@ -258,7 +256,7 @@ public class IPAddressUtil {
         return res;
     }
 
-    public byte[] convertFromIPv4MappedAddress(byte[] addr) {
+    private byte[] convertFromIPv4MappedAddress(byte[] addr) {
         if (isIPv4MappedAddress(addr)) {
             byte[] newAddr = new byte[INADDR4SZ];
             System.arraycopy(addr, 12, newAddr, 0, INADDR4SZ);
