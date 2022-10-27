@@ -42,11 +42,12 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.burningwave.core.classes.FieldCriteria;
@@ -99,8 +100,27 @@ public class HostNameForIPMapper {
         }
 	}
 
-	public HostNameForIPMapper install(List<Map<String, Object>> hostAliases) {
-		hostAliases = cloneHostAliasesConfig(hostAliases);
+	@SafeVarargs
+	public final HostNameForIPMapper install(Supplier<List<Map<String, Object>>>... hostAliasesYAMLFormatSuppliers) {
+		return install(Arrays.asList(hostAliasesYAMLFormatSuppliers));
+	}
+
+	public HostNameForIPMapper install(Collection<Supplier<List<Map<String, Object>>>> hostAliasesYAMLFormatSuppliers) {
+		Map<String, String> hostAliases = new LinkedHashMap<>();
+		for (Supplier<List<Map<String, Object>>> hostAliasesYAMLFormatSupplier : hostAliasesYAMLFormatSuppliers) {
+			for (Map<String, Object> addressesForIp : hostAliasesYAMLFormatSupplier.get()) {
+				Collection<String> hostNames = (Collection<String>)addressesForIp.get("hostnames");
+				String iPAddress = (String)addressesForIp.get("ip");
+				for (String hostName : hostNames) {
+					hostAliases.put(hostName, iPAddress);
+				}
+			}
+		}
+		return install(hostAliases);
+	}
+
+	public HostNameForIPMapper install(Map<String, String> hostAliases) {
+		hostAliases = new LinkedHashMap<>(hostAliases);
         Object proxy;
         if (Collection.class.isAssignableFrom(nameServiceFieldClass)) {
         	proxy = Arrays.asList(
@@ -113,38 +133,22 @@ public class HostNameForIPMapper {
         return this;
     }
 
-	private List<Map<String, Object>> cloneHostAliasesConfig(List<Map<String, Object>> hostAliases) {
-		List<Map<String, Object>> replacement = new CopyOnWriteArrayList<>();
-		for (Map<String, Object> addressesForIp : hostAliases) {
-			Map<String, Object> addressesForIpClone = new ConcurrentHashMap<>();
-			replacement.add(addressesForIpClone);
-			for (Map.Entry<String, Object> valuesEntry : addressesForIp.entrySet()) {
-				Object value = valuesEntry.getValue();
-				if (value instanceof Collection) {
-					value = new CopyOnWriteArrayList<>((Collection<?>)value);
-				}
-				addressesForIpClone.put(valuesEntry.getKey(), value);
-			}
-		}
-		return replacement;
-	}
-
-	private Object buildProxy(List<Map<String, Object>> replacement, Class<?> nameServiceClass,
+	private Object buildProxy(Map<String, String> hostAliases, Class<?> nameServiceClass,
 			Collection<Object> targets) {
 		return Proxy.newProxyInstance(
 			nameServiceClass.getClassLoader(),
 			new Class<?>[] { nameServiceClass },
-			buildInvocationHandler(replacement, targets)
+			buildInvocationHandler(hostAliases, targets)
 		);
 	}
 
-	private InvocationHandler buildInvocationHandler(List<Map<String, Object>> replacement, Collection<Object> targets) {
+	private InvocationHandler buildInvocationHandler(Map<String, String> hostAliases, Collection<Object> targets) {
 		return (prx, method, args) -> {
     		String methodName = method.getName();
     		if (methodName.equals("lookupAllHostAddr") || methodName.equals("lookupByName")) {
-    			return getAllAddressesForHostName(replacement, targets, method, args);
+    			return getAllAddressesForHostName(hostAliases, targets, method, args);
             } else if (method.getName().equals("getHostByAddr") || method.getName().equals("lookupByAddress")) {
-            	return getAllAddressesForHostAddress(replacement, targets, method, args).iterator().next();
+            	return getAllAddressesForHostAddress(hostAliases, targets, method, args).iterator().next();
             }
     		Object toRet = null;
     		for (Object object : targets) {
@@ -160,17 +164,16 @@ public class HostNameForIPMapper {
 	}
 
 	private Object getAllAddressesForHostName(
-		List<Map<String, Object>> hostAliases,
+		Map<String, String> hostAliases,
 		Collection<?> targets,
 		Method method,
 		Object... args
 	) throws Throwable {
 		String hostName = (String)args[0];
 		Collection<InetAddress> addresses = new ArrayList<>();
-		for (Map<String, Object> addressesForIp : hostAliases) {
-			if (((Collection<String>)addressesForIp.get("hostnames")).contains(hostName)) {
-				addresses.add(InetAddress.getByAddress(hostName, IPAddressUtil.INSTANCE.textToNumericFormat((String)addressesForIp.get("ip"))));
-			}
+		String iPAddress = hostAliases.get(hostName);
+		if (iPAddress != null) {
+			addresses.add(InetAddress.getByAddress(hostName, IPAddressUtil.INSTANCE.textToNumericFormat(iPAddress)));
 		}
 		Function<Object, Stream<InetAddress>> inetAddressSupplier = method.getReturnType().equals(InetAddress[].class) ?
 			obj ->
@@ -201,19 +204,17 @@ public class HostNameForIPMapper {
 
 
 	private Collection<String> getAllAddressesForHostAddress(
-		List<Map<String, Object>> hostAliases,
+		Map<String, String> hostAliases,
 		Collection<?> nameServices,
 		Method method,
 		Object... args
 	) throws Throwable {
 		byte[] address = (byte[])args[0];
 		Collection<String> hostNames = new ArrayList<>();
-		String ipAddress = IPAddressUtil.INSTANCE.numericToTextFormat(address);
-		for (Map<String, Object> addressesForIp : hostAliases) {
-			if (ipAddress.equals(addressesForIp.get("ip"))) {
-				for (String hostName : (Collection<String>)addressesForIp.get("hostnames")) {
-					hostNames.add(hostName);
-				}
+		String iPAddress = IPAddressUtil.INSTANCE.numericToTextFormat(address);
+		for (Map.Entry<String, String> addressForIp : hostAliases.entrySet()) {
+			if (addressForIp.getValue().equals(iPAddress)) {
+				hostNames.add(addressForIp.getKey());
 			}
 		}
 		for (Object nameService : nameServices) {
