@@ -12,12 +12,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.burningwave.tools.dns.DefaultHostsResolver;
-import org.burningwave.tools.dns.HostNameForIPMapper;
+import org.burningwave.tools.dns.HostsResolverService;
 import org.burningwave.tools.dns.IPAddressUtil;
 import org.burningwave.tools.dns.MappedHostsResolver;
 import org.junit.jupiter.api.Test;
 
-public class HostNameForIPMapperTest extends BaseTest {
+public class HostsResolverServiceTest extends BaseTest {
 
 	@Test
 	public void resolveTestOne() throws UnknownHostException {
@@ -27,7 +27,7 @@ public class HostNameForIPMapperTest extends BaseTest {
 			hostAliases.add(hostNamesForIp);
 			hostNamesForIp.put("ip", "123.123.123.123");
 			hostNamesForIp.put("hostnames", Arrays.asList("hello.world.one", "hello.world.two"));
-			HostNameForIPMapper.INSTANCE.install(
+			HostsResolverService.INSTANCE.install(
 				new MappedHostsResolver(() -> hostAliases),
 				DefaultHostsResolver.INSTANCE
 			);
