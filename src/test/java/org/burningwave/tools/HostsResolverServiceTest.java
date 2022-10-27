@@ -15,11 +15,16 @@ import org.burningwave.tools.dns.DefaultHostResolver;
 import org.burningwave.tools.dns.HostResolverService;
 import org.burningwave.tools.dns.IPAddressUtil;
 import org.burningwave.tools.dns.MappedHostResolver;
+import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
+@TestMethodOrder(OrderAnnotation.class)
 public class HostsResolverServiceTest extends BaseTest {
 
 	@Test
+	@Order(1)
 	public void resolveTestOne() throws UnknownHostException {
 		testDoesNotThrow(() -> {
 			List<Map<String, Object>> hostAliases = new ArrayList<>();
@@ -40,9 +45,22 @@ public class HostsResolverServiceTest extends BaseTest {
 			inetAddress = InetAddress.getByName("localhost");
 			assertNotNull(inetAddress);
 			assertTrue("127.0.0.1".equals(inetAddress.getHostAddress()));
-			inetAddress = InetAddress.getByAddress(IPAddressUtil.INSTANCE.textToNumericFormat("127.0.0.1"));
-			assertNotNull(inetAddress);
 		});
 	}
 
+	@Test
+	@Order(2)
+	public void getByAddressTestOne() {
+		testNotNull(() -> {
+			return InetAddress.getByAddress(IPAddressUtil.INSTANCE.textToNumericFormat("127.0.0.1"));
+		});
+	}
+
+	@Test
+	@Order(3)
+	public void reset() {
+		testDoesNotThrow(() -> {
+			HostResolverService.INSTANCE.reset();
+		});
+	}
 }
