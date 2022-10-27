@@ -83,9 +83,13 @@ public class HostResolverService {
         	nameServices = DefaultHostResolver.nameServices.iterator().next();
         }
         Fields.setStaticDirect(DefaultHostResolver.inetAddressClass, DefaultHostResolver.nameServiceField.getName(), nameServices);
-	    cache.clear();
-	    expirySet.clear();
+	    clearCache();
         return this;
+	}
+
+	public void clearCache() {
+		cache.clear();
+	    expirySet.clear();
 	}
 
 	private Collection<Resolver> checkResolvers(Resolver[] resolvers) {
