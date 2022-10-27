@@ -109,8 +109,8 @@ public class HostNameForIPMapper {
 		Map<String, String> hostAliases = new LinkedHashMap<>();
 		for (Supplier<List<Map<String, Object>>> hostAliasesYAMLFormatSupplier : hostAliasesYAMLFormatSuppliers) {
 			for (Map<String, Object> addressesForIp : hostAliasesYAMLFormatSupplier.get()) {
-				Collection<String> hostNames = (Collection<String>)addressesForIp.get("hostnames");
 				String iPAddress = (String)addressesForIp.get("ip");
+				Collection<String> hostNames = (Collection<String>)addressesForIp.get("hostnames");
 				for (String hostName : hostNames) {
 					hostAliases.put(hostName, iPAddress);
 				}
