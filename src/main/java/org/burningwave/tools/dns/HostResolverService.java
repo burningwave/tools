@@ -29,6 +29,7 @@
 package org.burningwave.tools.dns;
 
 import static org.burningwave.core.assembler.StaticComponentContainer.Fields;
+import static org.burningwave.core.assembler.StaticComponentContainer.Strings;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -70,11 +71,11 @@ public class HostResolverService {
 			throw new IllegalArgumentException("Resolvers are required");
 		}
 		Collection<Resolver> resolverList = new ArrayList<>();
-		for (int i = 0; i < resolvers.length; i++) {
-			if (resolvers[i] == null) {
-				throw new IllegalArgumentException("Resolver at index " + i + " is null");
+		for (int index = 0; index < resolvers.length; index++) {
+			if (resolvers[index] == null) {
+				throw new IllegalArgumentException(Strings.compile("Resolver at index [{}] is null", index));
 			}
-			resolverList.add(resolvers[i]);
+			resolverList.add(resolvers[index]);
 		}
 		return resolverList;
 	}
