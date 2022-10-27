@@ -50,10 +50,11 @@ public class IPAddressUtil {
     }
 
     public String numericToTextFormat(byte[] address) {
-    	if (isIPv4MappedAddress(address)) {
+    	try {
+    		return numericToTextFormatV6(address);
+    	} catch (Throwable exc) {
     		return numericToTextFormatV4(address);
     	}
-    	return numericToTextFormatV6(address);
     }
 
     private String numericToTextFormatV4(byte[] src) {
