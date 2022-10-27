@@ -40,7 +40,7 @@ import java.util.function.Supplier;
 
 @SuppressWarnings("unchecked")
 public class MappedHostResolver implements HostResolverService.Resolver {
-	Map<String, String> hostAliases;
+	private Map<String, String> hostAliases;
 
 	@SafeVarargs
 	public MappedHostResolver(Supplier<List<Map<String, Object>>>... hostAliasesYAMLFormatSuppliers) {
@@ -64,7 +64,6 @@ public class MappedHostResolver implements HostResolverService.Resolver {
 	public MappedHostResolver(Map<String, String> hostAliases) {
 		this.hostAliases = new LinkedHashMap<>(hostAliases);
     }
-
 
 
 	@Override
@@ -93,6 +92,13 @@ public class MappedHostResolver implements HostResolverService.Resolver {
 			}
 		}
 		return hostNames;
+	}
+
+	public MappedHostResolver addHost(String hostname, String ip) {
+		Map<String, String> hostAliases = new LinkedHashMap<>(this.hostAliases);
+		hostAliases.put(hostname, ip);
+		this.hostAliases = hostAliases;
+		return this;
 	}
 
 }
