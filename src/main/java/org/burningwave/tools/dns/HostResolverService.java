@@ -39,34 +39,48 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 
-public class HostsResolverService {
-	public static final HostsResolverService INSTANCE;
+public class HostResolverService {
+	public static final HostResolverService INSTANCE;
 	private Collection<Resolver> resolvers;
 
 	static {
-		INSTANCE = new HostsResolverService();
+		INSTANCE = new HostResolverService();
 	}
 
-	private HostsResolverService() {}
+	private HostResolverService() {}
 
-	public HostsResolverService install(Resolver... resolvers) {
-		this.resolvers = Arrays.asList(resolvers);
+	public HostResolverService install(Resolver... resolvers) {
+		this.resolvers = checkResolvers(resolvers);
         Object proxy;
-        if (Collection.class.isAssignableFrom(DefaultHostsResolver.nameServiceFieldClass)) {
+        if (Collection.class.isAssignableFrom(DefaultHostResolver.nameServiceFieldClass)) {
         	proxy = Arrays.asList(
     			buildProxy()
 			);
         } else {
         	proxy = buildProxy();
         }
-        Fields.setStaticDirect(DefaultHostsResolver.inetAddressClass, DefaultHostsResolver.nameServiceField.getName(), proxy);
+        Fields.setStaticDirect(DefaultHostResolver.inetAddressClass, DefaultHostResolver.nameServiceField.getName(), proxy);
         return this;
     }
 
+	private Collection<Resolver> checkResolvers(Resolver[] resolvers) {
+		if (resolvers == null || resolvers.length < 1) {
+			throw new IllegalArgumentException("Resolvers are required");
+		}
+		Collection<Resolver> resolverList = new ArrayList<>();
+		for (int i = 0; i < resolvers.length; i++) {
+			if (resolvers[i] == null) {
+				throw new IllegalArgumentException("Resolver at index " + i + " is null");
+			}
+			resolverList.add(resolvers[i]);
+		}
+		return resolverList;
+	}
+
 	private Object buildProxy() {
 		return Proxy.newProxyInstance(
-			DefaultHostsResolver.nameServiceClass.getClassLoader(),
-			new Class<?>[] { DefaultHostsResolver.nameServiceClass },
+			DefaultHostResolver.nameServiceClass.getClassLoader(),
+			new Class<?>[] { DefaultHostResolver.nameServiceClass },
 			buildInvocationHandler()
 		);
 	}
@@ -74,9 +88,9 @@ public class HostsResolverService {
 	private InvocationHandler buildInvocationHandler() {
 		return (prx, method, args) -> {
     		String methodName = method.getName();
-    		if (methodName.equals(DefaultHostsResolver.getAllAddressesForHostNameMethod.getName())) {
+    		if (methodName.equals(DefaultHostResolver.getAllAddressesForHostNameMethod.getName())) {
     			return getAllAddressesForHostName(args);
-            } else if (methodName.equals(DefaultHostsResolver.getAllHostNamesForHostAddress.getName())) {
+            } else if (methodName.equals(DefaultHostResolver.getAllHostNamesForHostAddress.getName())) {
             	return getAllAddressesForHostAddress(args).iterator().next();
             }
     		for (Resolver resolver : resolvers) {
@@ -99,7 +113,7 @@ public class HostsResolverService {
 		if (addresses.isEmpty()) {
 			throw new UnknownHostException((String)args[0]);
 		}
-		return DefaultHostsResolver.getAllAddressesForHostNameMethod.getReturnType().equals(InetAddress[].class) ?
+		return DefaultHostResolver.getAllAddressesForHostNameMethod.getReturnType().equals(InetAddress[].class) ?
 			addresses.toArray(new InetAddress[addresses.size()]) :
 			addresses.stream();
 	}

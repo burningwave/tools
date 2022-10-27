@@ -11,10 +11,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.burningwave.tools.dns.DefaultHostsResolver;
-import org.burningwave.tools.dns.HostsResolverService;
+import org.burningwave.tools.dns.DefaultHostResolver;
+import org.burningwave.tools.dns.HostResolverService;
 import org.burningwave.tools.dns.IPAddressUtil;
-import org.burningwave.tools.dns.MappedHostsResolver;
+import org.burningwave.tools.dns.MappedHostResolver;
 import org.junit.jupiter.api.Test;
 
 public class HostsResolverServiceTest extends BaseTest {
@@ -27,9 +27,9 @@ public class HostsResolverServiceTest extends BaseTest {
 			hostAliases.add(hostNamesForIp);
 			hostNamesForIp.put("ip", "123.123.123.123");
 			hostNamesForIp.put("hostnames", Arrays.asList("hello.world.one", "hello.world.two"));
-			HostsResolverService.INSTANCE.install(
-				new MappedHostsResolver(() -> hostAliases),
-				DefaultHostsResolver.INSTANCE
+			HostResolverService.INSTANCE.install(
+				new MappedHostResolver(() -> hostAliases),
+				DefaultHostResolver.INSTANCE
 			);
 			InetAddress inetAddress = InetAddress.getByName("hello.world.one");
 			assertNotNull(inetAddress);

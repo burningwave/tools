@@ -46,8 +46,8 @@ import org.burningwave.core.classes.FieldCriteria;
 import org.burningwave.core.classes.MethodCriteria;
 
 @SuppressWarnings("unchecked")
-public class DefaultHostsResolver implements HostsResolverService.Resolver {
-	public final static HostsResolverService.Resolver INSTANCE;
+public class DefaultHostResolver implements HostResolverService.Resolver {
+	public final static HostResolverService.Resolver INSTANCE;
 	static final Class<?> inetAddressClass;
 	static final Field nameServiceField;
 	static final Class<?> nameServiceFieldClass;
@@ -85,10 +85,10 @@ public class DefaultHostsResolver implements HostsResolverService.Resolver {
 			nameServiceClass
 		);
 		nameServices = getNameServices();
-		INSTANCE = new DefaultHostsResolver();
+		INSTANCE = new DefaultHostResolver();
 	}
 
-	public DefaultHostsResolver() {}
+	public DefaultHostResolver() {}
 
 	private static Class<?> getNameServiceFieldClass(Field nameServiceField) {
         if (Collection.class.isAssignableFrom(nameServiceField.getType())) {
@@ -104,10 +104,10 @@ public class DefaultHostsResolver implements HostsResolverService.Resolver {
         if (Collection.class.isAssignableFrom(nameServiceFieldClass)) {
         	nameServices.addAll(Fields.getStaticDirect(nameServiceField));
         } else {
-        	Object nameService = Fields.getStatic(nameServiceField);
+        	Object nameService = Fields.getStaticDirect(nameServiceField);
         	if (nameService == null && nameServiceField.getName().equals("resolver")) {
         		Methods.invokeStaticDirect(inetAddressClass, "resolver");
-        		nameService = Fields.getStatic(nameServiceField);
+        		nameService = Fields.getStaticDirect(nameServiceField);
             }
         	if (nameService != null) {
         		nameServices.add(nameService);

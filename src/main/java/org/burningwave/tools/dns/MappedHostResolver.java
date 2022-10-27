@@ -39,15 +39,15 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 @SuppressWarnings("unchecked")
-public class MappedHostsResolver implements HostsResolverService.Resolver {
+public class MappedHostResolver implements HostResolverService.Resolver {
 	Map<String, String> hostAliases;
 
 	@SafeVarargs
-	public MappedHostsResolver(Supplier<List<Map<String, Object>>>... hostAliasesYAMLFormatSuppliers) {
+	public MappedHostResolver(Supplier<List<Map<String, Object>>>... hostAliasesYAMLFormatSuppliers) {
 		this(Arrays.asList(hostAliasesYAMLFormatSuppliers));
 	}
 
-	public MappedHostsResolver(Collection<Supplier<List<Map<String, Object>>>> hostAliasesYAMLFormatSuppliers) {
+	public MappedHostResolver(Collection<Supplier<List<Map<String, Object>>>> hostAliasesYAMLFormatSuppliers) {
 		Map<String, String> hostAliases = new LinkedHashMap<>();
 		for (Supplier<List<Map<String, Object>>> hostAliasesYAMLFormatSupplier : hostAliasesYAMLFormatSuppliers) {
 			for (Map<String, Object> addressesForIp : hostAliasesYAMLFormatSupplier.get()) {
@@ -61,7 +61,7 @@ public class MappedHostsResolver implements HostsResolverService.Resolver {
 		this.hostAliases = hostAliases;
 	}
 
-	public MappedHostsResolver(Map<String, String> hostAliases) {
+	public MappedHostResolver(Map<String, String> hostAliases) {
 		this.hostAliases = new LinkedHashMap<>(hostAliases);
     }
 
