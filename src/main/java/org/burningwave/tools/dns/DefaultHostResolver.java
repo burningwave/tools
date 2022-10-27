@@ -100,21 +100,21 @@ public class DefaultHostResolver implements HostResolverService.Resolver {
 	}
 
 	private static Collection<Object> getNameServices() {
+		try {
+			InetAddress.getAllByName("localhost");
+		} catch (UnknownHostException ecc) {}
 		Collection<Object> nameServices = new CopyOnWriteArrayList<>();
         if (Collection.class.isAssignableFrom(nameServiceFieldClass)) {
         	nameServices.addAll(Fields.getStaticDirect(nameServiceField));
         } else {
         	Object nameService = Fields.getStaticDirect(nameServiceField);
-        	if (nameService == null && nameServiceField.getName().equals("resolver")) {
+        	/*if (nameService == null && nameServiceField.getName().equals("resolver")) {
         		Methods.invokeStaticDirect(inetAddressClass, "resolver");
         		nameService = Fields.getStaticDirect(nameServiceField);
-            }
+            }*/
         	if (nameService != null) {
         		nameServices.add(nameService);
         	}
-        }
-        if (nameServices.isEmpty()) {
-        	throw new RuntimeException("nameServices is empty");
         }
         return nameServices;
 	}
