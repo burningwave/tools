@@ -11,7 +11,7 @@ import org.junit.runner.RunWith;
 @SelectClasses({
 	CapturerTest.class,
 	TwoPassCapturerTest.class,
-	HostNameForIPMapperTest.class
+	HostsResolverServiceTest.class
 })
 public class AllExceptHeavyTestsSuite {
 
