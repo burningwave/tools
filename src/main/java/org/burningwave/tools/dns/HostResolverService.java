@@ -39,16 +39,25 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Map;
+import java.util.NavigableSet;
+import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 
 public class HostResolverService {
 	public static final HostResolverService INSTANCE;
 	private Collection<Resolver> resolvers;
+	private Map<?, ?> cache;
+	private Set<?> expirySet;
 
 	static {
 		INSTANCE = new HostResolverService();
 	}
 
-	private HostResolverService() {}
+	private HostResolverService() {
+		cache = Fields.getStaticDirect(Fields.findFirstAndMakeItAccessible(DefaultHostResolver.inetAddressClass, "cache", ConcurrentMap.class));
+		expirySet = Fields.getStaticDirect(Fields.findFirstAndMakeItAccessible(DefaultHostResolver.inetAddressClass, "expirySet", NavigableSet.class));
+	}
 
 	public HostResolverService install(Resolver... resolvers) {
 		this.resolvers = checkResolvers(resolvers);
@@ -74,6 +83,8 @@ public class HostResolverService {
         	nameServices = DefaultHostResolver.nameServices.iterator().next();
         }
         Fields.setStaticDirect(DefaultHostResolver.inetAddressClass, DefaultHostResolver.nameServiceField.getName(), nameServices);
+	    cache.clear();
+	    expirySet.clear();
         return this;
 	}
 
