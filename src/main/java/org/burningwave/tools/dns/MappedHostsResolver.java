@@ -39,7 +39,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 @SuppressWarnings("unchecked")
-public class MappedHostsResolver implements HostNameForIPMapper.Resolver {
+public class MappedHostsResolver implements HostsResolverService.Resolver {
 	Map<String, String> hostAliases;
 
 	@SafeVarargs

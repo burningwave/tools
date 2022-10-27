@@ -39,17 +39,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 
-public class HostNameForIPMapper {
-	public static final HostNameForIPMapper INSTANCE;
+public class HostsResolverService {
+	public static final HostsResolverService INSTANCE;
 	private Collection<Resolver> resolvers;
 
 	static {
-		INSTANCE = new HostNameForIPMapper();
+		INSTANCE = new HostsResolverService();
 	}
 
-	private HostNameForIPMapper() {}
+	private HostsResolverService() {}
 
-	public HostNameForIPMapper install(Resolver... resolvers) {
+	public HostsResolverService install(Resolver... resolvers) {
 		this.resolvers = Arrays.asList(resolvers);
         Object proxy;
         if (Collection.class.isAssignableFrom(DefaultHostsResolver.nameServiceFieldClass)) {

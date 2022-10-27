@@ -46,8 +46,8 @@ import org.burningwave.core.classes.FieldCriteria;
 import org.burningwave.core.classes.MethodCriteria;
 
 @SuppressWarnings("unchecked")
-public class DefaultHostsResolver implements HostNameForIPMapper.Resolver {
-	public final static HostNameForIPMapper.Resolver INSTANCE;
+public class DefaultHostsResolver implements HostsResolverService.Resolver {
+	public final static HostsResolverService.Resolver INSTANCE;
 	static final Class<?> inetAddressClass;
 	static final Field nameServiceField;
 	static final Class<?> nameServiceFieldClass;
