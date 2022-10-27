@@ -53,8 +53,10 @@ public class HostResolverService {
 		this.resolvers = checkResolvers(resolvers);
         Object proxy;
         if (Collection.class.isAssignableFrom(DefaultHostResolver.nameServiceFieldClass)) {
-        	proxy = Arrays.asList(
-    			buildProxy()
+        	proxy = new ArrayList<>(
+    			Arrays.asList(
+    				buildProxy()
+				)
 			);
         } else {
         	proxy = buildProxy();
