@@ -66,6 +66,17 @@ public class HostResolverService {
         return this;
     }
 
+	public HostResolverService reset() {
+        Object nameServices;
+		if (Collection.class.isAssignableFrom(DefaultHostResolver.nameServiceFieldClass)) {
+			nameServices = DefaultHostResolver.nameServices;
+        } else {
+        	nameServices = DefaultHostResolver.nameServices.iterator().next();
+        }
+        Fields.setStaticDirect(DefaultHostResolver.inetAddressClass, DefaultHostResolver.nameServiceField.getName(), nameServices);
+        return this;
+	}
+
 	private Collection<Resolver> checkResolvers(Resolver[] resolvers) {
 		if (resolvers == null || resolvers.length < 1) {
 			throw new IllegalArgumentException("Resolvers are required");
