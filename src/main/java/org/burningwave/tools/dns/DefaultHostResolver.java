@@ -28,8 +28,10 @@
  */
 package org.burningwave.tools.dns;
 
+import static org.burningwave.core.assembler.StaticComponentContainer.Driver;
 import static org.burningwave.core.assembler.StaticComponentContainer.Fields;
 import static org.burningwave.core.assembler.StaticComponentContainer.Methods;
+import static org.burningwave.core.assembler.StaticComponentContainer.Strings;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -44,6 +46,8 @@ import java.util.stream.Stream;
 
 import org.burningwave.core.classes.FieldCriteria;
 import org.burningwave.core.classes.MethodCriteria;
+
+import io.github.toolfactory.jvm.function.InitializeException;
 
 @SuppressWarnings("unchecked")
 public class DefaultHostResolver implements HostResolverService.Resolver {
@@ -85,6 +89,17 @@ public class DefaultHostResolver implements HostResolverService.Resolver {
 			nameServiceClass
 		);
 		nameServices = getNameServices();
+		if (nameServices.isEmpty()) {
+			Driver.throwException(
+				new InitializeException(
+					Strings.compile(
+						"No items found for field {}.{}",
+						nameServiceField.getDeclaringClass(),
+						nameServiceField.getName()
+					)
+				)
+			);
+		}
 		INSTANCE = new DefaultHostResolver();
 	}
 
@@ -101,6 +116,7 @@ public class DefaultHostResolver implements HostResolverService.Resolver {
 
 	private static Collection<Object> getNameServices() {
 		try {
+			//Initializing the nameServiceField
 			InetAddress.getAllByName("localhost");
 		} catch (UnknownHostException ecc) {}
 		Collection<Object> nameServices = new CopyOnWriteArrayList<>();
@@ -108,10 +124,6 @@ public class DefaultHostResolver implements HostResolverService.Resolver {
         	nameServices.addAll(Fields.getStaticDirect(nameServiceField));
         } else {
         	Object nameService = Fields.getStaticDirect(nameServiceField);
-        	/*if (nameService == null && nameServiceField.getName().equals("resolver")) {
-        		Methods.invokeStaticDirect(inetAddressClass, "resolver");
-        		nameService = Fields.getStaticDirect(nameServiceField);
-            }*/
         	if (nameService != null) {
         		nameServices.add(nameService);
         	}
