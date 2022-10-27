@@ -113,6 +113,9 @@ public class DefaultHostResolver implements HostResolverService.Resolver {
         		nameServices.add(nameService);
         	}
         }
+        if (nameServices.isEmpty()) {
+        	throw new RuntimeException("nameServices is empty");
+        }
         return nameServices;
 	}
 
