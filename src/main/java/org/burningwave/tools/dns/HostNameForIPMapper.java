@@ -29,212 +29,104 @@
 package org.burningwave.tools.dns;
 
 import static org.burningwave.core.assembler.StaticComponentContainer.Fields;
-import static org.burningwave.core.assembler.StaticComponentContainer.Methods;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Proxy;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
 
-import org.burningwave.core.classes.FieldCriteria;
-
-@SuppressWarnings("unchecked")
 public class HostNameForIPMapper {
 	public static final HostNameForIPMapper INSTANCE;
-	private static final Field nameServiceField;
-	private static final Class<?> nameServiceFieldClass;
-	private static final Class<?> nameServiceClass;
-	private static final Class<?> inetAddressClass;
-	private static final Collection<Object> nameServices;
+	private Collection<Resolver> resolvers;
 
 	static {
-		inetAddressClass = InetAddress.class;
-		nameServiceField = Fields.findFirst(
-			FieldCriteria.withoutConsideringParentClasses().name(fieldName ->
-				fieldName.equals("nameService") || fieldName.equals("nameServices") || fieldName.equals("resolver")
-			),
-			inetAddressClass
-		);
-		Fields.setAccessible(nameServiceField, true);
-        nameServiceFieldClass = nameServiceField.getType();
-        nameServiceClass = getNameServiceFieldClass(nameServiceField);
-        nameServices = getNameServices();
 		INSTANCE = new HostNameForIPMapper();
 	}
 
 	private HostNameForIPMapper() {}
 
-	private static Collection<Object> getNameServices() {
-		if (nameServiceField.getName().equals("resolver")) {
-			Methods.invokeStaticDirect(inetAddressClass, "resolver");
-		}
-		Collection<Object> nameServices = new CopyOnWriteArrayList<>();
-        if (Collection.class.isAssignableFrom(nameServiceFieldClass)) {
-        	nameServices.addAll(Fields.getStatic(nameServiceField));
-        } else {
-        	nameServices.add(Fields.getStatic(nameServiceField));
-        }
-        return nameServices;
-	}
-
-	private static Class<?> getNameServiceFieldClass(Field nameServiceField) {
-        if (Collection.class.isAssignableFrom(nameServiceField.getType())) {
-        	ParameterizedType stringListType = (ParameterizedType) nameServiceField.getGenericType();
-        	return (Class<?>) stringListType.getActualTypeArguments()[0];
-        } else {
-        	return nameServiceField.getType();
-        }
-	}
-
-	@SafeVarargs
-	public final HostNameForIPMapper install(Supplier<List<Map<String, Object>>>... hostAliasesYAMLFormatSuppliers) {
-		return install(Arrays.asList(hostAliasesYAMLFormatSuppliers));
-	}
-
-	public HostNameForIPMapper install(Collection<Supplier<List<Map<String, Object>>>> hostAliasesYAMLFormatSuppliers) {
-		Map<String, String> hostAliases = new LinkedHashMap<>();
-		for (Supplier<List<Map<String, Object>>> hostAliasesYAMLFormatSupplier : hostAliasesYAMLFormatSuppliers) {
-			for (Map<String, Object> addressesForIp : hostAliasesYAMLFormatSupplier.get()) {
-				String iPAddress = (String)addressesForIp.get("ip");
-				Collection<String> hostNames = (Collection<String>)addressesForIp.get("hostnames");
-				for (String hostName : hostNames) {
-					hostAliases.put(hostName, iPAddress);
-				}
-			}
-		}
-		return install(hostAliases);
-	}
-
-	public HostNameForIPMapper install(Map<String, String> hostAliases) {
-		hostAliases = new LinkedHashMap<>(hostAliases);
+	public HostNameForIPMapper install(Resolver... resolvers) {
+		this.resolvers = Arrays.asList(resolvers);
         Object proxy;
-        if (Collection.class.isAssignableFrom(nameServiceFieldClass)) {
+        if (Collection.class.isAssignableFrom(DefaultHostsResolver.nameServiceFieldClass)) {
         	proxy = Arrays.asList(
-    			buildProxy(hostAliases, nameServiceClass, nameServices)
+    			buildProxy()
 			);
         } else {
-        	proxy = buildProxy(hostAliases, nameServiceClass, nameServices);
+        	proxy = buildProxy();
         }
-        Fields.setStaticDirect(inetAddressClass, nameServiceField.getName(), proxy);
+        Fields.setStaticDirect(DefaultHostsResolver.inetAddressClass, DefaultHostsResolver.nameServiceField.getName(), proxy);
         return this;
     }
 
-	private Object buildProxy(Map<String, String> hostAliases, Class<?> nameServiceClass,
-			Collection<Object> targets) {
+	private Object buildProxy() {
 		return Proxy.newProxyInstance(
-			nameServiceClass.getClassLoader(),
-			new Class<?>[] { nameServiceClass },
-			buildInvocationHandler(hostAliases, targets)
+			DefaultHostsResolver.nameServiceClass.getClassLoader(),
+			new Class<?>[] { DefaultHostsResolver.nameServiceClass },
+			buildInvocationHandler()
 		);
 	}
 
-	private InvocationHandler buildInvocationHandler(Map<String, String> hostAliases, Collection<Object> targets) {
+	private InvocationHandler buildInvocationHandler() {
 		return (prx, method, args) -> {
     		String methodName = method.getName();
-    		if (methodName.equals("lookupAllHostAddr") || methodName.equals("lookupByName")) {
-    			return getAllAddressesForHostName(hostAliases, targets, method, args);
-            } else if (method.getName().equals("getHostByAddr") || method.getName().equals("lookupByAddress")) {
-            	return getAllAddressesForHostAddress(hostAliases, targets, method, args).iterator().next();
+    		if (methodName.equals(DefaultHostsResolver.getAllAddressesForHostNameMethod.getName())) {
+    			return getAllAddressesForHostName(args);
+            } else if (methodName.equals(DefaultHostsResolver.getAllHostNamesForHostAddress.getName())) {
+            	return getAllAddressesForHostAddress(args).iterator().next();
             }
-    		Object toRet = null;
-    		for (Object object : targets) {
-    			if (object != null) {
-    				toRet = MethodHandles.lookup().unreflect(method).bindTo(object).invokeWithArguments(args);
-    				if (toRet != null) {
-    					return toRet;
-    				}
+    		for (Resolver resolver : resolvers) {
+    			Object toRet = resolver.handle(method, args);
+    			if (toRet != null) {
+    				return toRet;
     			}
     		}
-    		return null;
+    		throw new UnsupportedOperationException(method.getName() + " is not supported");
         };
 	}
 
 	private Object getAllAddressesForHostName(
-		Map<String, String> hostAliases,
-		Collection<?> targets,
-		Method method,
 		Object... args
 	) throws Throwable {
-		String hostName = (String)args[0];
 		Collection<InetAddress> addresses = new ArrayList<>();
-		String iPAddress = hostAliases.get(hostName);
-		if (iPAddress != null) {
-			addresses.add(InetAddress.getByAddress(hostName, IPAddressUtil.INSTANCE.textToNumericFormat(iPAddress)));
-		}
-		Function<Object, Stream<InetAddress>> inetAddressSupplier = method.getReturnType().equals(InetAddress[].class) ?
-			obj ->
-				Stream.of((InetAddress[])obj) :
-			obj ->
-				(Stream<InetAddress>)obj;
-		for (Object nameService : targets) {
-			if (nameService != null) {
-				try {
-					Object inetAddresses = Methods.invokeDirect(nameService, method.getName(), args);
-					if (inetAddresses != null) {
-						inetAddressSupplier.apply(inetAddresses).forEach(addresses::add);
-					}
-				} catch (Throwable exc) {
-					if (!(exc instanceof UnknownHostException)) {
-						throw exc;
-					}
-				}
-			}
+		for (Resolver resolver : resolvers) {
+			addresses.addAll(resolver.getAllAddressesForHostName(args));
 		}
 		if (addresses.isEmpty()) {
-			throw new UnknownHostException(hostName);
+			throw new UnknownHostException((String)args[0]);
 		}
-		return method.getReturnType().equals(InetAddress[].class) ?
+		return DefaultHostsResolver.getAllAddressesForHostNameMethod.getReturnType().equals(InetAddress[].class) ?
 			addresses.toArray(new InetAddress[addresses.size()]) :
 			addresses.stream();
 	}
 
 
 	private Collection<String> getAllAddressesForHostAddress(
-		Map<String, String> hostAliases,
-		Collection<?> nameServices,
-		Method method,
 		Object... args
 	) throws Throwable {
-		byte[] address = (byte[])args[0];
 		Collection<String> hostNames = new ArrayList<>();
-		String iPAddress = IPAddressUtil.INSTANCE.numericToTextFormat(address);
-		for (Map.Entry<String, String> addressForIp : hostAliases.entrySet()) {
-			if (addressForIp.getValue().equals(iPAddress)) {
-				hostNames.add(addressForIp.getKey());
-			}
-		}
-		for (Object nameService : nameServices) {
-			if (nameService != null) {
-				try {
-					String hostName = Methods.invokeDirect(nameService, method.getName(), args);
-					if (hostName != null) {
-						hostNames.add(hostName);
-					}
-				} catch (Throwable exc) {
-					if (!(exc instanceof UnknownHostException)) {
-						throw exc;
-					}
-				}
-			}
+		for (Resolver resolver : resolvers) {
+			hostNames.addAll(resolver.getAllHostNamesForHostAddress(args));
 		}
 		if (hostNames.isEmpty()) {
-			throw new UnknownHostException(IPAddressUtil.INSTANCE.numericToTextFormat(address));
+			throw new UnknownHostException(IPAddressUtil.INSTANCE.numericToTextFormat((byte[])args[0]));
 		}
 		return hostNames;
+	}
+
+	public static interface Resolver {
+
+		public Collection<InetAddress> getAllAddressesForHostName(Object... arguments);
+
+		public Collection<String> getAllHostNamesForHostAddress(Object... arguments);
+
+		public default Object handle(Method method, Object... arguments) throws Throwable {
+			throw new UnsupportedOperationException(method.getName() + " is not supported");
+		}
 	}
 
 }
