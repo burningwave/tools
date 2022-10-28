@@ -45,6 +45,7 @@ public class HostsResolverServiceTest extends BaseTest {
 			inetAddress = InetAddress.getByName("localhost");
 			assertNotNull(inetAddress);
 			assertTrue("127.0.0.1".equals(inetAddress.getHostAddress()));
+			inetAddress = InetAddress.getByName("google.com");
 		});
 	}
 

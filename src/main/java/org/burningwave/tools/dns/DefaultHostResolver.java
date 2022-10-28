@@ -40,6 +40,8 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -57,8 +59,8 @@ public class DefaultHostResolver implements HostResolverService.Resolver {
 	static final Class<?> nameServiceFieldClass;
 	static final Class<?> nameServiceClass;
 	static final Method getAllAddressesForHostNameMethod;
-	static final Method getAllHostNamesForHostAddress;
-	static final Collection<Object> nameServices;
+	static final Method getAllHostNamesForHostAddressMethod;
+	static final List<Object> nameServices;
 	private static final Function<Object, Stream<InetAddress>> inetAddressSupplier;
 
 	static {
@@ -82,7 +84,7 @@ public class DefaultHostResolver implements HostResolverService.Resolver {
 				Stream.of((InetAddress[])obj) :
 			obj ->
 				(Stream<InetAddress>)obj;
-		getAllHostNamesForHostAddress = Methods.findFirst(
+		getAllHostNamesForHostAddressMethod = Methods.findFirst(
 			MethodCriteria.forEntireClassHierarchy().name(methodName ->
 				methodName.equals("getHostByAddr") || methodName.equals("lookupByAddress")
 			),
@@ -114,12 +116,12 @@ public class DefaultHostResolver implements HostResolverService.Resolver {
         }
 	}
 
-	private static Collection<Object> getNameServices() {
+	private static List<Object> getNameServices() {
 		try {
 			//Initializing the nameServiceField
 			InetAddress.getAllByName("localhost");
 		} catch (UnknownHostException ecc) {}
-		Collection<Object> nameServices = new CopyOnWriteArrayList<>();
+		List<Object> nameServices = new CopyOnWriteArrayList<>();
         if (Collection.class.isAssignableFrom(nameServiceFieldClass)) {
         	nameServices.addAll(Fields.getStaticDirect(nameServiceField));
         } else {
@@ -132,7 +134,12 @@ public class DefaultHostResolver implements HostResolverService.Resolver {
 	}
 
 	@Override
-	public Collection<InetAddress> getAllAddressesForHostName(Object... arguments) {
+	public Collection<InetAddress> getAllAddressesForHostName(Map<String, Object> argumentsMap)  throws UnknownHostException {
+		Object[] arguments = getMethodArguments(argumentsMap);
+		List<Object> nameServices = (List<Object>)argumentsMap.get("nameServices");
+		if (nameServices == null) {
+			nameServices = DefaultHostResolver.nameServices;
+		}
 		Collection<InetAddress> addresses = new ArrayList<>();
 		for (Object nameService : nameServices) {
 			if (nameService != null) {
@@ -148,16 +155,24 @@ public class DefaultHostResolver implements HostResolverService.Resolver {
 				}
 			}
 		}
+		if (addresses.isEmpty()) {
+			throw new UnknownHostException((String)arguments[0]);
+		}
 		return addresses;
 	}
 
 	@Override
-	public Collection<String> getAllHostNamesForHostAddress(Object... arguments) {
+	public Collection<String> getAllHostNamesForHostAddress(Map<String, Object> argumentsMap) throws UnknownHostException {
+		Object[] arguments = getMethodArguments(argumentsMap);
+		List<Object> nameServices = (List<Object>)argumentsMap.get("nameServices");
+		if (nameServices == null) {
+			nameServices = DefaultHostResolver.nameServices;
+		}
 		Collection<String> hostNames = new ArrayList<>();
 		for (Object nameService : nameServices) {
 			if (nameService != null) {
 				try {
-					String hostName = Methods.invokeDirect(nameService, getAllHostNamesForHostAddress.getName(), arguments);
+					String hostName = Methods.invokeDirect(nameService, getAllHostNamesForHostAddressMethod.getName(), arguments);
 					if (hostName != null) {
 						hostNames.add(hostName);
 					}
@@ -167,6 +182,9 @@ public class DefaultHostResolver implements HostResolverService.Resolver {
 					}
 				}
 			}
+		}
+		if (hostNames.isEmpty()) {
+			throw new UnknownHostException(IPAddressUtil.INSTANCE.numericToTextFormat((byte[])arguments[0]));
 		}
 		return hostNames;
 	}

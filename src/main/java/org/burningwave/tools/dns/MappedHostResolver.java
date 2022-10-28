@@ -69,8 +69,8 @@ public class MappedHostResolver implements HostResolverService.Resolver {
 
 
 	@Override
-	public Collection<InetAddress> getAllAddressesForHostName(Object... arguments) {
-		String hostName = (String)arguments[0];
+	public Collection<InetAddress> getAllAddressesForHostName(Map<String, Object> argumentsMap) throws UnknownHostException {
+		String hostName = (String)getMethodArguments(argumentsMap)[0];
 		Collection<InetAddress> addresses = new ArrayList<>();
 		String iPAddress = hostAliases.get(hostName);
 		if (iPAddress != null) {
@@ -80,18 +80,24 @@ public class MappedHostResolver implements HostResolverService.Resolver {
 
 			}
 		}
+		if (addresses.isEmpty()) {
+			throw new UnknownHostException(hostName);
+		}
 		return addresses;
 	}
 
 	@Override
-	public Collection<String> getAllHostNamesForHostAddress(Object... arguments) {
-		byte[] address = (byte[])arguments[0];
+	public Collection<String> getAllHostNamesForHostAddress(Map<String, Object> argumentsMap) throws UnknownHostException {
+		byte[] address = (byte[])getMethodArguments(argumentsMap)[0];
 		Collection<String> hostNames = new ArrayList<>();
 		String iPAddress = IPAddressUtil.INSTANCE.numericToTextFormat(address);
 		for (Map.Entry<String, String> addressForIp : hostAliases.entrySet()) {
 			if (addressForIp.getValue().equals(iPAddress)) {
 				hostNames.add(addressForIp.getKey());
 			}
+		}
+		if (hostNames.isEmpty()) {
+			throw new UnknownHostException(IPAddressUtil.INSTANCE.numericToTextFormat(address));
 		}
 		return hostNames;
 	}
