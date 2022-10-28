@@ -40,7 +40,7 @@ import java.util.function.Supplier;
 
 @SuppressWarnings("unchecked")
 public class MappedHostResolver implements HostResolverService.Resolver {
-	private Map<String, String> hostAliases;
+	Map<String, String> hostAliases;
 
 	@SafeVarargs
 	public MappedHostResolver(Supplier<List<Map<String, Object>>>... hostAliasesYAMLFormatSuppliers) {
@@ -99,6 +99,17 @@ public class MappedHostResolver implements HostResolverService.Resolver {
 		hostAliases.put(hostname, ip);
 		this.hostAliases = hostAliases;
 		return this;
+	}
+
+	@Override
+	public boolean isReady(HostResolverService hostResolverService) {
+		return hostAliases.keySet().stream().findFirst().map(hostName -> {
+			try {
+				return InetAddress.getByName(hostName);
+			} catch (UnknownHostException exc) {
+				return null;
+			}
+    	}).isPresent();
 	}
 
 }

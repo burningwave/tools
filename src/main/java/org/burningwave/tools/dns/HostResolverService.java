@@ -58,6 +58,10 @@ public class HostResolverService {
 	}
 
 	public HostResolverService install(Resolver... resolvers) {
+		return install(0, 250, resolvers);
+	}
+
+	public synchronized HostResolverService install(long timeout, long sleepingTime, Resolver... resolvers) {
 		this.resolvers = checkResolvers(resolvers);
         Object proxy;
         if (Collection.class.isAssignableFrom(DefaultHostResolver.nameServiceFieldClass)) {
@@ -70,6 +74,16 @@ public class HostResolverService {
         	proxy = buildProxy();
         }
         Fields.setStaticDirect(DefaultHostResolver.nameServiceField, proxy);
+        this.resolvers.stream().filter(MappedHostResolver.class::isInstance).findFirst()
+        .map(MappedHostResolver.class::cast).ifPresent(hostResolver -> {
+    		Long startTime = System.currentTimeMillis();
+    		Long expirationTime = startTime + timeout;
+    		while (!hostResolver.isReady(this) && (timeout == 0 || expirationTime > System.currentTimeMillis())) {
+    			try {
+    				Thread.sleep(sleepingTime);
+    			} catch (InterruptedException exc) {}
+    		}
+        });
         return this;
     }
 
@@ -164,6 +178,10 @@ public class HostResolverService {
 		public Collection<InetAddress> getAllAddressesForHostName(Object... arguments);
 
 		public Collection<String> getAllHostNamesForHostAddress(Object... arguments);
+
+		public default boolean isReady(HostResolverService hostResolverService) {
+			return hostResolverService.resolvers.contains(this);
+		}
 
 		public default Object handle(Method method, Object... arguments) throws Throwable {
 			throw new UnsupportedOperationException(method.getName() + " is not supported");

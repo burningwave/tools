@@ -63,4 +63,29 @@ public class HostsResolverServiceTest extends BaseTest {
 			HostResolverService.INSTANCE.reset();
 		});
 	}
+
+	@Test
+	@Order(4)
+	public void resolveTestTwo() throws UnknownHostException {
+		testDoesNotThrow(() -> {
+			List<Map<String, Object>> hostAliases = new ArrayList<>();
+			Map<String, Object> hostNamesForIp = new LinkedHashMap<>();
+			hostAliases.add(hostNamesForIp);
+			hostNamesForIp.put("ip", "123.123.123.123");
+			hostNamesForIp.put("hostnames", Arrays.asList("hello.world.one", "hello.world.two"));
+			HostResolverService.INSTANCE.install(
+				new MappedHostResolver(() -> hostAliases),
+				DefaultHostResolver.INSTANCE
+			);
+			InetAddress inetAddress = InetAddress.getByName("hello.world.one");
+			assertNotNull(inetAddress);
+			assertTrue("123.123.123.123".equals(inetAddress.getHostAddress()));
+			inetAddress = InetAddress.getByName("hello.world.two");
+			assertNotNull(inetAddress);
+			assertTrue("123.123.123.123".equals(inetAddress.getHostAddress()));
+			inetAddress = InetAddress.getByName("localhost");
+			assertNotNull(inetAddress);
+			assertTrue("127.0.0.1".equals(inetAddress.getHostAddress()));
+		});
+	}
 }
