@@ -44,7 +44,7 @@ import java.util.Set;
 
 public class HostResolverService {
 	public static final HostResolverService INSTANCE;
-	private Collection<Resolver> resolvers;
+	Collection<Resolver> resolvers;
 	private Map<?, ?> cache;
 	private Set<?> expirySet;
 

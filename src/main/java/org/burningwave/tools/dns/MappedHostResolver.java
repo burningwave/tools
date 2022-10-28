@@ -103,13 +103,14 @@ public class MappedHostResolver implements HostResolverService.Resolver {
 
 	@Override
 	public boolean isReady(HostResolverService hostResolverService) {
-		return hostAliases.keySet().stream().findFirst().map(hostName -> {
-			try {
-				return InetAddress.getByName(hostName);
-			} catch (UnknownHostException exc) {
-				return null;
-			}
-    	}).isPresent();
+		return HostResolverService.Resolver.super.isReady(hostResolverService) &&
+			hostAliases.keySet().stream().findFirst().map(hostName -> {
+				try {
+					return InetAddress.getByName(hostName);
+				} catch (UnknownHostException exc) {
+					return null;
+				}
+	    	}).isPresent();
 	}
 
 }
