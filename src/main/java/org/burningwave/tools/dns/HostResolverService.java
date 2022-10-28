@@ -176,10 +176,10 @@ public class HostResolverService {
 			String methodName = method.getName();
 			if (methodName.equals(DefaultHostResolver.getAllAddressesForHostNameMethod.getName())) {
 				return getAllAddressesForHostNameResultConverter.apply(
-					resolver.getAllAddressesForHostName(argumentsMapBuilder.apply(arguments))
+					resolver.checkAndGetAllAddressesForHostName(argumentsMapBuilder.apply(arguments))
 				);
 		    } else if (methodName.equals(DefaultHostResolver.getAllHostNamesForHostAddressMethod.getName())) {
-		    	return resolver.getAllHostNamesForHostAddress(argumentsMapBuilder.apply(arguments)).iterator().next();
+		    	return resolver.checkAndGgetAllHostNamesForHostAddress(argumentsMapBuilder.apply(arguments)).iterator().next();
 		    }
 			Object toRet = resolver.handle(method, arguments);
 			if (toRet != null) {
@@ -218,7 +218,7 @@ public class HostResolverService {
 		Map<String, Object> argumentsMap = buildArgumentsMap(args);
 		for (Resolver resolver : resolvers) {
 			try {
-				addresses.addAll(resolver.getAllAddressesForHostName(argumentsMap));
+				addresses.addAll(resolver.checkAndGetAllAddressesForHostName(argumentsMap));
 			} catch (UnknownHostException exc) {
 
 			}
@@ -243,7 +243,7 @@ public class HostResolverService {
 		Map<String, Object> argumentsMap = buildArgumentsMap(args);
 		for (Resolver resolver : resolvers) {
 			try {
-				hostNames.addAll(resolver.getAllHostNamesForHostAddress(argumentsMap));
+				hostNames.addAll(resolver.checkAndGgetAllHostNamesForHostAddress(argumentsMap));
 			} catch (UnknownHostException exc) {
 
 			}
@@ -256,9 +256,27 @@ public class HostResolverService {
 
 	public static interface Resolver {
 
-		public Collection<InetAddress> getAllAddressesForHostName(Map<String, Object> arguments) throws UnknownHostException;
+		public default Collection<InetAddress> checkAndGetAllAddressesForHostName(Map<String, Object> argumentsMap) throws UnknownHostException {
+			String hostName = (String)getMethodArguments(argumentsMap)[0];
+			Collection<InetAddress> addresses = getAllAddressesForHostName(argumentsMap);
+			if (addresses.isEmpty()) {
+				throw new UnknownHostException(hostName);
+			}
+			return addresses;
+		}
 
-		public Collection<String> getAllHostNamesForHostAddress(Map<String, Object> arguments) throws UnknownHostException;
+		public default  Collection<String> checkAndGgetAllHostNamesForHostAddress(Map<String, Object> argumentsMap) throws UnknownHostException {
+			byte[] address = (byte[])getMethodArguments(argumentsMap)[0];
+			Collection<String> hostNames = getAllHostNamesForHostAddress(argumentsMap);
+			if (hostNames.isEmpty()) {
+				throw new UnknownHostException(IPAddressUtil.INSTANCE.numericToTextFormat(address));
+			}
+			return hostNames;
+		}
+
+		public Collection<InetAddress> getAllAddressesForHostName(Map<String, Object> arguments);
+
+		public Collection<String> getAllHostNamesForHostAddress(Map<String, Object> arguments);
 
 		public default boolean isReady(HostResolverService hostResolverService) {
 			return hostResolverService.resolvers.contains(this);

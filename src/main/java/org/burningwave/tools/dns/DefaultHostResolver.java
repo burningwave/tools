@@ -134,7 +134,7 @@ public class DefaultHostResolver implements HostResolverService.Resolver {
 	}
 
 	@Override
-	public Collection<InetAddress> getAllAddressesForHostName(Map<String, Object> argumentsMap)  throws UnknownHostException {
+	public Collection<InetAddress> getAllAddressesForHostName(Map<String, Object> argumentsMap) {
 		Object[] arguments = getMethodArguments(argumentsMap);
 		List<Object> nameServices = (List<Object>)argumentsMap.get("nameServices");
 		if (nameServices == null) {
@@ -155,14 +155,11 @@ public class DefaultHostResolver implements HostResolverService.Resolver {
 				}
 			}
 		}
-		if (addresses.isEmpty()) {
-			throw new UnknownHostException((String)arguments[0]);
-		}
 		return addresses;
 	}
 
 	@Override
-	public Collection<String> getAllHostNamesForHostAddress(Map<String, Object> argumentsMap) throws UnknownHostException {
+	public Collection<String> getAllHostNamesForHostAddress(Map<String, Object> argumentsMap) {
 		Object[] arguments = getMethodArguments(argumentsMap);
 		List<Object> nameServices = (List<Object>)argumentsMap.get("nameServices");
 		if (nameServices == null) {
@@ -182,9 +179,6 @@ public class DefaultHostResolver implements HostResolverService.Resolver {
 					}
 				}
 			}
-		}
-		if (hostNames.isEmpty()) {
-			throw new UnknownHostException(IPAddressUtil.INSTANCE.numericToTextFormat((byte[])arguments[0]));
 		}
 		return hostNames;
 	}
