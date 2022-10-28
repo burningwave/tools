@@ -33,9 +33,12 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 @SuppressWarnings("unchecked")
@@ -94,23 +97,49 @@ public class MappedHostResolver implements HostResolverService.Resolver {
 		return hostNames;
 	}
 
-	public MappedHostResolver addHost(String hostname, String ip) {
+	public synchronized MappedHostResolver putHost(String hostname, String iP) {
 		Map<String, String> hostAliases = new LinkedHashMap<>(this.hostAliases);
-		hostAliases.put(hostname, ip);
+		hostAliases.put(hostname, iP);
+		this.hostAliases = hostAliases;
+		return this;
+	}
+
+	public synchronized MappedHostResolver removeHost(String hostname) {
+		Map<String, String> hostAliases = new LinkedHashMap<>(this.hostAliases);
+		hostAliases.remove(hostname);
+		this.hostAliases = hostAliases;
+		return this;
+	}
+
+	public synchronized MappedHostResolver removeHostForIP(String iP) {
+		Map<String, String> hostAliases = new LinkedHashMap<>(this.hostAliases);
+		Iterator<Map.Entry<String, String>> hostAliasesIterator = hostAliases.entrySet().iterator();
+		while (hostAliasesIterator.hasNext()) {
+			Map.Entry<String, String> host = hostAliasesIterator.next();
+			if (host.getValue().equals(iP)) {
+				hostAliasesIterator.remove();
+			}
+		}
 		this.hostAliases = hostAliases;
 		return this;
 	}
 
 	@Override
 	public boolean isReady(HostResolverService hostResolverService) {
-		return HostResolverService.Resolver.super.isReady(hostResolverService) &&
-			hostAliases.keySet().stream().findFirst().map(hostName -> {
+		boolean isReady = HostResolverService.Resolver.super.isReady(hostResolverService);
+		if (isReady) {
+			String hostNameForTest = UUID.randomUUID().toString();
+			putHost(hostNameForTest, "127.0.0.1");
+			isReady = hostAliases.keySet().stream().filter(Objects::nonNull).findFirst().map(hostName -> {
 				try {
-					return InetAddress.getByName(hostName);
+					return InetAddress.getByName(hostNameForTest);
 				} catch (UnknownHostException exc) {
 					return null;
 				}
 	    	}).isPresent();
+			removeHost(hostNameForTest);
+		}
+		return isReady;
 	}
 
 }
