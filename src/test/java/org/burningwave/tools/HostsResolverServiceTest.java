@@ -63,6 +63,9 @@ public class HostsResolverServiceTest extends BaseTest {
 		testDoesNotThrow(() -> {
 			HostResolverService.INSTANCE.reset();
 		});
+		testDoesThrow(() -> {
+			InetAddress.getByName("hello.world.one");
+		});
 	}
 
 	@Test
