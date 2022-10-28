@@ -37,13 +37,12 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Supplier;
 
 @SuppressWarnings("unchecked")
 public class MappedHostResolver implements HostResolverService.Resolver {
-	Map<String, String> hostAliases;
+	protected Map<String, String> hostAliases;
 
 	@SafeVarargs
 	public MappedHostResolver(Supplier<List<Map<String, Object>>>... hostAliasesYAMLFormatSuppliers) {
@@ -126,20 +125,26 @@ public class MappedHostResolver implements HostResolverService.Resolver {
 
 	@Override
 	public boolean isReady(HostResolverService hostResolverService) {
-		boolean isReady = HostResolverService.Resolver.super.isReady(hostResolverService);
-		if (isReady) {
-			String hostNameForTest = UUID.randomUUID().toString();
-			putHost(hostNameForTest, "127.0.0.1");
-			isReady = hostAliases.keySet().stream().filter(Objects::nonNull).findFirst().map(hostName -> {
-				try {
-					return InetAddress.getByName(hostNameForTest);
-				} catch (UnknownHostException exc) {
-					return null;
-				}
-	    	}).isPresent();
-			removeHost(hostNameForTest);
+		return HostResolverService.Resolver.super.isReady(hostResolverService) && obtainsResponseForMappedHost();
+	}
+
+	protected synchronized boolean obtainsResponseForMappedHost() {
+		String hostNameForTest = null;
+		if (hostAliases.isEmpty()) {
+			putHost(hostNameForTest = UUID.randomUUID().toString(), "127.0.0.1");
 		}
-		return isReady;
+		try {
+			for (String hostname : hostAliases.keySet()) {
+				InetAddress.getByName(hostname);
+			}
+			return true;
+		} catch (UnknownHostException exc) {
+			return false;
+		} finally {
+			if (hostNameForTest != null) {
+				removeHost(hostNameForTest);
+			}
+		}
 	}
 
 }
