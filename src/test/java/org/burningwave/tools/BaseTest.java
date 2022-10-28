@@ -95,6 +95,7 @@ public class BaseTest implements Component, ManagedLogger {
 		} catch (Throwable exc) {
 			logError("Exception occurred", exc);
 		}
+		assertNotNull(coll);
 		assertTrue(!coll.isEmpty());
 	}
 
@@ -150,6 +151,20 @@ public class BaseTest implements Component, ManagedLogger {
 			throwable = exc;
 		}
 		assertNull(throwable);
+	}
+
+	void testDoesThrow(Executable executable) {
+		Throwable throwable = null;
+		long initialTime = System.currentTimeMillis();
+		try {
+			logDebug("Initializing logger");
+			executable.execute();
+			logInfo("Elapsed time: " + getFormattedDifferenceOfMillis(System.currentTimeMillis(), initialTime));
+		} catch (Throwable exc) {
+			logInfo("Exception occurred", exc);
+			throwable = exc;
+		}
+		assertNotNull(throwable);
 	}
 
 
