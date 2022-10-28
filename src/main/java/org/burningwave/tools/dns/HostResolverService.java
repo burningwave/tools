@@ -58,7 +58,7 @@ public class HostResolverService {
 	}
 
 	public HostResolverService install(Resolver... resolvers) {
-		return install(0, 250, resolvers);
+		return install(-1, 250, resolvers);
 	}
 
 	public synchronized HostResolverService install(long timeout, long sleepingTime, Resolver... resolvers) {
@@ -78,7 +78,7 @@ public class HostResolverService {
         .map(MappedHostResolver.class::cast).ifPresent(hostResolver -> {
     		Long startTime = System.currentTimeMillis();
     		Long expirationTime = startTime + timeout;
-    		while (!hostResolver.isReady(this) && (timeout == 0 || expirationTime > System.currentTimeMillis())) {
+    		while (!hostResolver.isReady(this) && (timeout < 0 || expirationTime > System.currentTimeMillis())) {
     			try {
     				Thread.sleep(sleepingTime);
     			} catch (InterruptedException exc) {}
