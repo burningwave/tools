@@ -40,9 +40,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
-import java.util.NavigableSet;
 import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
 
 public class HostResolverService {
 	public static final HostResolverService INSTANCE;
@@ -55,8 +53,8 @@ public class HostResolverService {
 	}
 
 	private HostResolverService() {
-		cache = Fields.getStaticDirect(Fields.findFirstAndMakeItAccessible(DefaultHostResolver.inetAddressClass, "cache", ConcurrentMap.class));
-		expirySet = Fields.getStaticDirect(Fields.findFirstAndMakeItAccessible(DefaultHostResolver.inetAddressClass, "expirySet", NavigableSet.class));
+		cache = Fields.getStaticDirect(DefaultHostResolver.inetAddressClass, "cache");
+		expirySet = Fields.getStaticDirect(DefaultHostResolver.inetAddressClass, "expirySet");
 	}
 
 	public HostResolverService install(Resolver... resolvers) {
@@ -71,7 +69,7 @@ public class HostResolverService {
         } else {
         	proxy = buildProxy();
         }
-        Fields.setStaticDirect(DefaultHostResolver.inetAddressClass, DefaultHostResolver.nameServiceField.getName(), proxy);
+        Fields.setStaticDirect(DefaultHostResolver.nameServiceField, proxy);
         return this;
     }
 
@@ -82,7 +80,7 @@ public class HostResolverService {
         } else {
         	nameServices = DefaultHostResolver.nameServices.iterator().next();
         }
-        Fields.setStaticDirect(DefaultHostResolver.inetAddressClass, DefaultHostResolver.nameServiceField.getName(), nameServices);
+        Fields.setStaticDirect(DefaultHostResolver.nameServiceField, nameServices);
 	    clearCache();
         return this;
 	}
