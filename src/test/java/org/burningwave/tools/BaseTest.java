@@ -153,7 +153,7 @@ public class BaseTest implements Component, ManagedLogger {
 		assertNull(throwable);
 	}
 
-	void testDoesThrow(Executable executable) {
+	void testDoesThrow(Executable executable, Class<? extends Throwable> exceptionClass) {
 		Throwable throwable = null;
 		long initialTime = System.currentTimeMillis();
 		try {
@@ -165,6 +165,7 @@ public class BaseTest implements Component, ManagedLogger {
 			throwable = exc;
 		}
 		assertNotNull(throwable);
+		assertTrue(exceptionClass.isAssignableFrom(throwable.getClass()));
 	}
 
 

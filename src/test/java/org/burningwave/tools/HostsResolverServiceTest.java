@@ -63,9 +63,12 @@ public class HostsResolverServiceTest extends BaseTest {
 		testDoesNotThrow(() -> {
 			HostResolverService.INSTANCE.reset();
 		});
-		testDoesThrow(() -> {
-			InetAddress.getByName("hello.world.one");
-		});
+		testDoesThrow(
+			() -> {
+				InetAddress.getByName("hello.world.one");
+			},
+			UnknownHostException.class
+		);
 	}
 
 	@Test
