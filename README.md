@@ -42,7 +42,7 @@ To include Burningwave Tools in your projects simply use with **Apache Maven**:
 <br/>
 
 ## Extractor mode
-To use this mode simply pass to the method **captureAndStore**, as first parameter, the name of the class of your application that contains the main method.
+To use this mode simply pass to the method **`captureAndStore`**, as first parameter, the name of the class of your application that contains the main method.
 ```java
 package org.burningwave.tools.examples.twopasscapturer;
 
@@ -98,7 +98,7 @@ public class DependenciesExtractor {
 <br/>
 
 ## Adapter mode
-In this mode you can adapt a Java old version application to Java 9 or later. To use this mode you must **run the main of the application adapter with a jdk 9 or later**, load, by using PathHelper, the jdk libraries by which the target application was developed and pass to the method **captureAndStore**, as first parameter, the name of the class of your application that contains the main method. In the example below we adapt a Java 8 application to Java 9 or later.
+In this mode you can adapt a Java old version application to Java 9 or later. To use this mode you must **run the main of the application adapter with a jdk 9 or later**, load, by using `PathHelper`, the jdk libraries by which the target application was developed and pass to the method **`captureAndStore`**, as first parameter, the name of the class of your application that contains the main method. In the example below we adapt a Java 8 application to Java 9 or later.
 ```java
 package org.burningwave.tools.examples.twopasscapturer;
 
@@ -164,9 +164,9 @@ public class ApplicationAdapter {
 
 <br />
 
-#Configuring hostname resolution to use a universal custom hostname resolver
+# Configuring hostname resolution to use a universal custom hostname resolver
 
-With the `org.burningwave.tools.dns.HostResolverService` we can configure we can modify the local machine's default hostname resolution in an universal way that works for Java 8 and later:
+With the **`org.burningwave.tools.dns.HostResolverService`** we can configure we can modify the local machine's default hostname resolution in an universal way that works for Java 8 and later:
 
 ```java
 Map<String, String> hostAliases = new LinkedHashMap<>();
@@ -182,7 +182,7 @@ HostResolverService.INSTANCE.install(
 InetAddress inetAddress = InetAddress.getByName("my.hostname.one");
 ```
 
-We can also define a new custom Resolver by implementing the `HostResolverService.Resolver` interface
+We can also define a new custom Resolver by implementing the **`org.burningwave.tools.dns.HostResolverService.Resolver`** interface
 ```java
 //Installing the host resolvers
 HostResolverService.INSTANCE.install(
