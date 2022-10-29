@@ -26,8 +26,8 @@ Burningwave Tools [![Tweet](https://img.shields.io/twitter/url/http/shields.io.s
 By this functionality only the classes and resources strictly used by an application will be extracted and stored in a specified path. At the end of the execution of the task, a script will be created in the destination path to run the application using the extracted classes. **The dependency shrinkers can also be used to adapt applications written with Java old versions to Java 9 or later**.
 
 The classes that deal the dependencies extraction are:
-* **org.burningwave.tools.dependencies.Capturer**
-* **org.burningwave.tools.dependencies.TwoPassCapturer**
+* **`org.burningwave.tools.dependencies.Capturer`**
+* **`org.burningwave.tools.dependencies.TwoPassCapturer`**
 
 It can be used indiscriminately or one or the other class: the first performs a normal scan, the second a deep scan. **When the operations are finished a batch will be generated in the destination path to run your application with the extracted dependencies**.
 
@@ -163,6 +163,49 @@ public class ApplicationAdapter {
 ```
 
 <br />
+
+#Configuring hostname resolution to use a universal custom hostname resolver
+
+With the `org.burningwave.tools.dns.HostResolverService` we can configure we can modify the local machine's default hostname resolution in an universal way that works for Java 8 and later:
+
+```java
+Map<String, String> hostAliases = new LinkedHashMap<>();
+hostAliases.put("my.hostname.one", "123.123.123.123");
+
+//Installing the host resolvers
+HostResolverService.INSTANCE.install(
+    new MappedHostResolver(hostAliases),
+    //This is the system default resolving wrapper
+    DefaultHostResolver.INSTANCE
+);
+
+InetAddress inetAddress = InetAddress.getByName("my.hostname.one");
+```
+
+We can also define a new custom Resolver by implementing the `HostResolverService.Resolver` interface
+```java
+//Installing the host resolvers
+HostResolverService.INSTANCE.install(
+    new HostResolverService.Resolver() {
+
+        @Override
+        public Collection<InetAddress> getAllAddressesForHostName(Map<String, Object> arguments) {
+            ...
+        }
+
+        @Override
+        public Collection<String> getAllHostNamesForHostAddress(Map<String, Object> arguments) {
+            ...
+        }
+				
+    },
+    //This is the system default resolving wrapper
+    DefaultHostResolver.INSTANCE
+);
+
+```
+
+<br>
 
 # <a name="Ask-for-assistance"></a>Ask for assistance
 **For assistance you can**:
