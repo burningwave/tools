@@ -166,7 +166,7 @@ public class ApplicationAdapter {
 
 # Configuring hostname resolution to use a universal custom hostname resolver
 
-With the **`org.burningwave.tools.dns.HostResolverService`** we can configure we can modify the local machine's default hostname resolution in an universal way that works for Java 8 and later:
+With the **`org.burningwave.tools.dns.HostResolverService`** we can configure you can modify the local machine's default hostname resolution in an universal way that works for Java 8 and later:
 
 ```java
 Map<String, String> hostAliases = new LinkedHashMap<>();
@@ -182,7 +182,7 @@ HostResolverService.INSTANCE.install(
 InetAddress inetAddress = InetAddress.getByName("my.hostname.one");
 ```
 
-We can also define a new custom Resolver by implementing the **`org.burningwave.tools.dns.HostResolverService.Resolver`** interface
+You can also define a new custom Resolver by implementing the **`org.burningwave.tools.dns.HostResolverService.Resolver`** interface:
 ```java
 //Installing the host resolvers
 HostResolverService.INSTANCE.install(
