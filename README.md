@@ -164,7 +164,7 @@ public class ApplicationAdapter {
 
 <br />
 
-# Configuring hostname resolution to use a universal custom hostname resolver
+# Configuring host name resolution to use a universal custom host name resolver
 
 With the **`org.burningwave.tools.dns.HostResolverService`** we can configure you can modify the local machine's default hostname resolution in an universal way that works for Java 8 and later:
 
