@@ -34,7 +34,6 @@ import static org.burningwave.core.assembler.StaticComponentContainer.Strings;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -55,7 +54,7 @@ public class HostResolutionRequestInterceptor {
 	private static Object cacheOne;
 	private static Object cacheTwo;
 
-	Collection<Resolver> resolvers;
+	Collection<HostResolver> resolvers;
 
 
 	static {
@@ -82,11 +81,11 @@ public class HostResolutionRequestInterceptor {
 
 	private HostResolutionRequestInterceptor() {}
 
-	public HostResolutionRequestInterceptor install(Resolver... resolvers) {
+	public HostResolutionRequestInterceptor install(HostResolver... resolvers) {
 		return install(-1, 250, resolvers);
 	}
 
-	public HostResolutionRequestInterceptor install(long timeout, long sleepingTime, Resolver... resolvers) {
+	public HostResolutionRequestInterceptor install(long timeout, long sleepingTime, HostResolver... resolvers) {
 		this.resolvers = checkResolvers(resolvers);
 		synchronized (DefaultHostResolver.nameServices) {
 	        Fields.setStaticDirect(
@@ -128,11 +127,11 @@ public class HostResolutionRequestInterceptor {
 		}
 	}
 
-	private Collection<Resolver> checkResolvers(Resolver[] resolvers) {
+	private Collection<HostResolver> checkResolvers(HostResolver[] resolvers) {
 		if (resolvers == null || resolvers.length < 1) {
 			throw new IllegalArgumentException("Resolvers are required");
 		}
-		Collection<Resolver> resolverList = new ArrayList<>();
+		Collection<HostResolver> resolverList = new ArrayList<>();
 		for (int index = 0; index < resolvers.length; index++) {
 			if (resolvers[index] == null) {
 				throw new IllegalArgumentException(Strings.compile("Resolver at index [{}] is null", index));
@@ -144,7 +143,7 @@ public class HostResolutionRequestInterceptor {
 
 	private List<Object> buildProxies() {
 		List<Object> proxies = new ArrayList<>();
-		for (Resolver resolver : resolvers) {
+		for (HostResolver resolver : resolvers) {
 			if (resolver instanceof DefaultHostResolver) {
 				for (Object nameService : DefaultHostResolver.nameServices) {
 					proxies.add(
@@ -168,7 +167,7 @@ public class HostResolutionRequestInterceptor {
 		return proxies;
 	}
 
-	public InvocationHandler buildOneToOneInvocationHandler(Resolver resolver, Object nameService) {
+	public InvocationHandler buildOneToOneInvocationHandler(HostResolver resolver, Object nameService) {
 		Function<Object[], Map<String, Object>> argumentsMapBuilder =
 			nameService != null ?
 				arguments -> {
@@ -206,7 +205,7 @@ public class HostResolutionRequestInterceptor {
 	            } else if (methodName.equals(DefaultHostResolver.getAllHostNamesForHostAddressMethod.getName())) {
 	            	return getAllHostNamesForHostAddress(arguments).iterator().next();
 	            }
-	    		for (Resolver resolver : resolvers) {
+	    		for (HostResolver resolver : resolvers) {
 	    			Object toRet = resolver.handle(method, arguments);
 	    			if (toRet != null) {
 	    				return toRet;
@@ -222,7 +221,7 @@ public class HostResolutionRequestInterceptor {
 	) throws Throwable {
 		Collection<InetAddress> addresses = new ArrayList<>();
 		Map<String, Object> argumentsMap = buildArgumentsMap(args);
-		for (Resolver resolver : resolvers) {
+		for (HostResolver resolver : resolvers) {
 			try {
 				addresses.addAll(resolver.checkAndGetAllAddressesForHostName(argumentsMap));
 			} catch (UnknownHostException exc) {
@@ -247,7 +246,7 @@ public class HostResolutionRequestInterceptor {
 	) throws Throwable {
 		Collection<String> hostNames = new ArrayList<>();
 		Map<String, Object> argumentsMap = buildArgumentsMap(args);
-		for (Resolver resolver : resolvers) {
+		for (HostResolver resolver : resolvers) {
 			try {
 				hostNames.addAll(resolver.checkAndGgetAllHostNamesForHostAddress(argumentsMap));
 			} catch (UnknownHostException exc) {
@@ -258,43 +257,6 @@ public class HostResolutionRequestInterceptor {
 			throw new UnknownHostException(IPAddressUtil.INSTANCE.numericToTextFormat((byte[])args[0]));
 		}
 		return hostNames;
-	}
-
-	public static interface Resolver {
-
-		public default Collection<InetAddress> checkAndGetAllAddressesForHostName(Map<String, Object> argumentsMap) throws UnknownHostException {
-			String hostName = (String)getMethodArguments(argumentsMap)[0];
-			Collection<InetAddress> addresses = getAllAddressesForHostName(argumentsMap);
-			if (addresses.isEmpty()) {
-				throw new UnknownHostException(hostName);
-			}
-			return addresses;
-		}
-
-		public default  Collection<String> checkAndGgetAllHostNamesForHostAddress(Map<String, Object> argumentsMap) throws UnknownHostException {
-			byte[] address = (byte[])getMethodArguments(argumentsMap)[0];
-			Collection<String> hostNames = getAllHostNamesForHostAddress(argumentsMap);
-			if (hostNames.isEmpty()) {
-				throw new UnknownHostException(IPAddressUtil.INSTANCE.numericToTextFormat(address));
-			}
-			return hostNames;
-		}
-
-		public Collection<InetAddress> getAllAddressesForHostName(Map<String, Object> arguments);
-
-		public Collection<String> getAllHostNamesForHostAddress(Map<String, Object> arguments);
-
-		public default boolean isReady(HostResolutionRequestInterceptor hostResolverService) {
-			return hostResolverService.resolvers.contains(this);
-		}
-
-		public default Object handle(Method method, Object... arguments) throws Throwable {
-			throw new UnsupportedOperationException(method.getName() + " is not supported");
-		}
-
-		public default Object[] getMethodArguments(Map<String, Object> arguments) {
-			return (Object[])arguments.get("methodArguments");
-		}
 	}
 
 }
