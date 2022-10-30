@@ -52,8 +52,8 @@ import org.burningwave.core.classes.MethodCriteria;
 import io.github.toolfactory.jvm.function.InitializeException;
 
 @SuppressWarnings("unchecked")
-public class DefaultHostResolver implements HostResolverService.Resolver {
-	public final static HostResolverService.Resolver INSTANCE;
+public class DefaultHostResolver implements HostResolutionRequestInterceptor.Resolver {
+	public final static HostResolutionRequestInterceptor.Resolver INSTANCE;
 	static final Class<?> inetAddressClass;
 	static final Field nameServiceField;
 	static final Class<?> nameServiceFieldClass;

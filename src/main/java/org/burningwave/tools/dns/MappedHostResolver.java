@@ -41,7 +41,7 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 @SuppressWarnings("unchecked")
-public class MappedHostResolver implements HostResolverService.Resolver {
+public class MappedHostResolver implements HostResolutionRequestInterceptor.Resolver {
 	protected Map<String, String> hostAliases;
 
 	@SafeVarargs
@@ -124,8 +124,8 @@ public class MappedHostResolver implements HostResolverService.Resolver {
 	}
 
 	@Override
-	public boolean isReady(HostResolverService hostResolverService) {
-		return HostResolverService.Resolver.super.isReady(hostResolverService) && obtainsResponseForMappedHost();
+	public boolean isReady(HostResolutionRequestInterceptor hostResolverService) {
+		return HostResolutionRequestInterceptor.Resolver.super.isReady(hostResolverService) && obtainsResponseForMappedHost();
 	}
 
 	protected synchronized boolean obtainsResponseForMappedHost() {

@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.burningwave.tools.dns.DefaultHostResolver;
-import org.burningwave.tools.dns.HostResolverService;
+import org.burningwave.tools.dns.HostResolutionRequestInterceptor;
 import org.burningwave.tools.dns.IPAddressUtil;
 import org.burningwave.tools.dns.MappedHostResolver;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
@@ -32,7 +32,7 @@ public class HostsResolverServiceTest extends BaseTest {
 			hostAliases.add(hostNamesForIp);
 			hostNamesForIp.put("ip", "123.123.123.123");
 			hostNamesForIp.put("hostnames", Arrays.asList("hello.world.one", "hello.world.two"));
-			HostResolverService.INSTANCE.install(
+			HostResolutionRequestInterceptor.INSTANCE.install(
 				new MappedHostResolver(() -> hostAliases),
 				DefaultHostResolver.INSTANCE
 			);
@@ -61,7 +61,7 @@ public class HostsResolverServiceTest extends BaseTest {
 	@Order(3)
 	public void reset() {
 		testDoesNotThrow(() -> {
-			HostResolverService.INSTANCE.reset();
+			HostResolutionRequestInterceptor.INSTANCE.uninstall();
 		});
 		testDoesThrow(
 			() -> {
@@ -80,7 +80,7 @@ public class HostsResolverServiceTest extends BaseTest {
 			hostAliases.add(hostNamesForIp);
 			hostNamesForIp.put("ip", "123.123.123.123");
 			hostNamesForIp.put("hostnames", Arrays.asList("hello.world.one", "hello.world.two"));
-			HostResolverService.INSTANCE.install(
+			HostResolutionRequestInterceptor.INSTANCE.install(
 				new MappedHostResolver(() -> hostAliases),
 				DefaultHostResolver.INSTANCE
 			);

@@ -48,9 +48,9 @@ import java.util.function.Function;
 
 import org.burningwave.core.classes.FieldCriteria;
 
-public class HostResolverService {
-	public static final HostResolverService INSTANCE;
-	private static final Function<HostResolverService, Object> proxySupplier;
+public class HostResolutionRequestInterceptor {
+	public static final HostResolutionRequestInterceptor INSTANCE;
+	private static final Function<HostResolutionRequestInterceptor, Object> proxySupplier;
 	private static final Function<Collection<InetAddress>, Object> getAllAddressesForHostNameResultConverter;
 	private static Object cacheOne;
 	private static Object cacheTwo;
@@ -60,8 +60,8 @@ public class HostResolverService {
 
 	static {
 		proxySupplier = Collection.class.isAssignableFrom(DefaultHostResolver.nameServiceFieldClass) ?
-			HostResolverService::buildProxies:
-			HostResolverService::buildProxy;
+			HostResolutionRequestInterceptor::buildProxies:
+			HostResolutionRequestInterceptor::buildProxy;
 		Field cacheOneField = Fields.findOne(FieldCriteria.withoutConsideringParentClasses().name(fieldName -> {
 			return fieldName.equals("cache") || fieldName.equals("addressCache");
 		}), DefaultHostResolver.inetAddressClass);
@@ -77,21 +77,23 @@ public class HostResolverService {
 				addresses.toArray(new InetAddress[addresses.size()]) :
 			addresses ->
 				addresses.stream();
-		INSTANCE = new HostResolverService();
+		INSTANCE = new HostResolutionRequestInterceptor();
 	}
 
-	private HostResolverService() {}
+	private HostResolutionRequestInterceptor() {}
 
-	public HostResolverService install(Resolver... resolvers) {
+	public HostResolutionRequestInterceptor install(Resolver... resolvers) {
 		return install(-1, 250, resolvers);
 	}
 
-	public synchronized HostResolverService install(long timeout, long sleepingTime, Resolver... resolvers) {
+	public HostResolutionRequestInterceptor install(long timeout, long sleepingTime, Resolver... resolvers) {
 		this.resolvers = checkResolvers(resolvers);
-        Fields.setStaticDirect(
-    		DefaultHostResolver.nameServiceField,
-    		proxySupplier.apply(this)
-		);
+		synchronized (DefaultHostResolver.nameServices) {
+	        Fields.setStaticDirect(
+	    		DefaultHostResolver.nameServiceField,
+	    		proxySupplier.apply(this)
+			);
+		}
         this.resolvers.stream().filter(MappedHostResolver.class::isInstance).findFirst()
         .map(MappedHostResolver.class::cast).ifPresent(hostResolver -> {
     		Long startTime = System.currentTimeMillis();
@@ -105,21 +107,25 @@ public class HostResolverService {
         return this;
     }
 
-	public HostResolverService reset() {
+	public HostResolutionRequestInterceptor uninstall() {
         Object nameServices;
 		if (Collection.class.isAssignableFrom(DefaultHostResolver.nameServiceFieldClass)) {
 			nameServices = DefaultHostResolver.nameServices;
         } else {
         	nameServices = DefaultHostResolver.nameServices.iterator().next();
         }
-        Fields.setStaticDirect(DefaultHostResolver.nameServiceField, nameServices);
-	    clearCache();
+		synchronized (DefaultHostResolver.nameServices) {
+			Fields.setStaticDirect(DefaultHostResolver.nameServiceField, nameServices);
+			clearCache();
+		}
         return this;
 	}
 
 	public void clearCache() {
-		Methods.invokeDirect(cacheOne, "clear");
-		Methods.invokeDirect(cacheTwo, "clear");
+		synchronized (DefaultHostResolver.nameServices) {
+			Methods.invokeDirect(cacheOne, "clear");
+			Methods.invokeDirect(cacheTwo, "clear");
+		}
 	}
 
 	private Collection<Resolver> checkResolvers(Resolver[] resolvers) {
@@ -278,7 +284,7 @@ public class HostResolverService {
 
 		public Collection<String> getAllHostNamesForHostAddress(Map<String, Object> arguments);
 
-		public default boolean isReady(HostResolverService hostResolverService) {
+		public default boolean isReady(HostResolutionRequestInterceptor hostResolverService) {
 			return hostResolverService.resolvers.contains(this);
 		}
 
