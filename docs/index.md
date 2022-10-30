@@ -166,7 +166,7 @@ public class ApplicationAdapter {
 
 # Configuring host name resolution
 
-With the **`org.burningwave.tools.dns.HostResolverService`** you can modify the local machine's default host name resolution in a universal way:
+With the **`org.burningwave.tools.dns.HostResolutionRequestInterceptor`** you can modify the local machine's default host name resolution in a universal way:
 
 ```java
 Map<String, String> hostAliases = new LinkedHashMap<>();
