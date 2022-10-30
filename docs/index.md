@@ -8,9 +8,9 @@ Burningwave Tools [![Tweet](https://img.shields.io/twitter/url/http/shields.io.s
 [![Maven Central with version prefix filter](https://img.shields.io/maven-central/v/org.burningwave/tools/0)](https://maven-badges.herokuapp.com/maven-central/org.burningwave/tools/)
 [![GitHub](https://img.shields.io/github/license/burningwave/tools)](https://github.com/burningwave/tools/blob/master/LICENSE)
 
-[![Platforms](https://img.shields.io/badge/platforms-Windows%2C%20Mac%20OS%2C%20Linux-orange)](https://github.com/burningwave/tools/actions/runs/3347888103)
+[![Platforms](https://img.shields.io/badge/platforms-Windows%2C%20Mac%20OS%2C%20Linux-orange)](https://github.com/burningwave/tools/actions/runs/3356373567)
 
-[![Supported JVM](https://img.shields.io/badge/supported%20JVM-8%2C%209+%20(19)-blueviolet)](https://github.com/burningwave/tools/actions/runs/3347888103)
+[![Supported JVM](https://img.shields.io/badge/supported%20JVM-8%2C%209+%20(19)-blueviolet)](https://github.com/burningwave/tools/actions/runs/3356373567)
 
 [![Coveralls github branch](https://img.shields.io/coveralls/github/burningwave/tools/master)](https://coveralls.io/github/burningwave/tools)
 [![GitHub open issues](https://img.shields.io/github/issues/burningwave/tools)](https://github.com/burningwave/tools/issues)
@@ -36,7 +36,7 @@ To include Burningwave Tools in your projects simply use with **Apache Maven**:
 <dependency>
     <groupId>org.burningwave</groupId>
     <artifactId>tools</artifactId>
-    <version>0.18.1</version>
+    <version>0.19.0</version>
 </dependency>	
 ```
 <br/>
@@ -173,7 +173,7 @@ Map<String, String> hostAliases = new LinkedHashMap<>();
 hostAliases.put("my.hostname.one", "123.123.123.123");
 
 //Installing the host resolvers
-HostResolverService.INSTANCE.install(
+HostResolutionRequestInterceptor.INSTANCE.install(
     new MappedHostResolver(hostAliases),
     //This is the system default resolving wrapper
     DefaultHostResolver.INSTANCE
@@ -182,11 +182,11 @@ HostResolverService.INSTANCE.install(
 InetAddress inetAddress = InetAddress.getByName("my.hostname.one");
 ```
 
-You can also define a new custom Resolver by implementing the **`org.burningwave.tools.dns.HostResolverService.Resolver`** interface:
+You can also define a new custom Resolver by implementing the **`org.burningwave.tools.dns.HostResolver`** interface:
 ```java
 //Installing the host resolvers
-HostResolverService.INSTANCE.install(
-    new HostResolverService.Resolver() {
+HostResolutionRequestInterceptor.INSTANCE.install(
+    new HostResolver() {
 
         @Override
         public Collection<InetAddress> getAllAddressesForHostName(Map<String, Object> arguments) {
