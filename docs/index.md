@@ -164,7 +164,7 @@ public class ApplicationAdapter {
 
 <br />
 
-# Configuring host name resolution
+# Configuring host resolution
 
 With the **`org.burningwave.tools.dns.HostResolutionRequestInterceptor`** you can modify the local machine's default host name resolution in a universal way:
 
