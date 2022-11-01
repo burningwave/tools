@@ -17,7 +17,7 @@ public interface HostResolver {
 		return addresses;
 	}
 
-	public default  Collection<String> checkAndGgetAllHostNamesForHostAddress(Map<String, Object> argumentsMap) throws UnknownHostException {
+	public default  Collection<String> checkAndGetAllHostNamesForHostAddress(Map<String, Object> argumentsMap) throws UnknownHostException {
 		byte[] address = (byte[])getMethodArguments(argumentsMap)[0];
 		Collection<String> hostNames = getAllHostNamesForHostAddress(argumentsMap);
 		if (hostNames.isEmpty()) {

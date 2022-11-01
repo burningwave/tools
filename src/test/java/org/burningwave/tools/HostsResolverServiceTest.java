@@ -11,6 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.burningwave.tools.dns.DNSServerHostResolver;
 import org.burningwave.tools.dns.DefaultHostResolver;
 import org.burningwave.tools.dns.HostResolutionRequestInterceptor;
 import org.burningwave.tools.dns.IPAddressUtil;
@@ -33,9 +34,11 @@ public class HostsResolverServiceTest extends BaseTest {
 			hostNamesForIp.put("ip", "123.123.123.123");
 			hostNamesForIp.put("hostnames", Arrays.asList("hello.world.one", "hello.world.two"));
 			HostResolutionRequestInterceptor.INSTANCE.install(
+				new DNSServerHostResolver("208.67.222.222", 53),
 				new MappedHostResolver(() -> hostAliases),
 				DefaultHostResolver.INSTANCE
 			);
+
 			InetAddress inetAddress = InetAddress.getByName("hello.world.one");
 			assertNotNull(inetAddress);
 			assertTrue("123.123.123.123".equals(inetAddress.getHostAddress()));

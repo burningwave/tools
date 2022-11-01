@@ -28,6 +28,12 @@
  */
 package org.burningwave.tools.dns;
 
+import static org.burningwave.core.assembler.StaticComponentContainer.Strings;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 public class IPAddressUtil {
 	public static final IPAddressUtil INSTANCE;
 
@@ -50,14 +56,15 @@ public class IPAddressUtil {
     }
 
     public String numericToTextFormat(byte[] address) {
-    	try {
-    		return numericToTextFormatV6(address);
-    	} catch (Throwable exc) {
+    	if (address.length == INADDR4SZ) {
     		return numericToTextFormatV4(address);
+    	} else if (address.length == INADDR16SZ) {
+    		return numericToTextFormatV6(address);
     	}
+    	throw new IllegalArgumentException(Strings.compile("[{}] is not a valid ip address", String.join(",", convertToList(address).stream().map(value -> value.toString()).collect(Collectors.toList()))));
     }
 
-    private String numericToTextFormatV4(byte[] src) {
+    String numericToTextFormatV4(byte[] src) {
     	int i = src.length;
     	StringBuilder ipAddress = new StringBuilder();
         for (byte raw : src) {
@@ -69,7 +76,7 @@ public class IPAddressUtil {
         return ipAddress.toString();
     }
 
-    private String numericToTextFormatV6(byte[] src) {
+    String numericToTextFormatV6(byte[] src) {
 		StringBuilder sb = new StringBuilder(39);
 	    for (int i = 0; i < (INADDR16SZ / INT16SZ); i++) {
 	        sb.append(Integer.toHexString(((src[i<<1]<<8) & 0xff00)
@@ -81,7 +88,7 @@ public class IPAddressUtil {
 	    return sb.toString();
     }
 
-    private byte[] textToNumericFormatV6(String src) {
+    byte[] textToNumericFormatV6(String src) {
         // Shortest valid string is "::", hence at least 2 chars
         if (src.length() < 2) {
             return null;
@@ -196,7 +203,7 @@ public class IPAddressUtil {
         }
     }
 
-    private byte[] textToNumericFormatV4(String src) {
+    byte[] textToNumericFormatV4(String src) {
         if (src.length() == 0) {
             return null;
         }
@@ -257,7 +264,7 @@ public class IPAddressUtil {
         return res;
     }
 
-    private byte[] convertFromIPv4MappedAddress(byte[] addr) {
+    byte[] convertFromIPv4MappedAddress(byte[] addr) {
         if (isIPv4MappedAddress(addr)) {
             byte[] newAddr = new byte[INADDR4SZ];
             System.arraycopy(addr, 12, newAddr, 0, INADDR4SZ);
@@ -266,13 +273,21 @@ public class IPAddressUtil {
         return null;
     }
 
-    private boolean isIPv4MappedAddress(byte[] addr) {
+    boolean isIPv4MappedAddress(byte[] addr) {
         if (addr.length < INADDR16SZ) {
             return false;
         }
         return ((addr[0] == 0x00) && (addr[1] == 0x00) && (addr[2] == 0x00) && (addr[3] == 0x00) && (addr[4] == 0x00)
                 && (addr[5] == 0x00) && (addr[6] == 0x00) && (addr[7] == 0x00) && (addr[8] == 0x00)
                 && (addr[9] == 0x00) && (addr[10] == (byte) 0xff) && (addr[11] == (byte) 0xff));
+    }
+
+    private List<Byte> convertToList(byte[] bytes) {
+        final List<Byte> list = new ArrayList<>();
+        for (byte b : bytes) {
+            list.add(b);
+        }
+        return list;
     }
 
 }

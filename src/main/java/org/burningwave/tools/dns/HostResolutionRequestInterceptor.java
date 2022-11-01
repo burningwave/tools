@@ -184,7 +184,7 @@ public class HostResolutionRequestInterceptor {
 					resolver.checkAndGetAllAddressesForHostName(argumentsMapBuilder.apply(arguments))
 				);
 		    } else if (methodName.equals(DefaultHostResolver.getAllHostNamesForHostAddressMethod.getName())) {
-		    	return resolver.checkAndGgetAllHostNamesForHostAddress(argumentsMapBuilder.apply(arguments)).iterator().next();
+		    	return resolver.checkAndGetAllHostNamesForHostAddress(argumentsMapBuilder.apply(arguments)).iterator().next();
 		    }
 			Object toRet = resolver.handle(method, arguments);
 			if (toRet != null) {
@@ -248,7 +248,7 @@ public class HostResolutionRequestInterceptor {
 		Map<String, Object> argumentsMap = buildArgumentsMap(args);
 		for (HostResolver resolver : resolvers) {
 			try {
-				hostNames.addAll(resolver.checkAndGgetAllHostNamesForHostAddress(argumentsMap));
+				hostNames.addAll(resolver.checkAndGetAllHostNamesForHostAddress(argumentsMap));
 			} catch (UnknownHostException exc) {
 
 			}
