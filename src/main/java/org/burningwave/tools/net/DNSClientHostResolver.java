@@ -59,18 +59,29 @@ import org.burningwave.core.function.ThrowingBiFunction;
 
 @SuppressWarnings("unchecked")
 public class DNSClientHostResolver implements HostResolver {
-	public final static int DEFAULT_PORT = 53;
+	public final static int DEFAULT_PORT;
 
-	private static final String IPV6_DOMAIN = "ip6.arpa.";
-	private static final String IPV4_DOMAIN = "in-addr.arpa.";
-	private static final short RECORD_TYPE_A = 1;
-	private static final short RECORD_TYPE_PTR = 12;
-	private static final short RECORD_TYPE_AAAA = 28;
+	private static final String IPV6_DOMAIN;
+	private static final String IPV4_DOMAIN;
+	private static final short RECORD_TYPE_A;
+	private static final short RECORD_TYPE_PTR;
+	private static final short RECORD_TYPE_AAAA;
 
-	public static final ThrowingBiFunction<DNSClientHostResolver, String, byte[], IOException> IPV4_RETRIEVER = (dNSServerHostResolver, hostName) ->
-		dNSServerHostResolver.sendRequest(hostName, RECORD_TYPE_A) ;
-	public static final ThrowingBiFunction<DNSClientHostResolver, String, byte[], IOException> IPV6_RETRIEVER = (dNSServerHostResolver, hostName) ->
-		dNSServerHostResolver.sendRequest(hostName, RECORD_TYPE_AAAA);
+	public static final ThrowingBiFunction<DNSClientHostResolver, String, byte[], IOException> IPV4_RETRIEVER;
+	public static final ThrowingBiFunction<DNSClientHostResolver, String, byte[], IOException> IPV6_RETRIEVER;
+
+	static {
+		DEFAULT_PORT = 53;
+		IPV6_DOMAIN = "ip6.arpa.";
+		IPV4_DOMAIN = "in-addr.arpa.";
+		RECORD_TYPE_A = 1;
+		RECORD_TYPE_PTR = 12;
+		RECORD_TYPE_AAAA = 28;
+		IPV4_RETRIEVER = (dNSServerHostResolver, hostName) ->
+			dNSServerHostResolver.sendRequest(hostName, RECORD_TYPE_A);
+		IPV6_RETRIEVER = (dNSServerHostResolver, hostName) ->
+			dNSServerHostResolver.sendRequest(hostName, RECORD_TYPE_AAAA);
+	}
 
 	private ThrowingBiFunction<DNSClientHostResolver, String, byte[], IOException>[] resolveHostForNameRequestSenders;
 
