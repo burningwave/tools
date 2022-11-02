@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
-import org.burningwave.tools.net.DNSServerHostResolver;
+import org.burningwave.tools.net.DNSClientHostResolver;
 import org.burningwave.tools.net.DefaultHostResolver;
 import org.burningwave.tools.net.HostResolutionRequestInterceptor;
 import org.burningwave.tools.net.IPAddressUtil;
@@ -34,7 +34,7 @@ public class HostsResolverServiceTest extends BaseTest {
 			hostNamesForIp.put("ip", "123.123.123.123");
 			hostNamesForIp.put("hostnames", Arrays.asList("hello.world.one", "hello.world.two"));
 			HostResolutionRequestInterceptor.INSTANCE.install(
-				new DNSServerHostResolver("208.67.222.222", 53),
+				new DNSClientHostResolver("208.67.222.222", 53),
 				new MappedHostResolver(() -> hostAliases),
 				DefaultHostResolver.INSTANCE
 			);
