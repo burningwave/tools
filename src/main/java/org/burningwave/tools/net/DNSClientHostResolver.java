@@ -55,7 +55,7 @@ import org.burningwave.core.function.ThrowingBiFunction;
 
 
 @SuppressWarnings("unchecked")
-public class DNSServerHostResolver implements HostResolver {
+public class DNSClientHostResolver implements HostResolver {
 	public final static int DEFAULT_PORT = 53;
 
 	private static final String IPV6_DOMAIN = "ip6.arpa.";
@@ -64,15 +64,15 @@ public class DNSServerHostResolver implements HostResolver {
 	private static final short RECORD_TYPE_PTR = 12;
 	private static final short RECORD_TYPE_AAAA = 28;
 
-	public static final ThrowingBiFunction<DNSServerHostResolver, String, byte[], IOException> IPV4_RETRIEVER = (dNSServerHostResolver, hostName) ->
+	public static final ThrowingBiFunction<DNSClientHostResolver, String, byte[], IOException> IPV4_RETRIEVER = (dNSServerHostResolver, hostName) ->
 		dNSServerHostResolver.sendRequest(hostName, RECORD_TYPE_A) ;
-	public static final ThrowingBiFunction<DNSServerHostResolver, String, byte[], IOException> IPV6_RETRIEVER = (dNSServerHostResolver, hostName) ->
+	public static final ThrowingBiFunction<DNSClientHostResolver, String, byte[], IOException> IPV6_RETRIEVER = (dNSServerHostResolver, hostName) ->
 		dNSServerHostResolver.sendRequest(hostName, RECORD_TYPE_AAAA);
-	private static final ThrowingBiFunction<DNSServerHostResolver, String, byte[], IOException> PTR_RETRIEVER = (dNSServerHostResolver, hostName) ->
+	private static final ThrowingBiFunction<DNSClientHostResolver, String, byte[], IOException> PTR_RETRIEVER = (dNSServerHostResolver, hostName) ->
 		dNSServerHostResolver.sendRequest(hostName, RECORD_TYPE_PTR);
 
 
-	private ThrowingBiFunction<DNSServerHostResolver, String, byte[], IOException>[] resolveHostForNameRequestSenders;
+	private ThrowingBiFunction<DNSClientHostResolver, String, byte[], IOException>[] resolveHostForNameRequestSenders;
 
 	private static Random requestIdGenerator;
 
@@ -83,19 +83,19 @@ public class DNSServerHostResolver implements HostResolver {
 	private InetAddress dNSServerIP;
 	private int dNSServerPort;
 
-	public DNSServerHostResolver(String dNSServerIP) throws UnknownHostException {
+	public DNSClientHostResolver(String dNSServerIP) throws UnknownHostException {
 		this(dNSServerIP, DEFAULT_PORT, IPV4_RETRIEVER, IPV6_RETRIEVER);
 	}
 
-	public DNSServerHostResolver(String dNSServerIP, int dNSServerPort) throws UnknownHostException {
+	public DNSClientHostResolver(String dNSServerIP, int dNSServerPort) throws UnknownHostException {
 		this(dNSServerIP, dNSServerPort, IPV4_RETRIEVER, IPV6_RETRIEVER);
 	}
 
-	public DNSServerHostResolver(String dNSServerIP, ThrowingBiFunction<DNSServerHostResolver, String, byte[], IOException>... resolveHostForNameRequestSenders) throws UnknownHostException {
+	public DNSClientHostResolver(String dNSServerIP, ThrowingBiFunction<DNSClientHostResolver, String, byte[], IOException>... resolveHostForNameRequestSenders) throws UnknownHostException {
 		this(dNSServerIP, DEFAULT_PORT, resolveHostForNameRequestSenders);
 	}
 
-	public DNSServerHostResolver(String dNSServerIP, int dNSServerPort, ThrowingBiFunction<DNSServerHostResolver, String, byte[], IOException>... resolveHostForNameRequestSenders) throws UnknownHostException {
+	public DNSClientHostResolver(String dNSServerIP, int dNSServerPort, ThrowingBiFunction<DNSClientHostResolver, String, byte[], IOException>... resolveHostForNameRequestSenders) throws UnknownHostException {
 		this.dNSServerIP = InetAddress.getByName(dNSServerIP);
 		this.dNSServerPort = dNSServerPort;
 		this.resolveHostForNameRequestSenders = resolveHostForNameRequestSenders;
