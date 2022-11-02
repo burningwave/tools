@@ -102,7 +102,7 @@ public class DNSClientHostResolver implements HostResolver {
 			Driver.throwException(exc);
 		}
 		this.dNSServerPort = dNSServerPort;
-		this.resolveHostForNameRequestSenders =resolveHostForNameRequestSenders != null && resolveHostForNameRequestSenders.length > 0 ?
+		this.resolveHostForNameRequestSenders = resolveHostForNameRequestSenders != null && resolveHostForNameRequestSenders.length > 0 ?
 			resolveHostForNameRequestSenders :
 			new ThrowingBiFunction[] {IPV4_RETRIEVER, IPV6_RETRIEVER};
 	}
