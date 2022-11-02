@@ -83,20 +83,24 @@ public class DNSClientHostResolver implements HostResolver {
 	private InetAddress dNSServerIP;
 	private int dNSServerPort;
 
-	public DNSClientHostResolver(String dNSServerIP) throws UnknownHostException {
+	public DNSClientHostResolver(String dNSServerIP) {
 		this(dNSServerIP, DEFAULT_PORT, IPV4_RETRIEVER, IPV6_RETRIEVER);
 	}
 
-	public DNSClientHostResolver(String dNSServerIP, int dNSServerPort) throws UnknownHostException {
+	public DNSClientHostResolver(String dNSServerIP, int dNSServerPort) {
 		this(dNSServerIP, dNSServerPort, IPV4_RETRIEVER, IPV6_RETRIEVER);
 	}
 
-	public DNSClientHostResolver(String dNSServerIP, ThrowingBiFunction<DNSClientHostResolver, String, byte[], IOException>... resolveHostForNameRequestSenders) throws UnknownHostException {
+	public DNSClientHostResolver(String dNSServerIP, ThrowingBiFunction<DNSClientHostResolver, String, byte[], IOException>... resolveHostForNameRequestSenders) {
 		this(dNSServerIP, DEFAULT_PORT, resolveHostForNameRequestSenders);
 	}
 
-	public DNSClientHostResolver(String dNSServerIP, int dNSServerPort, ThrowingBiFunction<DNSClientHostResolver, String, byte[], IOException>... resolveHostForNameRequestSenders) throws UnknownHostException {
-		this.dNSServerIP = InetAddress.getByName(dNSServerIP);
+	public DNSClientHostResolver(String dNSServerIP, int dNSServerPort, ThrowingBiFunction<DNSClientHostResolver, String, byte[], IOException>... resolveHostForNameRequestSenders) {
+		try {
+			this.dNSServerIP = InetAddress.getByName(dNSServerIP);
+		} catch (UnknownHostException exc) {
+			Driver.throwException(exc);
+		}
 		this.dNSServerPort = dNSServerPort;
 		this.resolveHostForNameRequestSenders = resolveHostForNameRequestSenders;
 	}
