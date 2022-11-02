@@ -29,6 +29,8 @@
 package org.burningwave.tools.net;
 
 import static org.burningwave.core.assembler.StaticComponentContainer.Driver;
+import static org.burningwave.core.assembler.StaticComponentContainer.Fields;
+import static org.burningwave.core.assembler.StaticComponentContainer.Strings;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -50,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
+import java.util.function.Supplier;
 
 import org.burningwave.core.function.ThrowingBiFunction;
 
@@ -68,9 +71,6 @@ public class DNSClientHostResolver implements HostResolver {
 		dNSServerHostResolver.sendRequest(hostName, RECORD_TYPE_A) ;
 	public static final ThrowingBiFunction<DNSClientHostResolver, String, byte[], IOException> IPV6_RETRIEVER = (dNSServerHostResolver, hostName) ->
 		dNSServerHostResolver.sendRequest(hostName, RECORD_TYPE_AAAA);
-	private static final ThrowingBiFunction<DNSClientHostResolver, String, byte[], IOException> PTR_RETRIEVER = (dNSServerHostResolver, hostName) ->
-		dNSServerHostResolver.sendRequest(hostName, RECORD_TYPE_PTR);
-
 
 	private ThrowingBiFunction<DNSClientHostResolver, String, byte[], IOException>[] resolveHostForNameRequestSenders;
 
@@ -102,7 +102,25 @@ public class DNSClientHostResolver implements HostResolver {
 			Driver.throwException(exc);
 		}
 		this.dNSServerPort = dNSServerPort;
-		this.resolveHostForNameRequestSenders = resolveHostForNameRequestSenders;
+		this.resolveHostForNameRequestSenders =resolveHostForNameRequestSenders != null && resolveHostForNameRequestSenders.length > 0 ?
+			resolveHostForNameRequestSenders :
+			new ThrowingBiFunction[] {IPV4_RETRIEVER, IPV6_RETRIEVER};
+	}
+
+	public static Collection<DNSClientHostResolver> newInstances(Supplier<Collection<Map<String, Object>>> configuration) {
+		Collection<DNSClientHostResolver> dNSClientHostResolvers = new ArrayList<>();
+		configuration.get().stream().forEach(serverMap ->
+			dNSClientHostResolvers.add(
+	            new DNSClientHostResolver(
+	                (String)serverMap.get("ip"),
+	                (Integer)serverMap.getOrDefault("port", DEFAULT_PORT),
+					((List<String>)serverMap.get("ipTypeToSearchFor")).stream()
+					.map(ipType -> Fields.getStaticDirect(DNSClientHostResolver.class, Strings.compile("{}_RETRIEVER", ipType.toUpperCase())))
+					.map(ThrowingBiFunction.class::cast).toArray(size -> new ThrowingBiFunction[size])
+	            )
+	        )
+	    );
+		return dNSClientHostResolvers;
 	}
 
 	@Override
@@ -265,7 +283,7 @@ public class DNSClientHostResolver implements HostResolver {
 
 	public Collection<String> resolveHostForAddress(byte[] addressAsByteArray) throws IOException {
 		Map<byte[], String> iPToDomainMap = new LinkedHashMap<>();
-		iPToDomainMap.putAll(parseResponse(PTR_RETRIEVER.apply(this, iPAddressAsBytesToString(addressAsByteArray))));
+		iPToDomainMap.putAll(parseResponse(sendRequest(iPAddressAsBytesToString(addressAsByteArray), RECORD_TYPE_PTR)));
 		ArrayList<String> domains = new ArrayList<>();
 		iPToDomainMap.forEach((key, value) -> {
 			domains.add(hostNameAsBytesToString(key));
