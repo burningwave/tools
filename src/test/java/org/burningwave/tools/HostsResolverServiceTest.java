@@ -11,12 +11,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.burningwave.tools.dns.DNSServerHostResolver;
-import org.burningwave.tools.dns.DefaultHostResolver;
-import org.burningwave.tools.dns.HostResolutionRequestInterceptor;
-import org.burningwave.tools.dns.IPAddressUtil;
-import org.burningwave.tools.dns.MappedHostResolver;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
+import org.burningwave.tools.net.DNSServerHostResolver;
+import org.burningwave.tools.net.DefaultHostResolver;
+import org.burningwave.tools.net.HostResolutionRequestInterceptor;
+import org.burningwave.tools.net.IPAddressUtil;
+import org.burningwave.tools.net.MappedHostResolver;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;

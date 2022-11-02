@@ -1,4 +1,4 @@
-package org.burningwave.tools.dns;
+package org.burningwave.tools.net;
 
 import java.lang.reflect.Method;
 import java.net.InetAddress;
