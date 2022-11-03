@@ -285,16 +285,20 @@ public class DNSClientHostResolver implements HostResolver {
 
 	@Override
 	public Collection<String> getAllHostNamesForHostAddress(Map<String, Object> argumentsMap) {
-		try {
-			return resolveHostForAddress((byte[])getMethodArguments(argumentsMap)[0]);
-		} catch (IOException exc) {
-			return Driver.throwException(exc);
-		}
+		return resolveHostForAddress((byte[])getMethodArguments(argumentsMap)[0]);
 	}
 
-	public Collection<String> resolveHostForAddress(byte[] addressAsByteArray) throws IOException {
+	public Collection<String> resolveHostForAddress(String iPAddress) {
+		return resolveHostForAddress(IPAddressUtil.INSTANCE.textToNumericFormat(iPAddress));
+	}
+
+	public Collection<String> resolveHostForAddress(byte[] iPAddressAsBytes) {
 		Map<byte[], String> iPToDomainMap = new LinkedHashMap<>();
-		iPToDomainMap.putAll(parseResponse(sendRequest(iPAddressAsBytesToString(addressAsByteArray), RECORD_TYPE_PTR)));
+		try {
+			iPToDomainMap.putAll(parseResponse(sendRequest(iPAddressAsBytesToReversedString(iPAddressAsBytes), RECORD_TYPE_PTR)));
+		} catch (IOException exc) {
+			Driver.throwException(exc);
+		}
 		ArrayList<String> domains = new ArrayList<>();
 		iPToDomainMap.forEach((key, value) -> {
 			domains.add(hostNameAsBytesToString(key));
@@ -302,7 +306,7 @@ public class DNSClientHostResolver implements HostResolver {
 		return domains;
 	}
 
-	private String iPAddressAsBytesToString(byte[] iPAddressAsByte) {
+	private String iPAddressAsBytesToReversedString(byte[] iPAddressAsByte) {
 		if (iPAddressAsByte.length != 4 && iPAddressAsByte.length != 16) {
 			throw new IllegalArgumentException("array must contain 4 or 16 elements");
 		}
