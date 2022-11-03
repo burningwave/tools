@@ -182,7 +182,7 @@ HostResolutionRequestInterceptor.INSTANCE.install(
 InetAddress inetAddress = InetAddress.getByName("my.hostname.one");
 ```
 
-You can also define a new custom Resolver by implementing the **`org.burningwave.tools.net.HostResolver`** interface:
+You can also define a new custom resolver by implementing the **`org.burningwave.tools.net.HostResolver`** interface:
 ```java
 //Installing the host resolvers
 HostResolutionRequestInterceptor.INSTANCE.install(
