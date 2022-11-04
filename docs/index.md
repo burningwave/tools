@@ -166,8 +166,6 @@ public class ApplicationAdapter {
 
 # Configuring host resolution
 
-## Mapped host resolution
-
 With the **`org.burningwave.tools.net.HostResolutionRequestInterceptor`** you can modify the local machine's default host name resolution in a universal way:
 
 ```java
@@ -183,6 +181,7 @@ HostResolutionRequestInterceptor.INSTANCE.install(
 
 InetAddress inetAddress = InetAddress.getByName("my.hostname.one");
 ```
+<br/>
 
 ## Host resolution via DNS server
 
@@ -198,6 +197,7 @@ HostResolutionRequestInterceptor.INSTANCE.install(
 );
 InetAddress inetAddress = InetAddress.getByName("github.com");
 ```
+<br/>
 
 ## Implement a custom host resolver
 
