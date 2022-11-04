@@ -168,23 +168,23 @@ public class HostResolutionRequestInterceptor {
 	}
 
 	public InvocationHandler buildOneToOneInvocationHandler(HostResolver resolver, Object nameService) {
-		Function<Object[], Map<String, Object>> argumentsMapBuilder =
+		Function<Object[], Map<String, Object>> argumentMapBuilder =
 			nameService != null ?
 				arguments -> {
-					Map<String, Object> argumentsMap = buildArgumentsMap(arguments);
-					argumentsMap.put("nameServices", Arrays.asList(nameService));
-					return argumentsMap;
+					Map<String, Object> argumentMap = buildArgumentMap(arguments);
+					argumentMap.put("nameServices", Arrays.asList(nameService));
+					return argumentMap;
 				}:
-				this::buildArgumentsMap;
+				this::buildArgumentMap;
 
 		return (proxy, method, arguments) -> {
 			String methodName = method.getName();
 			if (methodName.equals(DefaultHostResolver.getAllAddressesForHostNameMethod.getName())) {
 				return getAllAddressesForHostNameResultConverter.apply(
-					resolver.checkAndGetAllAddressesForHostName(argumentsMapBuilder.apply(arguments))
+					resolver.checkAndGetAllAddressesForHostName(argumentMapBuilder.apply(arguments))
 				);
 		    } else if (methodName.equals(DefaultHostResolver.getAllHostNamesForHostAddressMethod.getName())) {
-		    	return resolver.checkAndGetAllHostNamesForHostAddress(argumentsMapBuilder.apply(arguments)).iterator().next();
+		    	return resolver.checkAndGetAllHostNamesForHostAddress(argumentMapBuilder.apply(arguments)).iterator().next();
 		    }
 			Object toRet = resolver.handle(method, arguments);
 			if (toRet != null) {
@@ -220,10 +220,10 @@ public class HostResolutionRequestInterceptor {
 		Object... args
 	) throws Throwable {
 		Collection<InetAddress> addresses = new ArrayList<>();
-		Map<String, Object> argumentsMap = buildArgumentsMap(args);
+		Map<String, Object> argumentMap = buildArgumentMap(args);
 		for (HostResolver resolver : resolvers) {
 			try {
-				addresses.addAll(resolver.checkAndGetAllAddressesForHostName(argumentsMap));
+				addresses.addAll(resolver.checkAndGetAllAddressesForHostName(argumentMap));
 			} catch (UnknownHostException exc) {
 
 			}
@@ -234,7 +234,7 @@ public class HostResolutionRequestInterceptor {
 		return getAllAddressesForHostNameResultConverter.apply(addresses);
 	}
 
-	public Map<String, Object> buildArgumentsMap(Object[] args) {
+	private Map<String, Object> buildArgumentMap(Object[] args) {
 		Map<String, Object> arguments = new LinkedHashMap<>();
 		arguments.put("methodArguments", args);
 		return arguments;
@@ -245,10 +245,10 @@ public class HostResolutionRequestInterceptor {
 		Object... args
 	) throws Throwable {
 		Collection<String> hostNames = new ArrayList<>();
-		Map<String, Object> argumentsMap = buildArgumentsMap(args);
+		Map<String, Object> argumentMap = buildArgumentMap(args);
 		for (HostResolver resolver : resolvers) {
 			try {
-				hostNames.addAll(resolver.checkAndGetAllHostNamesForHostAddress(argumentsMap));
+				hostNames.addAll(resolver.checkAndGetAllHostNamesForHostAddress(argumentMap));
 			} catch (UnknownHostException exc) {
 
 			}

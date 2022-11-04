@@ -134,9 +134,9 @@ public class DefaultHostResolver implements HostResolver {
 	}
 
 	@Override
-	public Collection<InetAddress> getAllAddressesForHostName(Map<String, Object> argumentsMap) {
-		Object[] arguments = getMethodArguments(argumentsMap);
-		List<Object> nameServices = (List<Object>)argumentsMap.get("nameServices");
+	public Collection<InetAddress> getAllAddressesForHostName(Map<String, Object> argumentMap) {
+		Object[] arguments = getMethodArguments(argumentMap);
+		List<Object> nameServices = (List<Object>)argumentMap.get("nameServices");
 		if (nameServices == null) {
 			nameServices = DefaultHostResolver.nameServices;
 		}
@@ -159,9 +159,9 @@ public class DefaultHostResolver implements HostResolver {
 	}
 
 	@Override
-	public Collection<String> getAllHostNamesForHostAddress(Map<String, Object> argumentsMap) {
-		Object[] arguments = getMethodArguments(argumentsMap);
-		List<Object> nameServices = (List<Object>)argumentsMap.get("nameServices");
+	public Collection<String> getAllHostNamesForHostAddress(Map<String, Object> argumentMap) {
+		Object[] arguments = getMethodArguments(argumentMap);
+		List<Object> nameServices = (List<Object>)argumentMap.get("nameServices");
 		if (nameServices == null) {
 			nameServices = DefaultHostResolver.nameServices;
 		}

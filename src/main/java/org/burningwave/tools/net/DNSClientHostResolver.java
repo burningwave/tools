@@ -135,8 +135,8 @@ public class DNSClientHostResolver implements HostResolver {
 	}
 
 	@Override
-	public Collection<InetAddress> getAllAddressesForHostName(Map<String, Object> argumentsMap) {
-		return resolveHostForName((String)getMethodArguments(argumentsMap)[0]);
+	public Collection<InetAddress> getAllAddressesForHostName(Map<String, Object> argumentMap) {
+		return resolveHostForName((String)getMethodArguments(argumentMap)[0]);
 	}
 
 	public Collection<InetAddress> resolveHostForName(String hostName) {
@@ -284,8 +284,8 @@ public class DNSClientHostResolver implements HostResolver {
 
 
 	@Override
-	public Collection<String> getAllHostNamesForHostAddress(Map<String, Object> argumentsMap) {
-		return resolveHostForAddress((byte[])getMethodArguments(argumentsMap)[0]);
+	public Collection<String> getAllHostNamesForHostAddress(Map<String, Object> argumentMap) {
+		return resolveHostForAddress((byte[])getMethodArguments(argumentMap)[0]);
 	}
 
 	public Collection<String> resolveHostForAddress(String iPAddress) {

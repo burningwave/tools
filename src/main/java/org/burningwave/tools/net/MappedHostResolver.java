@@ -69,8 +69,8 @@ public class MappedHostResolver implements HostResolver {
 
 
 	@Override
-	public Collection<InetAddress> getAllAddressesForHostName(Map<String, Object> argumentsMap) {
-		String hostName = (String)getMethodArguments(argumentsMap)[0];
+	public Collection<InetAddress> getAllAddressesForHostName(Map<String, Object> argumentMap) {
+		String hostName = (String)getMethodArguments(argumentMap)[0];
 		Collection<InetAddress> addresses = new ArrayList<>();
 		String iPAddress = hostAliases.get(hostName);
 		if (iPAddress != null) {
@@ -84,8 +84,8 @@ public class MappedHostResolver implements HostResolver {
 	}
 
 	@Override
-	public Collection<String> getAllHostNamesForHostAddress(Map<String, Object> argumentsMap) {
-		byte[] address = (byte[])getMethodArguments(argumentsMap)[0];
+	public Collection<String> getAllHostNamesForHostAddress(Map<String, Object> argumentMap) {
+		byte[] address = (byte[])getMethodArguments(argumentMap)[0];
 		Collection<String> hostNames = new ArrayList<>();
 		String iPAddress = IPAddressUtil.INSTANCE.numericToTextFormat(address);
 		for (Map.Entry<String, String> addressForIp : hostAliases.entrySet()) {

@@ -271,10 +271,10 @@ public class Sniffer extends MemoryClassLoader {
 			}
 			resources.clear();
 			// Nulling resources will cause crash
-			// resources = null;
+//			resources = null;
 			javaClasses.clear();
 			// Nulling javaClasses will cause crash
-			// javaClasses = null;
+//			javaClasses = null;
 //	    	javaClassFilterAndAdder = null;
 //	    	resourceFilterAndAdder = null;
 //	    	threadContextClassLoader = null;

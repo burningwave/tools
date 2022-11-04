@@ -70,7 +70,7 @@ public class Capturer implements Component {
 	}
 
 	public static Capturer getInstance() {
-		return LazyHolder.getCapturerInstance();
+		return Holder.getCapturerInstance();
 	}
 
 	public Result capture(String mainClassName, Collection<String> baseClassPaths,
@@ -296,7 +296,7 @@ public class Capturer implements Component {
 		}
 	}
 
-	static class LazyHolder {
+	static class Holder {
 		static final Capturer CAPTURER_INSTANCE = Capturer.create(ComponentContainer.getInstance());
 
 		static Capturer getCapturerInstance() {

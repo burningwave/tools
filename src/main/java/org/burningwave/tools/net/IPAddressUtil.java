@@ -37,9 +37,9 @@ import java.util.stream.Collectors;
 public class IPAddressUtil {
 	public static final IPAddressUtil INSTANCE;
 
-    private static final int INADDR4SZ = 4;
-    private static final int INADDR16SZ = 16;
-    private static final int INT16SZ = 2;
+    private static final int IPV4_SIZE = 4;
+    private static final int IPV6_SIZE = 16;
+    private static final int INT_16_SIZE = 2;
 
     static {
     	INSTANCE = new IPAddressUtil();
@@ -56,9 +56,9 @@ public class IPAddressUtil {
     }
 
     public String numericToTextFormat(byte[] address) {
-    	if (address.length == INADDR4SZ) {
+    	if (address.length == IPV4_SIZE) {
     		return numericToTextFormatV4(address);
-    	} else if (address.length == INADDR16SZ) {
+    	} else if (address.length == IPV6_SIZE) {
     		return numericToTextFormatV6(address);
     	}
     	throw new IllegalArgumentException(Strings.compile("[{}] is not a valid ip address", String.join(",", convertToList(address).stream().map(value -> value.toString()).collect(Collectors.toList()))));
@@ -78,10 +78,10 @@ public class IPAddressUtil {
 
     String numericToTextFormatV6(byte[] src) {
 		StringBuilder sb = new StringBuilder(39);
-	    for (int i = 0; i < (INADDR16SZ / INT16SZ); i++) {
+	    for (int i = 0; i < (IPV6_SIZE / INT_16_SIZE); i++) {
 	        sb.append(Integer.toHexString(((src[i<<1]<<8) & 0xff00)
 	                                      | (src[(i<<1)+1] & 0xff)));
-	        if (i < (INADDR16SZ / INT16SZ) -1 ) {
+	        if (i < (IPV6_SIZE / INT_16_SIZE) -1 ) {
 	           sb.append(":");
 	        }
 	    }
@@ -89,7 +89,6 @@ public class IPAddressUtil {
     }
 
     byte[] textToNumericFormatV6(String src) {
-        // Shortest valid string is "::", hence at least 2 chars
         if (src.length() < 2) {
             return null;
         }
@@ -99,7 +98,7 @@ public class IPAddressUtil {
         boolean sawXDigit;
         int val;
         char[] srcb = src.toCharArray();
-        byte[] dst = new byte[INADDR16SZ];
+        byte[] dst = new byte[IPV6_SIZE];
 
         int srcbLength = srcb.length;
         int pc = src.indexOf("%");
@@ -141,7 +140,7 @@ public class IPAddressUtil {
                 } else if (i == srcbLength) {
                     return null;
                 }
-                if (j + INT16SZ > INADDR16SZ) {
+                if (j + INT_16_SIZE > IPV6_SIZE) {
                     return null;
                 }
                 dst[j++] = (byte) ((val >> 8) & 0xff);
@@ -150,7 +149,7 @@ public class IPAddressUtil {
                 val = 0;
                 continue;
             }
-            if (ch == '.' && ((j + INADDR4SZ) <= INADDR16SZ)) {
+            if (ch == '.' && ((j + IPV4_SIZE) <= IPV6_SIZE)) {
                 String ia4 = src.substring(curtok, srcbLength);
                 int dotCount = 0;
                 int index = 0;
@@ -165,7 +164,7 @@ public class IPAddressUtil {
                 if (v4addr == null) {
                     return null;
                 }
-                for (int k = 0; k < INADDR4SZ; k++) {
+                for (int k = 0; k < IPV4_SIZE; k++) {
                     dst[j++] = v4addr[k];
                 }
                 sawXDigit = false;
@@ -174,7 +173,7 @@ public class IPAddressUtil {
             return null;
         }
         if (sawXDigit) {
-            if (j + INT16SZ > INADDR16SZ) {
+            if (j + INT_16_SIZE > IPV6_SIZE) {
                 return null;
             }
             dst[j++] = (byte) ((val >> 8) & 0xff);
@@ -183,16 +182,16 @@ public class IPAddressUtil {
 
         if (colonp != -1) {
             int n = j - colonp;
-            if (j == INADDR16SZ) {
+            if (j == IPV6_SIZE) {
                 return null;
             }
             for (i = 1; i <= n; i++) {
-                dst[INADDR16SZ - i] = dst[colonp + n - i];
+                dst[IPV6_SIZE - i] = dst[colonp + n - i];
                 dst[colonp + n - i] = 0;
             }
-            j = INADDR16SZ;
+            j = IPV6_SIZE;
         }
-        if (j != INADDR16SZ) {
+        if (j != IPV6_SIZE) {
             return null;
         }
         byte[] newdst = convertFromIPv4MappedAddress(dst);
@@ -208,7 +207,7 @@ public class IPAddressUtil {
             return null;
         }
 
-        byte[] res = new byte[INADDR4SZ];
+        byte[] res = new byte[IPV4_SIZE];
         String[] s = src.split("\\.", -1);
         long val;
         try {
@@ -266,15 +265,15 @@ public class IPAddressUtil {
 
     byte[] convertFromIPv4MappedAddress(byte[] addr) {
         if (isIPv4MappedAddress(addr)) {
-            byte[] newAddr = new byte[INADDR4SZ];
-            System.arraycopy(addr, 12, newAddr, 0, INADDR4SZ);
+            byte[] newAddr = new byte[IPV4_SIZE];
+            System.arraycopy(addr, 12, newAddr, 0, IPV4_SIZE);
             return newAddr;
         }
         return null;
     }
 
     boolean isIPv4MappedAddress(byte[] addr) {
-        if (addr.length < INADDR16SZ) {
+        if (addr.length < IPV6_SIZE) {
             return false;
         }
         return ((addr[0] == 0x00) && (addr[1] == 0x00) && (addr[2] == 0x00) && (addr[3] == 0x00) && (addr[4] == 0x00)

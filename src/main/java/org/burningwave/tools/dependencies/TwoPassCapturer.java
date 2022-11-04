@@ -81,7 +81,7 @@ public class TwoPassCapturer extends Capturer {
 	}
 
 	public static TwoPassCapturer getInstance() {
-		return LazyHolder.getCapturerInstance();
+		return Holder.getCapturerInstance();
 	}
 
 	@Override
@@ -352,7 +352,7 @@ public class TwoPassCapturer extends Capturer {
 		}
 	}
 
-	private static class LazyHolder {
+	private static class Holder {
 		private static final TwoPassCapturer CAPTURER_INSTANCE = TwoPassCapturer
 				.create(ComponentContainer.getInstance());
 
