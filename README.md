@@ -207,14 +207,14 @@ HostResolutionRequestInterceptor.INSTANCE.install(
     new HostResolver() {
 
         @Override
-        public Collection<InetAddress> getAllAddressesForHostName(Map<String, Object> arguments) {
-            String hostName = (String)super.getMethodArguments(argumentsMap)[0]
+        public Collection<InetAddress> getAllAddressesForHostName(Map<String, Object> argumentMap) {
+            String hostName = (String)super.getMethodArguments(argumentMap)[0]
             //Do the stuff...
         }
 
         @Override
-        public Collection<String> getAllHostNamesForHostAddress(Map<String, Object> arguments) {
-            byte[] iPAddressAsByteArray = (byte[])super.getMethodArguments(argumentsMap)[0];
+        public Collection<String> getAllHostNamesForHostAddress(Map<String, Object> argumentMap) {
+            byte[] iPAddressAsByteArray = (byte[])super.getMethodArguments(argumentMap)[0];
             String iPAddress = IPAddressUtil.INSTANCE.numericToTextFormat(iPAddressAsByteArray);
             //Do the stuff...
         }
