@@ -51,8 +51,8 @@ public class HostResolutionRequestInterceptor {
 	public static final HostResolutionRequestInterceptor INSTANCE;
 	private static final Function<HostResolutionRequestInterceptor, Object> proxySupplier;
 	private static final Function<Collection<InetAddress>, Object> getAllAddressesForHostNameResultConverter;
-	private static Object cacheOne;
-	private static Object cacheTwo;
+	private static final Object cacheOne;
+	private static final Object cacheTwo;
 
 	Collection<HostResolver> resolvers;
 
