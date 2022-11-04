@@ -209,12 +209,15 @@ HostResolutionRequestInterceptor.INSTANCE.install(
 
         @Override
         public Collection<InetAddress> getAllAddressesForHostName(Map<String, Object> arguments) {
-            ...
+            String hostName = (String)super.getMethodArguments(argumentsMap)[0]
+            //Do the stuff...
         }
 
         @Override
         public Collection<String> getAllHostNamesForHostAddress(Map<String, Object> arguments) {
-            ...
+            byte[] iPAddressAsByteArray = (byte[])super.getMethodArguments(argumentsMap)[0];
+            String iPAddress = IPAddressUtil.INSTANCE.numericToTextFormat(iPAddressAsByteArray);
+            //Do the stuff...
         }
 				
     },
