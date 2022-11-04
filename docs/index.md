@@ -203,7 +203,6 @@ InetAddress inetAddress = InetAddress.getByName("github.com");
 
 You can also define a new custom resolver by implementing the **`org.burningwave.tools.net.HostResolver`** interface:
 ```java
-//Installing the host resolvers
 HostResolutionRequestInterceptor.INSTANCE.install(
     new HostResolver() {
 
@@ -221,7 +220,6 @@ HostResolutionRequestInterceptor.INSTANCE.install(
         }
 				
     },
-    //This is the system default resolving wrapper
     DefaultHostResolver.INSTANCE
 );
 ```
