@@ -1,10 +1,11 @@
-name: Build and Test -> Compute coverage -> Release 
+name: Build and test -> Compute coverage -> Release
 
 on:
   watch:
     types: [started]
 
 jobs:
+            
   ask-for-authorization:
     name: Ask for authorization
     runs-on: ubuntu-latest
@@ -15,15 +16,21 @@ jobs:
         repository: ${{ github.repository }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Send push notification
+      if: ${{ failure() }}
+      uses: techulus/push-github-action@1.0.0
+      env:
+        API_KEY: ${{ secrets.PUSH_NOTIFICATION_API_KEY }}
+        MESSAGE: ${{ format('New star for {0}!', github.repository) }}
 
   build-and-test-with-Java-8-and-later:
     name: Build -> Test (JVM ${{ matrix.java }}, ${{ matrix.os }})
     needs: [ask-for-authorization]
     strategy:
       fail-fast: true
-      max-parallel: 16
+      max-parallel: 15
       matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
+        os: [windows-latest, macOS-latest, ubuntu-latest]
         java: [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]
         architecture: [x64]
         exclude:
@@ -42,8 +49,8 @@ jobs:
           java-version: ${{ matrix.java }}
           distribution: 'zulu'
           architecture: ${{ matrix.architecture }}
-      - name: Build and test
-        run: mvn -B clean test -Dproject_jdk_version=${{ matrix.java }} -DskipTests=false --file pom.xml
+      - name: Build and test with
+        run: mvn -B clean test -DskipTests=false --file pom.xml
         
   test-and-compute-coverage:
     name: Test -> Compute coverage
@@ -57,12 +64,13 @@ jobs:
           distribution: 'zulu'
           architecture: x64
       - name: Build and test
-        run: mvn clean test -DskipTests=false -P run-coveralls jacoco:report coveralls:report -DrepoToken=${{ secrets.coveralls_repo_token }}
+        run: mvn clean test -DskipTests=false -Dproject.test.testSuite=AllTestsSuite -P run-coveralls jacoco:report coveralls:report -DrepoToken=${{ secrets.coveralls_repo_token }}
        
   release:
     name: Release
     needs: [build-and-test-with-Java-8-and-later]
-    if: ${{ false }}  # disabled for now
+    # This is an organization variable: see https://docs.github.com/en/actions/learn-github-actions/variables
+    if: ${{ fromJSON(vars.MANUAL_RELEASE_ENABLED) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -80,7 +88,7 @@ jobs:
           echo "${{ secrets.gpg_private_key }}" | gpg --batch --import
           git config user.name "${GITHUB_ACTOR}"
           git config user.email "info@burningwave.org"
-          mvn -B release:prepare release:perform -Dproject_jdk_version=8 -DskipTests=true -Dgpg.passphrase=${{ secrets.gpg_passphrase }} -Dgpg.keyname=${{ secrets.gpg_key_id }} -Drepository.url=https://${GITHUB_ACTOR}:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git
+          mvn -B release:prepare release:perform -Dproject_jdk_version=8 -DskipTests=true -Dgpg.passphrase=${{ secrets.GPG_PASSPHRASE }} -Dgpg.keyname=${{ secrets.gpg_key_id }} -Drepository.url=https://${GITHUB_ACTOR}:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git
         env:
           MAVEN_USERNAME: ${{ secrets.nexus_username }}
           MAVEN_PASSWORD: ${{ secrets.nexus_password }}
