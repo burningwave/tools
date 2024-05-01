@@ -32,7 +32,7 @@
 	<groupId>org.burningwave</groupId>
 	<artifactId>tools</artifactId>
 
-	<version>0.25.15-SNAPSHOT</version>
+	<version>0.26.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	
 	<name>Burningwave Tools</name>
